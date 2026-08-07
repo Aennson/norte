@@ -70,6 +70,7 @@ Fixtures live in `test/fixtures/` (JSON/text), **with no real personal data** �
 - Dataset `test/fixtures/intents/ptbr_dataset.json`: **minimum 50 utterances** in PT-BR (the product's voice-command language) with expected intent+slots, including ≥10 ambiguous/noisy ones with `unknown` as the expected result.
 - The eval runs the `IntentParser` with `FakeAiEngine` (fixtures) in regular tests, and with the real engine **only** in a manual/optional CI job.
 - Approval metrics: intent accuracy ≥ 90% on the dataset; exact slots ≥ 85%; no utterance labeled `unknown` may ever become a mutating action.
+- **Multilingual premise (BR-11):** PT-BR is the primary dataset; additionally, smoke datasets of **≥10 utterances each** in English (`en_dataset.json`) and Italian (`it_dataset.json`) run with the same approval metrics — the intent-parsing prompt must handle utterances in the app's active language.
 
 ## 6. Coverage and CI
 

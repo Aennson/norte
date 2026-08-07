@@ -13,7 +13,7 @@
 
 ## Scope
 
-**In:** Flutter project (Android/iOS/Windows enabled), folder structure from `docs/architecture.md §11`, stack dependencies (§2.1), dark+light theme with the design system tokens, shared components (`NorteButton`, `NorteCard`, `StatusBadge`, `EmptyState`), navigation shell (mobile bottom nav / desktop rail) with placeholder screens, test fakes, `tool/check_imports.dart` script, GitHub Actions CI.
+**In:** Flutter project (Android/iOS/Windows enabled), folder structure from `docs/architecture.md §11`, stack dependencies (§2.1), dark+light theme with the design system tokens, shared components (`NorteButton`, `NorteCard`, `StatusBadge`, `EmptyState`), navigation shell (mobile bottom nav / desktop rail) with placeholder screens, **localization scaffolding (BR-11)**: `flutter_localizations` + `intl`, `l10n.yaml`, ARB files `app_en.arb` (template), `app_pt.arb`, `app_it.arb` with the shell's initial keys, app follows the device locale with fallback to English, test fakes, `tool/check_imports.dart` script, GitHub Actions CI.
 
 **Out:** any business rule, real entities, persistence, network calls.
 
@@ -26,12 +26,14 @@
 5. `test/fakes/` with the 6 fakes from `docs/testing-strategy.md §3` (provisional interfaces where the port does not exist yet are allowed **only** for fakes that depend on future sprints — in that case create the real port in `domain/ports/` right away).
 6. `tool/check_imports.dart` — fails (exit ≠ 0) if any file violates the dependency rule from `docs/project-rules.md §3`, or if `Color(0x...)` appears outside `presentation/shared/theme/`.
 7. CI workflow `.github/workflows/ci.yml`: analyze → format → check_imports → test → coverage gate.
+8. l10n scaffolding (BR-11): the 3 ARB files in `lib/l10n/` with identical key sets covering every shell string; `AppLocalizations` wired in `MaterialApp`; unsupported locales fall back to English.
 
 ## Sprint validation rules
 
 - Color tokens are **exactly** the hex values from `docs/design-system.md §2` — no invented colors.
 - No screen uses a literal color outside the theme (verified by check_imports).
 - Folder structure identical to `docs/architecture.md §11` (empty folders may hold a `.gitkeep`).
+- No hardcoded user-facing string: every visible text goes through `AppLocalizations` (BR-11) — including the placeholder screens.
 
 ## Tests
 
@@ -58,6 +60,18 @@
 - **Entry criteria:** contrast-ratio function implemented in the test.
 - **Action:** compute contrast for the pairs (`textPrimary`/`bg`, `textPrimary`/`surface`, `textSecondary`/`surface`, white/`accent`) in both themes.
 - **Exit criteria:** all ≥ 4.5:1.
+
+#### S00-UT-05 — Locale resolution and fallback
+- **What it validates:** BR-11 (supported languages and fallback).
+- **Entry criteria:** app configured with the 3 supported locales; a sample key present in the 3 ARB files with distinct values.
+- **Action:** resolve `AppLocalizations` for `en`, `pt-BR`, `it`, and an unsupported locale (`fr`).
+- **Exit criteria:** each supported locale returns its own translation for the sample key; `fr` resolves to the English value (fallback).
+
+#### S00-UT-06 — ARB key parity
+- **What it validates:** BR-11 (the three locales stay in parity). This test runs in every sprint from now on and fails whenever a key is added to fewer than 3 files.
+- **Entry criteria:** the files `app_en.arb`, `app_pt.arb`, `app_it.arb` read from disk by the test.
+- **Action:** compare the three key sets, each key's placeholder list, and value contents.
+- **Exit criteria:** identical key sets across the 3 files; identical placeholders per key; no empty or whitespace-only value.
 
 #### S00-GT-01 — Shared component goldens
 - **What it validates:** appearance of `NorteButton` (4 states), `NorteCard`, `StatusBadge` (4 statuses), `EmptyState`.

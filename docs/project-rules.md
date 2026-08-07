@@ -57,6 +57,7 @@ These rules come from the architecture (`docs/architecture.md`) and **must each 
 | BR-08 | Secrets (Jira token, Claude key) live only in secure storage; never in Drift, SharedPreferences, or logs | Sprint 02 onward |
 | BR-09 | The app never mirrors Jira: it stores only `issueKey`, `siteUrl`, `lastKnownStatus` (display cache), and `lastSyncedAt` | Sprint 02 |
 | BR-10 | Primary AI engine failure: 1 retry → fallback (if enabled) → clear error to the user; every switch is logged | Sprint 07 |
+| BR-11 | The system supports **English (en), Brazilian Portuguese (pt-BR), and Italian (it)**: every user-facing string comes from localized ARB resources (no hardcoded UI literals); the three locales stay in key parity; unsupported device locales fall back to English | Sprint 00 onward (parity test runs in every sprint) |
 
 ## 5. Testing rules
 
@@ -84,7 +85,7 @@ These rules come from the architecture (`docs/architecture.md`) and **must each 
 - Domain errors modeled as `Failure` sealed classes in `domain/failures/` — never throw raw exceptions across layers.
 - Every port (`abstract interface class`) documented with dartdoc describing its contract, possible errors, and guarantees.
 - Structured logs with automatic redaction of sensitive payloads (never log transcripts, tokens, keys, or AI request bodies).
-- UI strings in PT-BR for this v1.0 (the product's target language), centralized (prepared for future l10n).
+- UI strings localized via `flutter_localizations` + `intl` (ARB files in `lib/l10n/`): the system supports **en, pt-BR, and it** (BR-11). English (`app_en.arb`) is the template and fallback locale. Every new UI string must be added to **all three** ARB files in the same commit — the parity test (S00-UT-06) fails otherwise.
 
 ## 7. Mandatory Git workflow — branches, worktrees, PRs, and 100% CI
 

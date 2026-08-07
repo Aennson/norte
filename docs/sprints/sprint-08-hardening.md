@@ -13,7 +13,7 @@
 
 ## Scope
 
-**In:** review/audit of the `PiiRedactor` (grow the PII dataset to ≥40 cases, including variants with punctuation and line breaks); "Delete everything" in Settings (wipe Drift + secure storage + temp files, with double confirmation); log audit (automated verification that no log contains a token/key/transcript/AI payload); the intent eval as a mandatory CI job; API usage counter in settings (risk §15 — cost); simple privacy policy/consent screens; execution and stabilization of the global E2E regression suite (`docs/e2e/e2e-regression-plan.md`); final accessibility review (semantic labels on the main buttons, keyboard navigation on Windows).
+**In:** review/audit of the `PiiRedactor` (grow the PII dataset to ≥40 cases, including variants with punctuation and line breaks); "Delete everything" in Settings (wipe Drift + secure storage + temp files, with double confirmation); log audit (automated verification that no log contains a token/key/transcript/AI payload); the intent eval as a mandatory CI job; API usage counter in settings (risk §15 — cost); simple privacy policy/consent screens; execution and stabilization of the global E2E regression suite (`docs/e2e/e2e-regression-plan.md`); final accessibility review (semantic labels on the main buttons, keyboard navigation on Windows); **localization review (BR-11)**: manual pass through every screen in en, pt-BR, and it (no missing/overflowing/untranslated string), with the ARB parity test (S00-UT-06) green.
 
 **Out:** certificate pinning (v1.1), Jira OAuth, multi-user.
 
@@ -73,6 +73,7 @@
 - [ ] Gates G1–G6 green; domain+application coverage ≥ 90%, project ≥ 80%.
 - [ ] All S08-* tests passing; the eval mandatory in CI.
 - [ ] Global E2E regression suite green 3× in a row.
-- [ ] Compliance checklist completed in the report: BR-01 through BR-10, each with the ID of the test covering it.
+- [ ] Compliance checklist completed in the report: BR-01 through BR-11, each with the ID of the test covering it.
+- [ ] Manual localization pass (en, pt-BR, it) across every screen recorded in the report with evidence.
 - [ ] Release builds produced for Android (APK), Windows (exe/msix), and iOS (if the environment is available) — artifacts attached/recorded.
 - [ ] Final report `docs/reports/sprint-08-report.md` + `docs/reports/v1.0-release-notes.md`.

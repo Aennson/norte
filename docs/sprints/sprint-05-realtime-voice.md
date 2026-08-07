@@ -9,7 +9,7 @@
 ## Entry criteria
 
 - [ ] Sprint 04 DoD complete.
-- [ ] `FakeRealtimeTranscription` and the intents dataset (`test/fixtures/intents/ptbr_dataset.json`, ≥50 utterances) created.
+- [ ] `FakeRealtimeTranscription` and the intents dataset (`test/fixtures/intents/ptbr_dataset.json`, ≥50 utterances) created, plus the en/it smoke datasets (`en_dataset.json`, `it_dataset.json`, ≥10 utterances each — BR-11).
 
 ## Scope
 
@@ -79,11 +79,11 @@
 - **Action:** `parseIntent` on each adapter.
 - **Exit criteria:** both return a `VoiceIntent` valid against the schema; a network failure maps to the same `Failure`.
 
-#### S05-EV-01 — PT-BR dataset eval
-- **What it validates:** parsing accuracy (architecture §13; strategy §5).
-- **Entry criteria:** dataset ≥50 utterances with ground truth (intent + slots), ≥10 ambiguous ones with `unknown` ground truth; `FakeAiEngine` with fixtures OR the real engine in a manual job.
-- **Action:** run the parser over all utterances.
-- **Exit criteria:** intent accuracy ≥ 90%; exact slots ≥ 85%; 100% of the `unknown`-labeled utterances result in `unknown` (none becomes an action); a per-utterance error report generated as an artifact.
+#### S05-EV-01 — Multilingual intent dataset eval
+- **What it validates:** parsing accuracy (architecture §13; strategy §5) across the supported languages (BR-11).
+- **Entry criteria:** PT-BR dataset ≥50 utterances with ground truth (intent + slots), ≥10 ambiguous ones with `unknown` ground truth; en and it smoke datasets ≥10 utterances each with ground truth; `FakeAiEngine` with fixtures OR the real engine in a manual job.
+- **Action:** run the parser over all utterances of the three datasets.
+- **Exit criteria:** per dataset: intent accuracy ≥ 90%; exact slots ≥ 85%; 100% of the `unknown`-labeled utterances result in `unknown` (none becomes an action); a per-utterance error report generated as an artifact.
 
 #### S05-GT-01 — VoiceOverlay and ConfirmSheet
 - **What it validates:** the voice components (design system §4).

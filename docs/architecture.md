@@ -15,6 +15,7 @@
 3. **Offline-first** — tasks and reminders work without a network; Jira synchronization is opportunistic.
 4. **Privacy by default (LGPD)** — transcripts processed in memory; persistence only under explicit user action; PII redaction before sending to external APIs.
 5. **External layer to Jira** — the app is never the source of truth for Jira; it references tickets, never mirrors them entirely.
+6. **Multilingual by premise** — the system supports **English (en), Brazilian Portuguese (pt-BR), and Italian (it)**. Every UI string is a localized resource from day one; English is the template/fallback locale.
 
 ---
 
@@ -54,6 +55,7 @@
 | Audio (streaming) | web_socket_channel + PCM 16k | Scribe v2 Realtime requirement |
 | Navigation | go_router | Deep links (open ticket via notification) |
 | Serialization | freezed + json_serializable | Immutability in the domain |
+| Localization | flutter_localizations + intl (ARB) | Supported languages: en, pt-BR, it (principle §1.1.6) |
 | Background | workmanager (mobile) / isolates (Windows) | Jira sync and reminders |
 
 ---
