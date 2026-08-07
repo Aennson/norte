@@ -29,6 +29,7 @@ This folder contains **everything an executing AI needs to implement and test th
 | [`design-system.md`](design-system.md) | Dark/light palette, typography, components, responsive layout |
 | [`testing-strategy.md`](testing-strategy.md) | Test types, fakes/fixtures, specification format, evals |
 | [`e2e/e2e-regression-plan.md`](e2e/e2e-regression-plan.md) | Global E2E suite crossing the pillars (REG-E2E-01..08) |
+| [`tooling.md`](tooling.md) | Recommended AI plugins and the auto-loaded project skills (`.claude/skills/`) |
 | `reports/` | Created during execution (sprint reports and decisions) |
 
 ## 🚀 Sprints (executable roadmap)
