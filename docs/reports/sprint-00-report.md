@@ -23,7 +23,13 @@ Every command below was run at `HEAD` of the sprint branch.
 | G4 — coverage | `flutter test --coverage` + `dart run tool/check_coverage.dart` | domain+application **100.0%** (13/13) · project **84.3%** (397/471) — `gate G4: OK` ✅ |
 | G5 — dependency rule | `dart run tool/check_imports.dart` | `check_imports: OK — no layer or color violations in lib` ✅ |
 | G6 — secrets | `grep -rEn "(api[_-]?key\|token)[[:space:]]*=[[:space:]]*['\"]" lib/` | no match ✅ |
-| E2E | `flutter test integration_test/` | not runnable in this container — see §5 ⚠️ |
+| E2E | `xvfb-run flutter test integration_test/` | green on the CI Linux desktop host — `✓ Built build/linux/x64/debug/bundle/norte`, 2/2 scenarios passing ✅ |
+
+**CI evidence.** Workflow run
+[#2](https://github.com/Aennson/norte/actions/runs/31226818154) on
+`6e37da8` — all three jobs (`quality`, `test`, `e2e`) **success**. Run #1 failed
+on a single E2E scenario that had not pinned the viewport; fixed on the branch
+in `6e37da8` (no re-run was used to mask it).
 
 **Coverage per layer**
 
@@ -79,13 +85,11 @@ Developer can close them locally.
    the real `ProviderScope`/`NorteApp` tree), not by a platform artifact.
    **Action for the Developer:** run `flutter build apk --debug` and
    `flutter build windows --debug` locally once before merging.
-2. **S00-E2E-01 was not executed end-to-end in this container.** The Linux
-   desktop host (DEC-004) builds until `sqlite3_flutter_libs` fetches the SQLite
-   amalgamation from `sqlite.org`, which the same egress policy refuses. The
-   test's assertions were validated by running the identical test body under the
-   widget-test binding (2/2 passing) before deletion of the temporary copy; the
-   `e2e` CI job runs the real thing on GitHub's runner, where that host is
-   reachable. **The sprint is not closed until that job is green.**
+2. **S00-E2E-01 could not be executed in this container** (resolved in CI). The
+   Linux desktop host (DEC-004) builds until `sqlite3_flutter_libs` fetches the
+   SQLite amalgamation from `sqlite.org`, which the same egress policy refuses.
+   The `e2e` CI job runs the real thing on GitHub's runner, where that host is
+   reachable: it built the Linux bundle and passed both scenarios on run #2.
 
 **Decisions taken:** DEC-001 (`onAccent` token + darkened light accent),
 DEC-002 (`lucide_icons_flutter`), DEC-003 (branch name), DEC-004 (Linux desktop
@@ -104,7 +108,7 @@ as E2E host), DEC-005 (plugin versions) — all in `docs/reports/decisions.md`.
 | S00-GT-01 | Shared component goldens | 10 (5 × dark/light) | ✅ |
 | S00-GT-02 | Navigation shell | 4 | ✅ |
 | S00-IT-01 | check_imports detects a violation | 9 | ✅ |
-| S00-E2E-01 | Navigation smoke test | 2 | ⏳ CI |
+| S00-E2E-01 | Navigation smoke test | 2 | ✅ (CI, Linux desktop host) |
 | — | Fakes sanity suite (added under §5.4) | 24 | ✅ |
 
 67 tests green under `flutter test`; 12 golden files committed under
@@ -113,9 +117,12 @@ as E2E host), DEC-005 (plugin versions) — all in `docs/reports/decisions.md`.
 ## 7. Definition of Done
 
 - [x] Gates G1–G6 green.
-- [x] All S00-* tests implemented and passing (S00-E2E-01 pending its CI run — §5.2).
-- [ ] **CI runs and passes on push** — pending the first GitHub Actions run.
+- [x] All S00-* tests implemented and passing — 67 under `flutter test`, 2 under
+      `flutter test integration_test/`.
+- [x] CI runs and passes on push — run #2, all three jobs green.
 - [x] Report `docs/reports/sprint-00-report.md` created with evidence.
 
-**The sprint is not complete until the CI run on this branch is 100% green and
-the PR to `master` is mergeable** (`docs/project-rules.md` §7.3).
+**Remaining to close the sprint** (`docs/project-rules.md` §7.3): open the
+sprint PR to `master` and merge it only with Actions 100% green on the PR head.
+The Developer should also run the platform builds listed in §5.1 first — that is
+the one piece of deliverable 1 this environment could not produce.
