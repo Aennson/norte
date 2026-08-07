@@ -1,9 +1,9 @@
 # Norte
 
-Assistente pessoal de produtividade para desenvolvedores — tarefas com vínculo Jira, resumo de reuniões por IA, comandos de voz e lembretes. Flutter · Android · iOS · Windows.
+A personal productivity assistant for developers — tasks with Jira linking, AI meeting summaries, voice commands, and reminders. Flutter · Android · iOS · Windows.
 
-> **Status:** fase de documentação. O desenvolvimento é executado sprint a sprint seguindo a documentação abaixo.
+> **Status:** documentation phase. Development is executed sprint by sprint following the documentation below.
 
-## Documentação
+## Documentation
 
-Toda a especificação do projeto (arquitetura, regras, design system, sprints e testes) está em [`docs/`](docs/README.md). Comece por [`docs/README.md`](docs/README.md).
+The entire project specification (architecture, rules, design system, sprints, and tests) lives in [`docs/`](docs/README.md). Start with [`docs/README.md`](docs/README.md).

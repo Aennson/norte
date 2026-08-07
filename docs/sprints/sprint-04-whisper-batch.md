@@ -1,83 +1,83 @@
-# Sprint 04 — Whisper Batch: Gravação de Áudio e Transcrição de Reuniões
+# Sprint 04 — Whisper Batch: Audio Recording and Meeting Transcription
 
-**Objetivo:** segundo fluxo de entrada de reuniões — gravar áudio no app, transcrever via `WhisperBatchEngine` e alimentar o **mesmo** pipeline de resumo da Sprint 03.
+**Objective:** the second meeting input flow — record audio in the app, transcribe via `WhisperBatchEngine`, and feed the **same** summarization pipeline from Sprint 03.
 
-**Referências obrigatórias:** `docs/arquitetura.md` §5.1, §9 · RN-03, RN-07
+**Mandatory references:** `docs/architecture.md` §5.1, §9 · BR-03, BR-07
 
 ---
 
-## Critérios de entrada
+## Entry criteria
 
-- [ ] Sprint 03 com DoD completo (pipeline de resumo funcionando).
-- [ ] `FakeBatchTranscription` disponível.
+- [ ] Sprint 03 DoD complete (summarization pipeline working).
+- [ ] `FakeBatchTranscription` available.
 
-## Escopo
+## Scope
 
-**Dentro:** ports `TranscriptionEngine`/`BatchTranscription` (interface da §9.1); `WhisperBatchEngine` (upload de arquivo, key em secure storage, idioma opcional); captura de áudio (`record`) com permissão de microfone, indicador de gravação (tempo decorrido, nível), pausa/retomada, limite configurável (default 90 min); use case `TranscribeMeetingAudio` que conecta gravação → transcrição → pipeline da Sprint 03; estados de progresso na UI (gravando → enviando → transcrevendo → resumindo).
+**In:** `TranscriptionEngine`/`BatchTranscription` ports (interface from §9.1); `WhisperBatchEngine` (file upload, key in secure storage, optional language); audio capture (`record`) with microphone permission, recording indicator (elapsed time, level), pause/resume, configurable limit (default 90 min); `TranscribeMeetingAudio` use case connecting recording → transcription → the Sprint 03 pipeline; progress states in the UI (recording → uploading → transcribing → summarizing).
 
-**Fora:** transcrição realtime/Scribe (Sprint 05), captura de áudio do sistema (fora do escopo v1.0).
+**Out:** realtime/Scribe transcription (Sprint 05), system audio capture (out of scope for v1.0).
 
-## Regras de validação da sprint
+## Sprint validation rules
 
-- Arquivo de áudio de reunião é **temporário**: gravado em diretório temp do app, excluído após transcrição bem-sucedida **ou** quando o usuário descarta; nunca no diretório de documentos.
-- Transcrição concluída entra no pipeline da Sprint 03 **sem código duplicado** — mesmo use case `SummarizeMeeting`, mesmas regras de PII e retenção (RN-03/RN-07 se aplicam ao transcript gerado).
-- Permissão de microfone negada → tela explicativa com link para configurações do sistema; nunca crash.
-- Falha de upload/transcrição → o arquivo de áudio local é **mantido** e o usuário pode tentar de novo sem regravar.
-- Interrupção da gravação (chamada telefônica, app em background em mobile) → gravação pausada e recuperável.
+- The meeting audio file is **temporary**: recorded in the app's temp directory, deleted after successful transcription **or** when the user discards it; never in the documents directory.
+- A completed transcript enters the Sprint 03 pipeline **with no duplicated code** — same `SummarizeMeeting` use case, same PII and retention rules (BR-03/BR-07 apply to the generated transcript).
+- Microphone permission denied → explanatory screen with a link to system settings; never a crash.
+- Upload/transcription failure → the local audio file is **kept** and the user can retry without re-recording.
+- Recording interruption (phone call, app backgrounded on mobile) → recording paused and recoverable.
 
-## Testes
+## Tests
 
-#### S04-UT-01 — Orquestração do fluxo
-- **O que valida:** transcrever → resumir sem duplicação.
-- **Critérios de entrada:** `TranscribeMeetingAudio` com `FakeBatchTranscription` (retorna transcript fixo) e `SummarizeMeeting` espião; arquivo fake.
-- **Ação:** executar com template daily.
-- **Critérios de saída:** `SummarizeMeeting` recebido exatamente o transcript do engine e o template escolhido; estados emitidos na ordem enviando → transcrevendo → resumindo → concluído.
+#### S04-UT-01 — Flow orchestration
+- **What it validates:** transcribe → summarize without duplication.
+- **Entry criteria:** `TranscribeMeetingAudio` with `FakeBatchTranscription` (returns a fixed transcript) and a spy `SummarizeMeeting`; fake file.
+- **Action:** execute with the daily template.
+- **Exit criteria:** `SummarizeMeeting` received exactly the engine's transcript and the chosen template; states emitted in the order uploading → transcribing → summarizing → done.
 
-#### S04-UT-02 — Falha de transcrição preserva o áudio
-- **O que valida:** regra de retry sem regravar.
-- **Critérios de entrada:** fake programado para `TranscriptionFailure`; arquivo fake existente.
-- **Ação:** executar; verificar arquivo; reexecutar com fake ok.
-- **Critérios de saída:** após a falha o arquivo ainda existe e o erro é propagado; o retry funciona com o mesmo arquivo; após sucesso o arquivo é excluído.
+#### S04-UT-02 — Transcription failure preserves the audio
+- **What it validates:** the retry-without-re-recording rule.
+- **Entry criteria:** fake programmed for `TranscriptionFailure`; existing fake file.
+- **Action:** execute; check the file; re-execute with the fake OK.
+- **Exit criteria:** after the failure the file still exists and the error is propagated; the retry works with the same file; after success the file is deleted.
 
-#### S04-UT-03 — Limpeza pós-sucesso e pós-descarte
-- **O que valida:** ciclo de vida do arquivo temporário.
-- **Critérios de entrada:** gravação concluída em diretório temp fake.
-- **Ação:** cenário A: fluxo completo com sucesso; cenário B: usuário descarta antes de transcrever.
-- **Critérios de saída:** em ambos os cenários o arquivo é excluído; nenhum arquivo de áudio remanescente no diretório.
+#### S04-UT-03 — Cleanup after success and after discard
+- **What it validates:** the temp file's lifecycle.
+- **Entry criteria:** recording completed in a fake temp directory.
+- **Action:** scenario A: full flow with success; scenario B: user discards before transcribing.
+- **Exit criteria:** in both scenarios the file is deleted; no audio file remains in the directory.
 
-#### S04-IT-01 — WhisperBatchEngine: request correto
-- **O que valida:** conformidade com a API de transcrição.
-- **Critérios de entrada:** servidor HTTP fake; arquivo de áudio pequeno de fixture; key fake.
-- **Ação:** `transcribeFile(audio, language: 'pt')`.
-- **Critérios de saída:** multipart com o arquivo e o idioma; auth presente; resposta parseada em `Transcript` com o texto do fake; 401 → `AuthFailure`; 5xx → `TranscriptionFailure`.
+#### S04-IT-01 — WhisperBatchEngine: correct request
+- **What it validates:** conformance with the transcription API.
+- **Entry criteria:** fake HTTP server; small fixture audio file; fake key.
+- **Action:** `transcribeFile(audio, language: 'pt')`.
+- **Exit criteria:** multipart with the file and the language; auth present; response parsed into a `Transcript` with the fake's text; 401 → `AuthFailure`; 5xx → `TranscriptionFailure`.
 
-#### S04-CT-01 — Contrato BatchTranscription
-- **O que valida:** `WhisperBatchEngine` (servidor fake) e `FakeBatchTranscription` no mesmo contrato.
-- **Critérios de entrada:** suíte parametrizada; mesmo arquivo fixture.
-- **Ação:** `transcribeFile` em cada adapter; casos: sucesso, arquivo inexistente, erro de servidor.
-- **Critérios de saída:** mesmo shape de `Transcript` e mesmos `Failure`s nos dois adapters.
+#### S04-CT-01 — BatchTranscription contract
+- **What it validates:** `WhisperBatchEngine` (fake server) and `FakeBatchTranscription` under the same contract.
+- **Entry criteria:** parameterized suite; same fixture file.
+- **Action:** `transcribeFile` on each adapter; cases: success, nonexistent file, server error.
+- **Exit criteria:** same `Transcript` shape and same `Failure`s on both adapters.
 
-#### S04-GT-01 — Tela de gravação
-- **O que valida:** UI de gravação no design system.
-- **Critérios de entrada:** estados gravando / pausado / enviando / transcrevendo mockados.
-- **Ação:** renderizar dark/light.
-- **Critérios de saída:** goldens estáveis; timer em fonte `mono`; indicador de gravação usa `accent`; progresso por etapa visível.
+#### S04-GT-01 — Recording screen
+- **What it validates:** the recording UI in the design system.
+- **Entry criteria:** recording / paused / uploading / transcribing states mocked.
+- **Action:** render dark/light.
+- **Exit criteria:** stable goldens; timer in the `mono` font; the recording indicator uses `accent`; per-stage progress visible.
 
-#### S04-E2E-01 — Gravar → transcrever → resumir
-- **O que valida:** Pilar 2 fluxo 2 de ponta a ponta.
-- **Critérios de entrada:** app com `FakeBatchTranscription` (transcript de daily) e `FakeAiEngine` (resumo de daily); captura de áudio fake injetada (produz arquivo dummy).
-- **Ação:** nova reunião → "Gravar áudio" → gravar → parar → confirmar transcrição → processar com template daily → salvar.
-- **Critérios de saída:** resumo com as seções do daily na tela; meeting salvo; arquivo de áudio ausente do sistema de arquivos ao final (verificado por assert).
+#### S04-E2E-01 — Record → transcribe → summarize
+- **What it validates:** Pillar 2, flow 2, end to end.
+- **Entry criteria:** app with `FakeBatchTranscription` (daily transcript) and `FakeAiEngine` (daily summary); fake audio capture injected (produces a dummy file).
+- **Action:** new meeting → "Record audio" → record → stop → confirm transcription → process with the daily template → save.
+- **Exit criteria:** summary with the daily's sections on screen; meeting saved; the audio file absent from the file system at the end (verified by assert).
 
-#### S04-E2E-02 — Permissão de microfone negada
-- **O que valida:** UX de permissão.
-- **Critérios de entrada:** provider de permissão overridado para "negado".
-- **Ação:** tentar iniciar gravação.
-- **Critérios de saída:** tela explicativa com ação para configurações; nenhum crash; voltar e usar o fluxo de colar continua funcionando.
+#### S04-E2E-02 — Microphone permission denied
+- **What it validates:** the permission UX.
+- **Entry criteria:** permission provider overridden to "denied".
+- **Action:** try to start recording.
+- **Exit criteria:** explanatory screen with an action to open settings; no crash; going back and using the paste flow still works.
 
 ## Definition of Done
 
-- [ ] Gates G1–G6 verdes; cobertura domain+application ≥ 90%.
-- [ ] Todos os testes S04-* passando.
-- [ ] Roteiro manual: gravação real de ~1 min em cada plataforma disponível + transcrição Whisper real (key própria) → evidência no relatório.
-- [ ] Relatório `docs/relatorios/sprint-04-relatorio.md`.
+- [ ] Gates G1–G6 green; domain+application coverage ≥ 90%.
+- [ ] All S04-* tests passing.
+- [ ] Manual script: a real ~1 min recording on each available platform + a real Whisper transcription (your own key) → evidence in the report.
+- [ ] Report `docs/reports/sprint-04-report.md`.

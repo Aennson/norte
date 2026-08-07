@@ -1,108 +1,108 @@
-# Sprint 02 — Integração Jira: JiraLink, Adapter REST, Outbox e Refresh
+# Sprint 02 — Jira Integration: JiraLink, REST Adapter, Outbox, and Refresh
 
-**Objetivo:** vincular tasks a issues do Jira Cloud (camada externa, nunca espelho), com escrita via outbox offline-first idempotente e refresh de status sob demanda + background.
+**Objective:** link tasks to Jira Cloud issues (external layer, never a mirror), with idempotent offline-first writes via outbox and status refresh on demand + in the background.
 
-**Referências obrigatórias:** `docs/arquitetura.md` §4 · RN-01, RN-02, RN-05, RN-08, RN-09
+**Mandatory references:** `docs/architecture.md` §4 · BR-01, BR-02, BR-05, BR-08, BR-09
 
 ---
 
-## Critérios de entrada
+## Entry criteria
 
-- [ ] Sprint 01 com DoD completo.
-- [ ] `FakeJiraGateway` disponível com fixtures de issues (`test/fixtures/jira_issues.json`).
+- [ ] Sprint 01 DoD complete.
+- [ ] `FakeJiraGateway` available with issue fixtures (`test/fixtures/jira_issues.json`).
 
-## Escopo
+## Scope
 
-**Dentro:** port `JiraGateway` (getIssue, transitionIssue, addComment, createIssue, getStatus); `JiraRestAdapter` (dio, Basic auth com API token, Jira Cloud REST v3); armazenamento de credenciais em `flutter_secure_storage` + tela de configuração Jira em Ajustes; tabela `outbox` no Drift + `OutboxDispatcher` (retry exponencial, idempotência por `operationId`); use cases `LinkTaskToJira`, `UnlinkTask`, `UpdateJiraStatus`, `AddJiraComment`, `CreateJiraIssueFromTask`, `RefreshJiraStatus`; refresh em background a cada 15 min (workmanager mobile / timer+isolate Windows) apenas para tasks vinculadas não concluídas; UI: `JiraChip` na task, `DivergenceBanner` para conflito de status.
+**In:** `JiraGateway` port (getIssue, transitionIssue, addComment, createIssue, getStatus); `JiraRestAdapter` (dio, Basic auth with API token, Jira Cloud REST v3); credential storage in `flutter_secure_storage` + Jira configuration screen in Settings; `outbox` table in Drift + `OutboxDispatcher` (exponential retry, idempotency by `operationId`); use cases `LinkTaskToJira`, `UnlinkTask`, `UpdateJiraStatus`, `AddJiraComment`, `CreateJiraIssueFromTask`, `RefreshJiraStatus`; background refresh every 15 min (workmanager on mobile / timer+isolate on Windows) only for linked, non-completed tasks; UI: `JiraChip` on the task, `DivergenceBanner` for status conflict.
 
-**Fora:** OAuth, sync bidirecional automática, espelhamento de campos do Jira além dos 4 do `JiraLink`.
+**Out:** OAuth, automatic bidirectional sync, mirroring Jira fields beyond the 4 in `JiraLink`.
 
-## Regras de validação da sprint
+## Sprint validation rules
 
-- **RN-09:** `JiraLink` persiste somente `issueKey`, `siteUrl`, `lastKnownStatus`, `lastSyncedAt`. Nenhuma outra coluna/campo de Jira no schema.
-- **RN-05:** toda mutação Jira (transition, comment, create) entra na outbox; nenhuma chamada de escrita direta de use case → adapter.
-- **RN-02:** divergência de status nunca resolve sozinha; banner oferece "Manter local" / "Adotar do Jira".
-- **RN-08:** token só em secure storage; logs do dio redigem header `Authorization` e corpo de credenciais.
-- Outbox: backoff exponencial 2s/4s/8s/16s (máx 5 tentativas); depois marca `failed` e exibe indicador na UI com ação de retry manual.
-- Vincular ticket exige validação online (`GET /issue/{key}`): key inexistente → erro claro; sem rede → erro "requer conexão" (vínculo não é enfileirado).
+- **BR-09:** `JiraLink` persists only `issueKey`, `siteUrl`, `lastKnownStatus`, `lastSyncedAt`. No other Jira column/field in the schema.
+- **BR-05:** every Jira mutation (transition, comment, create) goes into the outbox; no direct write call from use case → adapter.
+- **BR-02:** a status divergence is never resolved on its own; the banner offers "Keep local" / "Adopt from Jira".
+- **BR-08:** token only in secure storage; dio logs redact the `Authorization` header and credential bodies.
+- Outbox: exponential backoff 2s/4s/8s/16s (max 5 attempts); afterwards mark `failed` and show a UI indicator with a manual retry action.
+- Linking a ticket requires online validation (`GET /issue/{key}`): nonexistent key → clear error; no network → "requires connection" error (the link is not queued).
 
-## Testes
+## Tests
 
-#### S02-UT-01 — Vincular e desvincular preserva a task
-- **O que valida:** RN-01.
-- **Critérios de entrada:** task local existente; `FakeJiraGateway` com issue `PROJ-123` válida.
-- **Ação:** `LinkTaskToJira(task, "PROJ-123")`, depois `UnlinkTask`.
-- **Critérios de saída:** após vincular, `jiraLink.issueKey == "PROJ-123"` e demais campos da task intactos; após desvincular, `jiraLink == null` e a task continua existindo com título/status locais.
+#### S02-UT-01 — Linking and unlinking preserves the task
+- **What it validates:** BR-01.
+- **Entry criteria:** existing local task; `FakeJiraGateway` with valid issue `PROJ-123`.
+- **Action:** `LinkTaskToJira(task, "PROJ-123")`, then `UnlinkTask`.
+- **Exit criteria:** after linking, `jiraLink.issueKey == "PROJ-123"` and the task's other fields are intact; after unlinking, `jiraLink == null` and the task still exists with its local title/status.
 
-#### S02-UT-02 — Vínculo com key inexistente
-- **O que valida:** validação online do vínculo.
-- **Critérios de entrada:** fake configurado para 404 em `NOPE-1`.
-- **Ação:** `LinkTaskToJira(task, "NOPE-1")`.
-- **Critérios de saída:** `JiraIssueNotFoundFailure`; task permanece sem link; nada na outbox.
+#### S02-UT-02 — Linking a nonexistent key
+- **What it validates:** online link validation.
+- **Entry criteria:** fake configured to return 404 for `NOPE-1`.
+- **Action:** `LinkTaskToJira(task, "NOPE-1")`.
+- **Exit criteria:** `JiraIssueNotFoundFailure`; task remains unlinked; nothing in the outbox.
 
-#### S02-UT-03 — Mutações vão para a outbox, nunca direto
-- **O que valida:** RN-05.
-- **Critérios de entrada:** task vinculada; fake gateway espião.
-- **Ação:** `UpdateJiraStatus(task, "Done")` **sem** rodar o dispatcher.
-- **Critérios de saída:** 1 operação pendente na outbox com payload correto; **zero** chamadas registradas no gateway.
+#### S02-UT-03 — Mutations go to the outbox, never direct
+- **What it validates:** BR-05.
+- **Entry criteria:** linked task; spy fake gateway.
+- **Action:** `UpdateJiraStatus(task, "Done")` **without** running the dispatcher.
+- **Exit criteria:** 1 pending operation in the outbox with the correct payload; **zero** calls recorded on the gateway.
 
-#### S02-UT-04 — Detecção de divergência
-- **O que valida:** RN-02 (detecção).
-- **Critérios de entrada:** task com status local `done`, `lastKnownStatus = "In Progress"`; fake retorna status remoto `"To Do"`.
-- **Ação:** `RefreshJiraStatus(task)`.
-- **Critérios de saída:** resultado sinaliza divergência (local ≠ remoto); status local **não** é alterado; `lastKnownStatus` atualizado para `"To Do"` e `lastSyncedAt` = clock.now.
+#### S02-UT-04 — Divergence detection
+- **What it validates:** BR-02 (detection).
+- **Entry criteria:** task with local status `done`, `lastKnownStatus = "In Progress"`; fake returns remote status `"To Do"`.
+- **Action:** `RefreshJiraStatus(task)`.
+- **Exit criteria:** the result flags a divergence (local ≠ remote); local status is **not** changed; `lastKnownStatus` updated to `"To Do"` and `lastSyncedAt` = clock.now.
 
-#### S02-IT-01 — Idempotência da outbox
-- **O que valida:** RN-05 (idempotência por `operationId`).
-- **Critérios de entrada:** outbox Drift em memória com operação `op-1`; fake gateway contando chamadas.
-- **Ação:** despachar; simular timeout de resposta após sucesso no servidor (resposta perdida); redespachar `op-1`.
-- **Critérios de saída:** gateway aplicou a operação 1 única vez (fake deduplica por `operationId` e o teste asserta 1 aplicação efetiva); operação termina `completed`, sem duplicata na fila.
+#### S02-IT-01 — Outbox idempotency
+- **What it validates:** BR-05 (idempotency by `operationId`).
+- **Entry criteria:** in-memory Drift outbox with operation `op-1`; fake gateway counting calls.
+- **Action:** dispatch; simulate a response timeout after server-side success (lost response); re-dispatch `op-1`.
+- **Exit criteria:** the gateway applied the operation exactly once (the fake deduplicates by `operationId` and the test asserts 1 effective application); the operation ends `completed`, with no duplicate in the queue.
 
-#### S02-IT-02 — Retry com backoff e falha final
-- **O que valida:** política de retry da outbox.
-- **Critérios de entrada:** fake gateway retornando 429 sempre; `FakeClock` controlando o tempo.
-- **Ação:** despachar uma operação e avançar o relógio pelos intervalos.
-- **Critérios de saída:** tentativas nos offsets 0s/2s/4s/8s/16s (5 no total); após a 5ª, estado `failed`; nenhuma tentativa além disso sem retry manual.
+#### S02-IT-02 — Retry with backoff and final failure
+- **What it validates:** the outbox retry policy.
+- **Entry criteria:** fake gateway always returning 429; `FakeClock` controlling time.
+- **Action:** dispatch one operation and advance the clock through the intervals.
+- **Exit criteria:** attempts at offsets 0s/2s/4s/8s/16s (5 total); after the 5th, state `failed`; no further attempts without a manual retry.
 
-#### S02-IT-03 — Ordem FIFO por issue
-- **O que valida:** consistência de mutações sequenciais.
-- **Critérios de entrada:** outbox com transition e comment para a mesma issue, criadas nessa ordem.
-- **Ação:** despachar com rede ok.
-- **Critérios de saída:** gateway recebe transition antes do comment.
+#### S02-IT-03 — FIFO order per issue
+- **What it validates:** consistency of sequential mutations.
+- **Entry criteria:** outbox with a transition and a comment for the same issue, created in that order.
+- **Action:** dispatch with the network up.
+- **Exit criteria:** the gateway receives the transition before the comment.
 
-#### S02-IT-04 — Redação de credenciais nos logs
-- **O que valida:** RN-08.
-- **Critérios de entrada:** `JiraRestAdapter` com interceptor de log capturado em memória; request com Basic auth.
-- **Ação:** executar `getIssue` contra servidor HTTP fake.
-- **Critérios de saída:** log não contém o token nem o header `Authorization` em claro (aparece `[REDACTED]`).
+#### S02-IT-04 — Credential redaction in logs
+- **What it validates:** BR-08.
+- **Entry criteria:** `JiraRestAdapter` with its log interceptor captured in memory; request with Basic auth.
+- **Action:** execute `getIssue` against a fake HTTP server.
+- **Exit criteria:** the log contains neither the token nor the `Authorization` header in plaintext (`[REDACTED]` appears instead).
 
-#### S02-CT-01 — Contrato JiraGateway
-- **O que valida:** `JiraRestAdapter` (contra servidor fake) e `FakeJiraGateway` obedecem o mesmo contrato.
-- **Critérios de entrada:** suíte parametrizada recebendo factory do adapter.
-- **Ação:** rodar os mesmos casos (issue existe, 404, 401, 429, comment ok) nos dois adapters.
-- **Critérios de saída:** mesmos tipos de retorno/failure para os mesmos estímulos nos dois.
+#### S02-CT-01 — JiraGateway contract
+- **What it validates:** `JiraRestAdapter` (against a fake server) and `FakeJiraGateway` obey the same contract.
+- **Entry criteria:** parameterized suite receiving an adapter factory.
+- **Action:** run the same cases (issue exists, 404, 401, 429, comment ok) on both adapters.
+- **Exit criteria:** the same return types/failures for the same stimuli on both.
 
-#### S02-GT-01 — JiraChip e DivergenceBanner
-- **O que valida:** componentes Jira no design system (§4).
-- **Critérios de entrada:** task vinculada com e sem divergência.
-- **Ação:** renderizar card de task em dark/light.
-- **Critérios de saída:** goldens estáveis; banner usa cor `warning` e dois botões de decisão.
+#### S02-GT-01 — JiraChip and DivergenceBanner
+- **What it validates:** the Jira components in the design system (§4).
+- **Entry criteria:** linked task with and without divergence.
+- **Action:** render the task card in dark/light.
+- **Exit criteria:** stable goldens; the banner uses the `warning` color and two decision buttons.
 
-#### S02-E2E-01 — Fluxo offline → online
-- **O que valida:** offline-first (RN-05) de ponta a ponta.
-- **Critérios de entrada:** app com task vinculada a `PROJ-123`; fake gateway em modo "sem rede".
-- **Ação:** pela UI, mudar status para Done (ação Jira) → verificar indicador "pendente de sync" → religar a rede do fake → aguardar dispatcher.
-- **Critérios de saída:** com rede off, UI mostra pendência e nada chega ao gateway; com rede on, operação é aplicada 1 vez, indicador some, `lastKnownStatus` reflete "Done".
+#### S02-E2E-01 — Offline → online flow
+- **What it validates:** offline-first (BR-05) end to end.
+- **Entry criteria:** app with a task linked to `PROJ-123`; fake gateway in "no network" mode.
+- **Action:** through the UI, change status to Done (Jira action) → verify the "pending sync" indicator → restore the fake's network → wait for the dispatcher.
+- **Exit criteria:** with the network down, the UI shows the pending state and nothing reaches the gateway; with the network up, the operation is applied once, the indicator disappears, `lastKnownStatus` reflects "Done".
 
-#### S02-E2E-02 — Decisão de divergência
-- **O que valida:** RN-02 na UI.
-- **Critérios de entrada:** task local `done`; fake com status remoto "In Progress".
-- **Ação:** refresh pela UI → banner aparece → escolher "Adotar do Jira".
-- **Critérios de saída:** antes da escolha nada muda; após, status local vira `inProgress`; escolher "Manter local" (cenário B, repetido) mantém `done` e enfileira transition na outbox.
+#### S02-E2E-02 — Divergence decision
+- **What it validates:** BR-02 in the UI.
+- **Entry criteria:** local task `done`; fake with remote status "In Progress".
+- **Action:** refresh through the UI → banner appears → choose "Adopt from Jira".
+- **Exit criteria:** before the choice nothing changes; after it, the local status becomes `inProgress`; choosing "Keep local" (scenario B, repeated) keeps `done` and queues a transition in the outbox.
 
 ## Definition of Done
 
-- [ ] Gates G1–G6 verdes; cobertura domain+application ≥ 90%.
-- [ ] Todos os testes S02-* passando; contrato CT rodando para ambos adapters no CI.
-- [ ] Teste manual contra um Jira Cloud real (site de teste): vincular, comentar, transicionar — roteiro e evidência no relatório. **Token real nunca commitado.**
-- [ ] Relatório `docs/relatorios/sprint-02-relatorio.md`.
+- [ ] Gates G1–G6 green; domain+application coverage ≥ 90%.
+- [ ] All S02-* tests passing; the CT contract runs for both adapters in CI.
+- [ ] Manual test against a real Jira Cloud (test site): link, comment, transition — script and evidence in the report. **A real token is never committed.**
+- [ ] Report `docs/reports/sprint-02-report.md`.

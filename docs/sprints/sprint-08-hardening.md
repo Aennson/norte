@@ -1,78 +1,78 @@
-# Sprint 08 — Hardening: LGPD, Wipe, Evals em CI e Fechamento da v1.0
+# Sprint 08 — Hardening: LGPD, Wipe, Evals in CI, and v1.0 Closure
 
-**Objetivo:** endurecer segurança e privacidade (auditoria RN-03/06/07/08, "Apagar tudo"), consolidar os evals de intent como gate de regressão no CI e fechar a v1.0 com a suíte E2E de regressão completa.
+**Objective:** harden security and privacy (BR-03/06/07/08 audit, "Delete everything"), consolidate the intent evals as a regression gate in CI, and close v1.0 with the complete E2E regression suite.
 
-**Referências obrigatórias:** `docs/arquitetura.md` §10, §13, §15 · RN-03, RN-06, RN-07, RN-08 · `docs/e2e/plano-e2e-regressao.md`
+**Mandatory references:** `docs/architecture.md` §10, §13, §15 · BR-03, BR-06, BR-07, BR-08 · `docs/e2e/e2e-regression-plan.md`
 
 ---
 
-## Critérios de entrada
+## Entry criteria
 
-- [ ] Sprints 00–07 com DoD completo.
-- [ ] Todos os testes S00–S07 verdes no CI.
+- [ ] Sprints 00–07 with DoD complete.
+- [ ] All S00–S07 tests green in CI.
 
-## Escopo
+## Scope
 
-**Dentro:** revisão/auditoria do `PiiRedactor` (ampliar dataset de PII para ≥40 casos, incluindo variantes com pontuação e quebra de linha); "Apagar tudo" em Ajustes (wipe Drift + secure storage + arquivos temp, com dupla confirmação); auditoria de logs (verificação automatizada de que nenhum log contém token/key/transcript/payload de IA); eval de intents como job obrigatório do CI; contador de uso de API nas settings (risco §15 — custo); telas de política de privacidade/consentimento simples; execução e estabilização da suíte E2E de regressão global (`docs/e2e/plano-e2e-regressao.md`); revisão final de acessibilidade (labels semânticos nos botões principais, navegação por teclado no Windows).
+**In:** review/audit of the `PiiRedactor` (grow the PII dataset to ≥40 cases, including variants with punctuation and line breaks); "Delete everything" in Settings (wipe Drift + secure storage + temp files, with double confirmation); log audit (automated verification that no log contains a token/key/transcript/AI payload); the intent eval as a mandatory CI job; API usage counter in settings (risk §15 — cost); simple privacy policy/consent screens; execution and stabilization of the global E2E regression suite (`docs/e2e/e2e-regression-plan.md`); final accessibility review (semantic labels on the main buttons, keyboard navigation on Windows).
 
-**Fora:** certificate pinning (v1.1), OAuth Jira, multiusuário.
+**Out:** certificate pinning (v1.1), Jira OAuth, multi-user.
 
-## Regras de validação da sprint
+## Sprint validation rules
 
-- "Apagar tudo" é irreversível e completo: Drift zerado, secure storage zerado, diretório temp limpo, estado em memória reiniciado (app volta ao estado de primeira execução, incluindo templates re-seedados).
-- Dupla confirmação com digitação da palavra "APAGAR" (padrão de ação destrutiva máxima).
-- Nenhum teste existente pode ser removido/enfraquecido nesta sprint; regressões encontradas geram teste antes do fix (regras §5).
-- O job de eval falha o CI se acurácia cair abaixo dos limiares (intent ≥ 90%, slots ≥ 85%).
+- "Delete everything" is irreversible and complete: Drift zeroed, secure storage zeroed, temp directory cleaned, in-memory state reset (the app returns to its first-run state, including re-seeded templates).
+- Double confirmation requiring the word "DELETE" to be typed (the pattern for a maximally destructive action).
+- No existing test may be removed/weakened in this sprint; regressions found generate a test before the fix (rules §5).
+- The eval job fails CI if accuracy drops below the thresholds (intent ≥ 90%, slots ≥ 85%).
 
-## Testes
+## Tests
 
-#### S08-UT-01 — PiiRedactor ampliado
-- **O que valida:** RN-07 com dataset adversarial.
-- **Critérios de entrada:** dataset `test/fixtures/pii/casos.json` com ≥40 casos: CPFs válidos/inválidos-em-formato, telefones fixos/celulares/com DDI, e-mails com subdomínios/+tag, PII colado a pontuação e quebrado em linhas; ≥10 falsos-positivos (issue keys, datas, versões, CEP, CNPJ*).
-- **Ação:** redigir todos os casos.
-- **Critérios de saída:** 100% dos PII do gabarito redigidos; 0 falsos-positivos redigidos. (*CNPJ documentadamente fora do escopo v1.0 — deve permanecer intacto.)
+#### S08-UT-01 — Expanded PiiRedactor
+- **What it validates:** BR-07 with an adversarial dataset.
+- **Entry criteria:** dataset `test/fixtures/pii/cases.json` with ≥40 cases: CPFs valid/invalid-in-format, landline/mobile/with-country-code phones, e-mails with subdomains/+tag, PII glued to punctuation and broken across lines; ≥10 false positives (issue keys, dates, versions, CEP, CNPJ*).
+- **Action:** redact all cases.
+- **Exit criteria:** 100% of the ground-truth PII redacted; 0 false positives redacted. (*CNPJ is documented as out of scope for v1.0 — it must remain intact.)
 
-#### S08-UT-02 — Wipe completo
-- **O que valida:** direito de exclusão (§10).
-- **Critérios de entrada:** app com dados em tudo: tasks (com JiraLink), meetings, reminders agendados, templates editados, outbox pendente, token Jira e key Claude em secure storage fake, arquivo temp de áudio.
-- **Ação:** executar o use case de wipe.
-- **Critérios de saída:** todas as tabelas Drift vazias; secure storage vazio; temp vazio; scheduler sem agendamentos; templates padrão re-seedados; contadores de uso zerados.
+#### S08-UT-02 — Complete wipe
+- **What it validates:** the right to erasure (§10).
+- **Entry criteria:** app with data everywhere: tasks (with JiraLink), meetings, scheduled reminders, edited templates, pending outbox, Jira token and Claude key in fake secure storage, a temp audio file.
+- **Action:** execute the wipe use case.
+- **Exit criteria:** all Drift tables empty; secure storage empty; temp empty; scheduler with no schedules; default templates re-seeded; usage counters zeroed.
 
-#### S08-IT-01 — Auditoria automatizada de logs
-- **O que valida:** RN-08 e §10 (logs redigidos).
-- **Critérios de entrada:** logger global capturado; execução de um fluxo de cada pilar com fakes (resumo, sync Jira, comando de voz, lembrete) usando valores sentinela (`TOKEN_SENTINEL`, `KEY_SENTINEL`, transcript com `SEGREDO_SENTINEL`).
-- **Ação:** rodar os fluxos e varrer todo o log capturado.
-- **Critérios de saída:** nenhuma ocorrência de qualquer sentinela nos logs; ocorrências de `[REDACTED]` presentes onde payloads foram logados.
+#### S08-IT-01 — Automated log audit
+- **What it validates:** BR-08 and §10 (redacted logs).
+- **Entry criteria:** global logger captured; one flow from each pillar executed with fakes (summary, Jira sync, voice command, reminder) using sentinel values (`TOKEN_SENTINEL`, `KEY_SENTINEL`, transcript containing `SECRET_SENTINEL`).
+- **Action:** run the flows and sweep the entire captured log.
+- **Exit criteria:** no occurrence of any sentinel in the logs; `[REDACTED]` occurrences present where payloads were logged.
 
-#### S08-IT-02 — Eval como gate de CI
-- **O que valida:** arquitetura §13/§14.8 (evals de regressão).
-- **Critérios de entrada:** workflow de CI com job de eval; dataset com 1 gabarito propositalmente quebrado em branch de teste.
-- **Ação:** rodar o job com dataset correto e com o quebrado.
-- **Critérios de saída:** dataset correto → job verde com métricas publicadas como artifact; quebrado abaixo do limiar → job falha o pipeline.
+#### S08-IT-02 — Eval as a CI gate
+- **What it validates:** architecture §13/§14.8 (regression evals).
+- **Entry criteria:** CI workflow with the eval job; a dataset with 1 deliberately broken ground truth on a test branch.
+- **Action:** run the job with the correct dataset and with the broken one.
+- **Exit criteria:** correct dataset → green job with metrics published as an artifact; broken one below the threshold → the job fails the pipeline.
 
-#### S08-GT-01 — Telas de privacidade e wipe
-- **O que valida:** UI de consentimento e ação destrutiva máxima.
-- **Critérios de entrada:** telas implementadas.
-- **Ação:** golden dark/light da tela de privacidade e do diálogo de dupla confirmação.
-- **Critérios de saída:** goldens estáveis; botão final de wipe usa cor `error`; campo de digitação "APAGAR" presente.
+#### S08-GT-01 — Privacy and wipe screens
+- **What it validates:** the consent UI and the maximally destructive action.
+- **Entry criteria:** screens implemented.
+- **Action:** golden dark/light of the privacy screen and the double-confirmation dialog.
+- **Exit criteria:** stable goldens; the final wipe button uses the `error` color; the "DELETE" typing field is present.
 
-#### S08-E2E-01 — Wipe de ponta a ponta
-- **O que valida:** exclusão vista pelo usuário.
-- **Critérios de entrada:** app populado (1 task vinculada, 1 meeting salvo, 1 reminder futuro, credenciais fake).
-- **Ação:** Ajustes → Apagar tudo → digitar "APAGAR" → confirmar → navegar por todas as abas.
-- **Critérios de saída:** todas as abas em `EmptyState`; Ajustes sem credenciais; digitar palavra errada (cenário B) mantém tudo intacto.
+#### S08-E2E-01 — Wipe end to end
+- **What it validates:** erasure as seen by the user.
+- **Entry criteria:** populated app (1 linked task, 1 saved meeting, 1 future reminder, fake credentials).
+- **Action:** Settings → Delete everything → type "DELETE" → confirm → navigate through every tab.
+- **Exit criteria:** every tab in `EmptyState`; Settings with no credentials; typing the wrong word (scenario B) keeps everything intact.
 
-#### S08-E2E-02 — Suíte de regressão global
-- **O que valida:** os 6 pilares íntegros em conjunto.
-- **Critérios de entrada:** todos os cenários de `docs/e2e/plano-e2e-regressao.md` implementados.
-- **Ação:** executar a suíte completa no CI (desktop) 3 vezes consecutivas.
-- **Critérios de saída:** 3 execuções 100% verdes (sem flakes); duração total registrada no relatório.
+#### S08-E2E-02 — Global regression suite
+- **What it validates:** the 6 pillars intact together.
+- **Entry criteria:** all the scenarios in `docs/e2e/e2e-regression-plan.md` implemented.
+- **Action:** run the full suite in CI (desktop) 3 consecutive times.
+- **Exit criteria:** 3 runs 100% green (no flakes); total duration recorded in the report.
 
-## Definition of Done — fechamento da v1.0
+## Definition of Done — v1.0 closure
 
-- [ ] Gates G1–G6 verdes; cobertura domain+application ≥ 90%, projeto ≥ 80%.
-- [ ] Todos os testes S08-* passando; eval obrigatório no CI.
-- [ ] Suíte E2E de regressão global verde 3× seguidas.
-- [ ] Checklist de conformidade preenchido no relatório: RN-01 a RN-10, cada uma com o ID do teste que a cobre.
-- [ ] Build de release gerado para Android (APK), Windows (exe/msix) e iOS (se ambiente disponível) — artefatos anexados/registrados.
-- [ ] Relatório final `docs/relatorios/sprint-08-relatorio.md` + `docs/relatorios/v1.0-release-notes.md`.
+- [ ] Gates G1–G6 green; domain+application coverage ≥ 90%, project ≥ 80%.
+- [ ] All S08-* tests passing; the eval mandatory in CI.
+- [ ] Global E2E regression suite green 3× in a row.
+- [ ] Compliance checklist completed in the report: BR-01 through BR-10, each with the ID of the test covering it.
+- [ ] Release builds produced for Android (APK), Windows (exe/msix), and iOS (if the environment is available) — artifacts attached/recorded.
+- [ ] Final report `docs/reports/sprint-08-report.md` + `docs/reports/v1.0-release-notes.md`.

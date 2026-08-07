@@ -1,91 +1,91 @@
-# Sprint 00 — Setup, Design System e Infraestrutura de Testes
+# Sprint 00 — Setup, Design System, and Test Infrastructure
 
-**Objetivo:** criar o esqueleto do projeto Flutter multiplataforma com a estrutura de camadas, o tema visual (design system), os fakes de teste e o CI — a base sobre a qual todas as sprints seguintes rodam.
+**Objective:** create the cross-platform Flutter project skeleton with the layer structure, the visual theme (design system), the test fakes, and CI — the base upon which every following sprint runs.
 
-**Referências obrigatórias:** `docs/arquitetura.md` §2, §11 · `docs/design-system.md` · `docs/estrategia-de-testes.md` · `docs/regras-do-projeto.md`
+**Mandatory references:** `docs/architecture.md` §2, §11 · `docs/design-system.md` · `docs/testing-strategy.md` · `docs/project-rules.md`
 
 ---
 
-## Critérios de entrada
+## Entry criteria
 
-- [ ] Repositório vazio ou apenas com `docs/`.
-- [ ] Flutter SDK estável 3.x instalado (`flutter doctor` sem erros para as plataformas alvo disponíveis no ambiente).
+- [ ] Repository empty or containing only `docs/`.
+- [ ] Stable Flutter SDK 3.x installed (`flutter doctor` with no errors for the target platforms available in the environment).
 
-## Escopo
+## Scope
 
-**Dentro:** projeto Flutter (Android/iOS/Windows habilitados), estrutura de pastas de `docs/arquitetura.md §11`, dependências da stack (§2.1), tema dark+light com tokens do design system, componentes compartilhados (`NorteButton`, `NorteCard`, `StatusBadge`, `EmptyState`), shell de navegação (bottom nav mobile / rail desktop) com telas placeholder, fakes de teste, script `tool/check_imports.dart`, CI GitHub Actions.
+**In:** Flutter project (Android/iOS/Windows enabled), folder structure from `docs/architecture.md §11`, stack dependencies (§2.1), dark+light theme with the design system tokens, shared components (`NorteButton`, `NorteCard`, `StatusBadge`, `EmptyState`), navigation shell (mobile bottom nav / desktop rail) with placeholder screens, test fakes, `tool/check_imports.dart` script, GitHub Actions CI.
 
-**Fora:** qualquer regra de negócio, entidades reais, persistência, chamadas de rede.
+**Out:** any business rule, real entities, persistence, network calls.
 
-## Entregáveis
+## Deliverables
 
-1. App compila e roda nas plataformas disponíveis; `main.dart` é o composition root com `ProviderScope`.
-2. `presentation/shared/theme/` com `NorteColors` (ThemeExtension, dark+light) e `NorteTypography` conforme `docs/design-system.md`.
-3. Componentes compartilhados listados no escopo, cada um com golden test.
-4. Navegação `go_router` com 4 destinos placeholder (Tarefas, Reuniões, Lembretes, Ajustes) + botão de voz (sem função ainda).
-5. `test/fakes/` com os 6 fakes de `docs/estrategia-de-testes.md §3` (interfaces provisórias onde o port ainda não existe são permitidas **somente** para fakes que dependem de sprints futuras — neste caso criar o port real já em `domain/ports/`).
-6. `tool/check_imports.dart` — falha (exit ≠ 0) se qualquer arquivo violar a regra de dependência de `docs/regras-do-projeto.md §3`, e se houver `Color(0x...)` fora de `presentation/shared/theme/`.
-7. Workflow CI `.github/workflows/ci.yml`: analyze → format → check_imports → test → coverage gate.
+1. App compiles and runs on the available platforms; `main.dart` is the composition root with `ProviderScope`.
+2. `presentation/shared/theme/` with `NorteColors` (ThemeExtension, dark+light) and `NorteTypography` per `docs/design-system.md`.
+3. Shared components listed in the scope, each with a golden test.
+4. `go_router` navigation with 4 placeholder destinations (Tasks, Meetings, Reminders, Settings) + voice button (no function yet).
+5. `test/fakes/` with the 6 fakes from `docs/testing-strategy.md §3` (provisional interfaces where the port does not exist yet are allowed **only** for fakes that depend on future sprints — in that case create the real port in `domain/ports/` right away).
+6. `tool/check_imports.dart` — fails (exit ≠ 0) if any file violates the dependency rule from `docs/project-rules.md §3`, or if `Color(0x...)` appears outside `presentation/shared/theme/`.
+7. CI workflow `.github/workflows/ci.yml`: analyze → format → check_imports → test → coverage gate.
 
-## Regras de validação da sprint
+## Sprint validation rules
 
-- Tokens de cor **exatamente** os hex de `docs/design-system.md §2` — sem cores inventadas.
-- Nenhuma tela usa cor literal fora do tema (verificado pelo check_imports).
-- Estrutura de pastas idêntica à de `docs/arquitetura.md §11` (pastas vazias podem ter `.gitkeep`).
+- Color tokens are **exactly** the hex values from `docs/design-system.md §2` — no invented colors.
+- No screen uses a literal color outside the theme (verified by check_imports).
+- Folder structure identical to `docs/architecture.md §11` (empty folders may hold a `.gitkeep`).
 
-## Testes
+## Tests
 
-#### S00-UT-01 — Tokens do tema dark
-- **O que valida:** fidelidade da paleta dark ao design system.
-- **Critérios de entrada:** `NorteColors.dark` instanciado.
-- **Ação:** ler cada token.
-- **Critérios de saída:** cada token corresponde ao hex da tabela `design-system.md §2.1` (assert por valor).
+#### S00-UT-01 — Dark theme tokens
+- **What it validates:** dark palette fidelity to the design system.
+- **Entry criteria:** `NorteColors.dark` instantiated.
+- **Action:** read each token.
+- **Exit criteria:** each token matches the hex in the `design-system.md §2.1` table (assert by value).
 
-#### S00-UT-02 — Tokens do tema claro
-- **O que valida:** fidelidade da paleta light (§2.2).
-- **Critérios de entrada:** `NorteColors.light` instanciado.
-- **Ação:** ler cada token.
-- **Critérios de saída:** todos os hex batem com a tabela §2.2.
+#### S00-UT-02 — Light theme tokens
+- **What it validates:** light palette fidelity (§2.2).
+- **Entry criteria:** `NorteColors.light` instantiated.
+- **Action:** read each token.
+- **Exit criteria:** all hex values match the §2.2 table.
 
-#### S00-UT-03 — Lerp do ThemeExtension
-- **O que valida:** transição de tema não quebra (requisito do ThemeExtension).
-- **Critérios de entrada:** instâncias dark e light.
-- **Ação:** `lerp(dark, light, 0.5)` e `copyWith()`.
-- **Critérios de saída:** nenhum token nulo; `lerp(a, b, 0) == a` e `lerp(a, b, 1) == b`.
+#### S00-UT-03 — ThemeExtension lerp
+- **What it validates:** theme transition does not break (ThemeExtension requirement).
+- **Entry criteria:** dark and light instances.
+- **Action:** `lerp(dark, light, 0.5)` and `copyWith()`.
+- **Exit criteria:** no token is null; `lerp(a, b, 0) == a` and `lerp(a, b, 1) == b`.
 
-#### S00-UT-04 — Contraste AA
-- **O que valida:** acessibilidade WCAG AA (design-system §2, regra final).
-- **Critérios de entrada:** função de razão de contraste implementada no teste.
-- **Ação:** calcular contraste dos pares (`textPrimary`/`bg`, `textPrimary`/`surface`, `textSecondary`/`surface`, branco/`accent`) nos dois temas.
-- **Critérios de saída:** todos ≥ 4.5:1.
+#### S00-UT-04 — AA contrast
+- **What it validates:** WCAG AA accessibility (design-system §2, final rule).
+- **Entry criteria:** contrast-ratio function implemented in the test.
+- **Action:** compute contrast for the pairs (`textPrimary`/`bg`, `textPrimary`/`surface`, `textSecondary`/`surface`, white/`accent`) in both themes.
+- **Exit criteria:** all ≥ 4.5:1.
 
-#### S00-GT-01 — Goldens dos componentes compartilhados
-- **O que valida:** aparência de `NorteButton` (4 estados), `NorteCard`, `StatusBadge` (4 status), `EmptyState`.
-- **Critérios de entrada:** fonte mono embarcada carregada no teste; tamanho de superfície fixo.
-- **Ação:** renderizar cada componente em dark e light.
-- **Critérios de saída:** goldens gerados e commitados; execução subsequente passa sem diff.
+#### S00-GT-01 — Shared component goldens
+- **What it validates:** appearance of `NorteButton` (4 states), `NorteCard`, `StatusBadge` (4 statuses), `EmptyState`.
+- **Entry criteria:** bundled mono font loaded in the test; fixed surface size.
+- **Action:** render each component in dark and light.
+- **Exit criteria:** goldens generated and committed; subsequent runs pass with no diff.
 
-#### S00-GT-02 — Shell de navegação
-- **O que valida:** layout responsivo (design-system §5).
-- **Critérios de entrada:** app shell com telas placeholder.
-- **Ação:** renderizar em 390×844 (mobile) e 1280×800 (desktop).
-- **Critérios de saída:** mobile mostra bottom nav com 4 itens + botão de voz; desktop mostra navigation rail; goldens estáveis.
+#### S00-GT-02 — Navigation shell
+- **What it validates:** responsive layout (design-system §5).
+- **Entry criteria:** app shell with placeholder screens.
+- **Action:** render at 390×844 (mobile) and 1280×800 (desktop).
+- **Exit criteria:** mobile shows bottom nav with 4 items + voice button; desktop shows the navigation rail; stable goldens.
 
-#### S00-IT-01 — check_imports detecta violação
-- **O que valida:** o gate G5 realmente falha quando deve.
-- **Critérios de entrada:** arquivo temporário em `domain/` importando `package:flutter/material.dart` criado pelo teste em diretório sintético.
-- **Ação:** rodar a análise do script sobre o diretório sintético.
-- **Critérios de saída:** script reporta a violação (e exit ≠ 0); removendo o arquivo, passa.
+#### S00-IT-01 — check_imports detects a violation
+- **What it validates:** gate G5 actually fails when it should.
+- **Entry criteria:** temporary file in `domain/` importing `package:flutter/material.dart`, created by the test in a synthetic directory.
+- **Action:** run the script's analysis over the synthetic directory.
+- **Exit criteria:** the script reports the violation (and exit ≠ 0); after removing the file, it passes.
 
-#### S00-E2E-01 — Smoke de navegação
-- **O que valida:** app sobe e navega entre os 4 destinos.
-- **Critérios de entrada:** app iniciado via `integration_test` com `ProviderScope` padrão.
-- **Ação:** tocar em cada item de navegação.
-- **Critérios de saída:** cada tela placeholder aparece (título esperado encontrado); sem exceções no log.
+#### S00-E2E-01 — Navigation smoke test
+- **What it validates:** app boots and navigates across the 4 destinations.
+- **Entry criteria:** app started via `integration_test` with the default `ProviderScope`.
+- **Action:** tap each navigation item.
+- **Exit criteria:** each placeholder screen appears (expected title found); no exceptions in the log.
 
 ## Definition of Done
 
-- [ ] Gates G1–G6 verdes (`docs/regras-do-projeto.md §2`); cobertura ainda sem gate de domínio (não há domínio) — gate de projeto ≥ 80% aplicado ao que existe.
-- [ ] Todos os testes S00-* implementados e passando.
-- [ ] CI executa e passa no push.
-- [ ] Relatório `docs/relatorios/sprint-00-relatorio.md` criado com evidências.
+- [ ] Gates G1–G6 green (`docs/project-rules.md §2`); no domain coverage gate yet (there is no domain) — the ≥ 80% project gate applies to what exists.
+- [ ] All S00-* tests implemented and passing.
+- [ ] CI runs and passes on push.
+- [ ] Report `docs/reports/sprint-00-report.md` created with evidence.

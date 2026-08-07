@@ -1,101 +1,101 @@
-# Norte — Design System (inspirado no Claude Code)
+# Norte — Design System (inspired by Claude Code)
 
-> Guia visual obrigatório para toda a camada `presentation/`. A estética é a do **Claude Code**:
-> terminal moderno, fundo escuro quente, acento coral/laranja, tipografia monoespaçada para dados técnicos,
-> interface densa porém calma. Este documento define tokens que a IA executora deve implementar como
-> `ThemeData`/`ThemeExtension` na Sprint 00 e usar em todas as telas.
+> Mandatory visual guide for the entire `presentation/` layer. The aesthetic is that of **Claude Code**:
+> a modern terminal, warm dark background, coral/orange accent, monospaced typography for technical data,
+> a dense yet calm interface. This document defines tokens that the executing AI must implement as
+> `ThemeData`/`ThemeExtension` in Sprint 00 and use across all screens.
 
 ---
 
-## 1. Princípios visuais
+## 1. Visual principles
 
-1. **Terminal-first:** a UI lembra um terminal refinado — superfícies planas, cantos levemente arredondados (8px), sem sombras pesadas, separadores de 1px.
-2. **Um único acento:** o coral `#D97757` é o único acento de marca. Estados (sucesso/erro/aviso) têm cores próprias e discretas.
-3. **Dark é o tema padrão.** Light existe e usa o marfim quente da paleta Anthropic.
-4. **Mono para dados, sans para prosa:** issue keys (`PROJ-123`), status, timestamps, transcripts e comandos usam fonte mono; títulos e textos correntes usam sans.
-5. **Densidade calma:** espaçamento em escala de 4px; nada de gradientes, glassmorphism ou animações decorativas. Animações apenas funcionais (≤200ms, curvas padrão do Material).
+1. **Terminal-first:** the UI resembles a refined terminal — flat surfaces, slightly rounded corners (8px), no heavy shadows, 1px separators.
+2. **A single accent:** coral `#D97757` is the only brand accent. States (success/error/warning) have their own discreet colors.
+3. **Dark is the default theme.** Light exists and uses the warm ivory of the Anthropic palette.
+4. **Mono for data, sans for prose:** issue keys (`PROJ-123`), statuses, timestamps, transcripts, and commands use a mono font; titles and running text use sans.
+5. **Calm density:** spacing on a 4px scale; no gradients, glassmorphism, or decorative animations. Animations are functional only (≤200ms, standard Material curves).
 
-## 2. Paleta de cores (tokens)
+## 2. Color palette (tokens)
 
-### 2.1 Tema escuro (padrão)
+### 2.1 Dark theme (default)
 
-| Token | Hex | Uso |
+| Token | Hex | Usage |
 |---|---|---|
-| `bg` | `#1F1E1D` | Fundo principal do app |
-| `surface` | `#262624` | Cards, campos, painéis |
-| `surfaceRaised` | `#30302E` | Hover, itens selecionados, modais |
-| `border` | `#3E3E3A` | Separadores e bordas de 1px |
-| `textPrimary` | `#F5F4EF` | Texto principal |
-| `textSecondary` | `#A8A79E` | Texto de apoio, metadados |
-| `textMuted` | `#6E6D66` | Placeholders, desabilitado |
-| `accent` | `#D97757` | Botões primários, links, foco, ícone ativo |
-| `accentHover` | `#E08B6D` | Hover/pressed do acento |
-| `accentSubtle` | `#3A2A22` | Fundo de chips/realces com acento |
-| `success` | `#7BAE7F` | Task concluída, sync ok |
-| `warning` | `#D9A45B` | Divergência local×Jira, confidence baixa |
-| `error` | `#C4553D` | Falhas, ações destrutivas |
-| `info` | `#6A9BCC` | Estados informativos, links Jira |
+| `bg` | `#1F1E1D` | Main app background |
+| `surface` | `#262624` | Cards, fields, panels |
+| `surfaceRaised` | `#30302E` | Hover, selected items, modals |
+| `border` | `#3E3E3A` | Separators and 1px borders |
+| `textPrimary` | `#F5F4EF` | Primary text |
+| `textSecondary` | `#A8A79E` | Supporting text, metadata |
+| `textMuted` | `#6E6D66` | Placeholders, disabled |
+| `accent` | `#D97757` | Primary buttons, links, focus, active icon |
+| `accentHover` | `#E08B6D` | Accent hover/pressed |
+| `accentSubtle` | `#3A2A22` | Background of accent chips/highlights |
+| `success` | `#7BAE7F` | Completed task, sync ok |
+| `warning` | `#D9A45B` | Local×Jira divergence, low confidence |
+| `error` | `#C4553D` | Failures, destructive actions |
+| `info` | `#6A9BCC` | Informational states, Jira links |
 
-### 2.2 Tema claro
+### 2.2 Light theme
 
-| Token | Hex | Uso |
+| Token | Hex | Usage |
 |---|---|---|
-| `bg` | `#FAF9F5` | Fundo principal (marfim) |
-| `surface` | `#FFFFFF` | Cards, campos |
-| `surfaceRaised` | `#F0EEE6` | Hover, selecionados |
-| `border` | `#E3E1D9` | Separadores |
-| `textPrimary` | `#191919` | Texto principal |
-| `textSecondary` | `#5E5D59` | Texto de apoio |
+| `bg` | `#FAF9F5` | Main background (ivory) |
+| `surface` | `#FFFFFF` | Cards, fields |
+| `surfaceRaised` | `#F0EEE6` | Hover, selected |
+| `border` | `#E3E1D9` | Separators |
+| `textPrimary` | `#191919` | Primary text |
+| `textSecondary` | `#5E5D59` | Supporting text |
 | `textMuted` | `#9B9A94` | Placeholders |
-| `accent` | `#C2603F` | Acento (coral escurecido p/ contraste AA) |
+| `accent` | `#C2603F` | Accent (darkened coral for AA contrast) |
 | `accentHover` | `#D97757` | Hover |
-| `accentSubtle` | `#F6E3DB` | Chips/realces |
+| `accentSubtle` | `#F6E3DB` | Chips/highlights |
 | `success` | `#4E7D52` | — |
 | `warning` | `#A97B2F` | — |
 | `error` | `#B03A24` | — |
 | `info` | `#3E6C99` | — |
 
-**Regra:** todo par texto/fundo deve atingir contraste **WCAG AA (≥4.5:1)** para texto normal. Isso é verificado por teste (S00-UT-04).
+**Rule:** every text/background pair must reach **WCAG AA contrast (≥4.5:1)** for normal text. This is verified by a test (S00-UT-04).
 
-## 3. Tipografia
+## 3. Typography
 
-| Papel | Fonte | Tamanho/peso | Uso |
+| Role | Font | Size/weight | Usage |
 |---|---|---|---|
-| `display` | Sans (Inter ou system) | 24 / w600 | Título de tela |
-| `title` | Sans | 17 / w600 | Título de card/section |
-| `body` | Sans | 14.5 / w400 | Texto corrente |
-| `caption` | Sans | 12 / w400, `textSecondary` | Metadados, timestamps relativos |
-| `mono` | JetBrains Mono (bundled) | 13 / w400 | Issue keys, status, transcript, comandos de voz reconhecidos |
-| `monoSmall` | JetBrains Mono | 11 / w500, uppercase, letter-spacing 0.6 | Badges de status |
+| `display` | Sans (Inter or system) | 24 / w600 | Screen title |
+| `title` | Sans | 17 / w600 | Card/section title |
+| `body` | Sans | 14.5 / w400 | Running text |
+| `caption` | Sans | 12 / w400, `textSecondary` | Metadata, relative timestamps |
+| `mono` | JetBrains Mono (bundled) | 13 / w400 | Issue keys, statuses, transcripts, recognized voice commands |
+| `monoSmall` | JetBrains Mono | 11 / w500, uppercase, letter-spacing 0.6 | Status badges |
 
-## 4. Componentes padrão
+## 4. Standard components
 
-Implementados em `presentation/shared/` na Sprint 00 e reutilizados em todo o app:
+Implemented in `presentation/shared/` in Sprint 00 and reused across the app:
 
-| Componente | Especificação |
+| Component | Specification |
 |---|---|
-| `NorteButton` | Primário: fundo `accent`, texto `#FFFFFF`, radius 8, altura 40. Secundário: borda 1px `border`, texto `textPrimary`. Destrutivo: fundo `error`. Estados: hover (`accentHover`), disabled (50% opacity), loading (spinner 16px substitui label) |
-| `NorteCard` | Fundo `surface`, borda 1px `border`, radius 8, padding 16 |
-| `StatusBadge` | `monoSmall` + ponto de 6px à esquerda. Cores: todo=`textMuted`, inProgress=`info`, done=`success`, blocked=`error` |
-| `JiraChip` | Fonte `mono`, fundo `accentSubtle`, texto `accent`, prefixo do issueKey (ex.: `PROJ-123`); tap abre ação de link |
-| `DivergenceBanner` | Fundo `warning` a 15% de opacidade, borda esquerda 3px `warning`, texto explicando status local vs. Jira + dois botões de decisão (RN-02) |
-| `VoiceOverlay` | Painel inferior estilo "prompt de terminal": fundo `surface`, prefixo `❯` em `accent`, transcript parcial em `mono` `textSecondary`, committed em `textPrimary` |
-| `ConfirmSheet` | Bottom sheet usado para confirmação de intents (RN-04): mostra a ação interpretada em `mono`, confidence como barra, botões Confirmar (`accent`) / Cancelar |
-| `EmptyState` | Ícone 32px `textMuted` + frase curta + ação primária opcional |
+| `NorteButton` | Primary: `accent` background, `#FFFFFF` text, radius 8, height 40. Secondary: 1px `border` outline, `textPrimary` text. Destructive: `error` background. States: hover (`accentHover`), disabled (50% opacity), loading (16px spinner replaces label) |
+| `NorteCard` | `surface` background, 1px `border`, radius 8, padding 16 |
+| `StatusBadge` | `monoSmall` + 6px dot on the left. Colors: todo=`textMuted`, inProgress=`info`, done=`success`, blocked=`error` |
+| `JiraChip` | `mono` font, `accentSubtle` background, `accent` text, issueKey prefix (e.g.: `PROJ-123`); tap opens the link action |
+| `DivergenceBanner` | `warning` background at 15% opacity, 3px left border in `warning`, text explaining local vs. Jira status + two decision buttons (BR-02) |
+| `VoiceOverlay` | Bottom panel styled like a terminal prompt: `surface` background, `❯` prefix in `accent`, partial transcript in `mono` `textSecondary`, committed in `textPrimary` |
+| `ConfirmSheet` | Bottom sheet used for intent confirmation (BR-04): shows the interpreted action in `mono`, confidence as a bar, Confirm (`accent`) / Cancel buttons |
+| `EmptyState` | 32px `textMuted` icon + short sentence + optional primary action |
 
-## 5. Layout e navegação
+## 5. Layout and navigation
 
-- **Mobile:** bottom navigation com 4 destinos — Tarefas, Reuniões, Lembretes, Ajustes. Botão de voz flutuante central (círculo `accent`, ícone mic) presente em todas as abas.
-- **Windows/desktop (≥ 900px):** navigation rail à esquerda (72px colapsado), conteúdo em coluna central máx. 840px. Botão de voz no rail.
-- Grid de espaçamento: múltiplos de 4 (4/8/12/16/24/32). Padding padrão de tela: 16 (mobile) / 24 (desktop).
-- Ícones: `lucide_icons` (traço 1.5px, consistente com a estética de terminal).
+- **Mobile:** bottom navigation with 4 destinations — Tasks, Meetings, Reminders, Settings. A central floating voice button (`accent` circle, mic icon) present on every tab.
+- **Windows/desktop (≥ 900px):** navigation rail on the left (72px collapsed), content in a centered column max. 840px. Voice button on the rail.
+- Spacing grid: multiples of 4 (4/8/12/16/24/32). Default screen padding: 16 (mobile) / 24 (desktop).
+- Icons: `lucide_icons` (1.5px stroke, consistent with the terminal aesthetic).
 
-## 6. Estados obrigatórios de toda tela
+## 6. Mandatory states for every screen
 
-Toda tela implementa e testa (golden) os 4 estados: **loading** (skeleton, nunca spinner de tela cheia), **vazio** (`EmptyState`), **erro** (mensagem + retry) e **conteúdo**.
+Every screen implements and tests (golden) the 4 states: **loading** (skeleton, never a full-screen spinner), **empty** (`EmptyState`), **error** (message + retry), and **content**.
 
-## 7. Implementação (Sprint 00)
+## 7. Implementation (Sprint 00)
 
-- Tokens em `presentation/shared/theme/norte_colors.dart` como `ThemeExtension<NorteColors>` (dark + light).
-- Tipografia em `norte_typography.dart`; componentes em `presentation/shared/widgets/`.
-- **Proibido** usar cor literal (`Color(0xFF...)`) fora dos arquivos de tema — gate verificado por grep no G5/S00.
+- Tokens in `presentation/shared/theme/norte_colors.dart` as `ThemeExtension<NorteColors>` (dark + light).
+- Typography in `norte_typography.dart`; components in `presentation/shared/widgets/`.
+- **Forbidden** to use literal colors (`Color(0xFF...)`) outside the theme files — gate verified by grep in G5/S00.
