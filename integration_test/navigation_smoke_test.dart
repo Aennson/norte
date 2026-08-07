@@ -17,9 +17,12 @@ import 'package:norte/presentation/voice/voice_button.dart';
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('S00-E2E-01: every navigation destination opens its screen', (
-    WidgetTester tester,
-  ) async {
+  /// Pins the locale and the viewport before booting the app.
+  ///
+  /// The desktop host this suite runs on opens a window wider than the 900px
+  /// breakpoint, which would give us the navigation rail; every scenario here
+  /// drives the bottom navigation, so the size is fixed for all of them.
+  Future<void> bootApp(WidgetTester tester) async {
     tester.platformDispatcher.localesTestValue = <Locale>[const Locale('en')];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     tester.view.physicalSize = const Size(390, 844);
@@ -31,6 +34,12 @@ void main() {
 
     await tester.pumpWidget(const ProviderScope(child: NorteApp()));
     await tester.pumpAndSettle();
+  }
+
+  testWidgets('S00-E2E-01: every navigation destination opens its screen', (
+    WidgetTester tester,
+  ) async {
+    await bootApp(tester);
 
     // The app boots on Tasks, with the voice affordance available everywhere.
     expect(find.byType(TasksScreen), findsOneWidget);
@@ -71,11 +80,7 @@ void main() {
   testWidgets('S00-E2E-01: each destination keeps its own navigation branch', (
     WidgetTester tester,
   ) async {
-    tester.platformDispatcher.localesTestValue = <Locale>[const Locale('en')];
-    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
-
-    await tester.pumpWidget(const ProviderScope(child: NorteApp()));
-    await tester.pumpAndSettle();
+    await bootApp(tester);
 
     // Re-selecting the current destination is a no-op, not a crash.
     await tester.tap(
