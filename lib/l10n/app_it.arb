@@ -1,0 +1,27 @@
+{
+  "@@locale": "it",
+
+  "appTitle": "Norte",
+
+  "navTasks": "Attività",
+  "navMeetings": "Riunioni",
+  "navReminders": "Promemoria",
+  "navSettings": "Impostazioni",
+
+  "voiceCommandLabel": "Comando vocale",
+
+  "tasksEmptyMessage": "Nessuna attività al momento.",
+  "meetingsEmptyMessage": "Nessuna riunione al momento.",
+  "remindersEmptyMessage": "Nessun promemoria al momento.",
+  "settingsEmptyMessage": "Nessuna impostazione disponibile.",
+
+  "statusTodo": "Da fare",
+  "statusInProgress": "In corso",
+  "statusDone": "Completata",
+  "statusBlocked": "Bloccata",
+
+  "actionConfirm": "Conferma",
+  "actionCancel": "Annulla",
+  "actionDelete": "Elimina",
+  "actionRetry": "Riprova"
+}

@@ -1,0 +1,27 @@
+{
+  "@@locale": "pt",
+
+  "appTitle": "Norte",
+
+  "navTasks": "Tarefas",
+  "navMeetings": "Reuniões",
+  "navReminders": "Lembretes",
+  "navSettings": "Ajustes",
+
+  "voiceCommandLabel": "Comando de voz",
+
+  "tasksEmptyMessage": "Nenhuma tarefa ainda.",
+  "meetingsEmptyMessage": "Nenhuma reunião ainda.",
+  "remindersEmptyMessage": "Nenhum lembrete ainda.",
+  "settingsEmptyMessage": "Nenhum ajuste disponível ainda.",
+
+  "statusTodo": "A fazer",
+  "statusInProgress": "Em andamento",
+  "statusDone": "Concluída",
+  "statusBlocked": "Bloqueada",
+
+  "actionConfirm": "Confirmar",
+  "actionCancel": "Cancelar",
+  "actionDelete": "Excluir",
+  "actionRetry": "Tentar novamente"
+}

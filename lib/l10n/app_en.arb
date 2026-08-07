@@ -1,0 +1,81 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "Norte",
+  "@appTitle": {
+    "description": "Application name, shown as the window/task title."
+  },
+
+  "navTasks": "Tasks",
+  "@navTasks": {
+    "description": "Navigation label for the tasks destination."
+  },
+  "navMeetings": "Meetings",
+  "@navMeetings": {
+    "description": "Navigation label for the meetings destination."
+  },
+  "navReminders": "Reminders",
+  "@navReminders": {
+    "description": "Navigation label for the reminders destination."
+  },
+  "navSettings": "Settings",
+  "@navSettings": {
+    "description": "Navigation label for the settings destination."
+  },
+
+  "voiceCommandLabel": "Voice command",
+  "@voiceCommandLabel": {
+    "description": "Accessible label of the floating voice button."
+  },
+
+  "tasksEmptyMessage": "No tasks yet.",
+  "@tasksEmptyMessage": {
+    "description": "Empty state of the tasks screen."
+  },
+  "meetingsEmptyMessage": "No meetings yet.",
+  "@meetingsEmptyMessage": {
+    "description": "Empty state of the meetings screen."
+  },
+  "remindersEmptyMessage": "No reminders yet.",
+  "@remindersEmptyMessage": {
+    "description": "Empty state of the reminders screen."
+  },
+  "settingsEmptyMessage": "No settings available yet.",
+  "@settingsEmptyMessage": {
+    "description": "Empty state of the settings screen."
+  },
+
+  "statusTodo": "To do",
+  "@statusTodo": {
+    "description": "Status badge label for a task that has not started."
+  },
+  "statusInProgress": "In progress",
+  "@statusInProgress": {
+    "description": "Status badge label for a task being worked on."
+  },
+  "statusDone": "Done",
+  "@statusDone": {
+    "description": "Status badge label for a completed task."
+  },
+  "statusBlocked": "Blocked",
+  "@statusBlocked": {
+    "description": "Status badge label for a blocked task."
+  },
+
+  "actionConfirm": "Confirm",
+  "@actionConfirm": {
+    "description": "Generic confirmation button label."
+  },
+  "actionCancel": "Cancel",
+  "@actionCancel": {
+    "description": "Generic cancel button label."
+  },
+  "actionDelete": "Delete",
+  "@actionDelete": {
+    "description": "Generic destructive button label."
+  },
+  "actionRetry": "Retry",
+  "@actionRetry": {
+    "description": "Button label that retries the failed operation."
+  }
+}
