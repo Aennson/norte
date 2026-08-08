@@ -46,3 +46,22 @@ final class TimeoutFailure extends Failure {
 final class EngineFailure extends Failure {
   const EngineFailure([super.message = 'engine failure']);
 }
+
+/// The caller's input does not satisfy a use case's precondition — an empty
+/// task title, a due date the entity cannot hold, an unknown id.
+///
+/// Raised **before** any port is touched: a use case that returns this has
+/// written nothing (`sprint-01` S01-UT-02).
+final class ValidationFailure extends Failure {
+  const ValidationFailure([super.message = 'invalid input', this.field]);
+
+  /// Name of the offending field, when a single one can be blamed — the UI
+  /// uses it to place the error next to the right input. `null` when the
+  /// failure is not attributable to one field.
+  final String? field;
+}
+
+/// The local database could not complete an operation.
+final class StorageFailure extends Failure {
+  const StorageFailure([super.message = 'local storage failure']);
+}

@@ -61,4 +61,101 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get actionRetry => 'Retry';
+
+  @override
+  String get actionSave => 'Save';
+
+  @override
+  String get actionCreate => 'Create';
+
+  @override
+  String get actionClear => 'Clear';
+
+  @override
+  String get tasksNewTask => 'New task';
+
+  @override
+  String get tasksEditTask => 'Edit task';
+
+  @override
+  String get tasksLoadingLabel => 'Loading tasks';
+
+  @override
+  String get tasksErrorMessage => 'Your tasks could not be loaded.';
+
+  @override
+  String get tasksFilteredEmptyMessage => 'No task matches this filter.';
+
+  @override
+  String get tasksFilterAll => 'All';
+
+  @override
+  String get taskFieldTitle => 'Title';
+
+  @override
+  String get taskFieldTitleHint => 'What needs doing?';
+
+  @override
+  String get taskFieldTitleRequired => 'A title is required.';
+
+  @override
+  String get taskFieldDescription => 'Description';
+
+  @override
+  String get taskFieldStatus => 'Status';
+
+  @override
+  String get taskFieldPriority => 'Priority';
+
+  @override
+  String get taskFieldDueDate => 'Due date';
+
+  @override
+  String get taskFieldDueDateEmpty => 'No due date';
+
+  @override
+  String get taskFieldTags => 'Tags';
+
+  @override
+  String get taskFieldTagsHint => 'Comma separated';
+
+  @override
+  String taskDueLabel(String date) {
+    return 'Due $date';
+  }
+
+  @override
+  String get taskMarkDone => 'Mark as done';
+
+  @override
+  String get taskMarkNotDone => 'Reopen task';
+
+  @override
+  String get taskDeleteTitle => 'Delete task?';
+
+  @override
+  String taskDeleteMessage(String title) {
+    return '“$title” will be removed permanently. This cannot be undone.';
+  }
+
+  @override
+  String get priorityLow => 'Low';
+
+  @override
+  String get priorityMedium => 'Medium';
+
+  @override
+  String get priorityHigh => 'High';
+
+  @override
+  String get priorityUrgent => 'Urgent';
+
+  @override
+  String get sortLabel => 'Sort';
+
+  @override
+  String get sortByPriority => 'Priority';
+
+  @override
+  String get sortByDueDate => 'Due date';
 }

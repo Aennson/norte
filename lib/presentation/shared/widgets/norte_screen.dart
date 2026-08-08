@@ -7,10 +7,19 @@ import '../theme/norte_colors.dart';
 /// Common chrome for every destination: screen title in `display` type and a
 /// content column capped at 840px on desktop (`docs/design-system.md` §5).
 class NorteScreen extends StatelessWidget {
-  const NorteScreen({required this.title, required this.child, super.key});
+  const NorteScreen({
+    required this.title,
+    required this.child,
+    super.key,
+    this.action,
+  });
 
   /// Localized screen title (BR-11).
   final String title;
+
+  /// Optional primary action rendered on the title row, e.g. "New task".
+  /// `null` keeps the header exactly as Sprint 00 shipped it.
+  final Widget? action;
 
   final Widget child;
 
@@ -36,11 +45,18 @@ class NorteScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  Text(
-                    title,
-                    style: NorteTypography.display.copyWith(
-                      color: colors.textPrimary,
-                    ),
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: NorteTypography.display.copyWith(
+                            color: colors.textPrimary,
+                          ),
+                        ),
+                      ),
+                      ?action,
+                    ],
                   ),
                   const SizedBox(height: NorteSpacing.lg),
                   Expanded(child: child),

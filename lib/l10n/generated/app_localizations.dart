@@ -207,6 +207,192 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Retry'**
   String get actionRetry;
+
+  /// Button label that saves an edited task.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get actionSave;
+
+  /// Button label that creates a new task.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get actionCreate;
+
+  /// Button label that empties an optional field, such as a due date.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get actionClear;
+
+  /// Label of the action that opens the task editor for a new task.
+  ///
+  /// In en, this message translates to:
+  /// **'New task'**
+  String get tasksNewTask;
+
+  /// Title of the task editor when changing an existing task.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit task'**
+  String get tasksEditTask;
+
+  /// Accessible label of the loading skeleton on the tasks screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading tasks'**
+  String get tasksLoadingLabel;
+
+  /// Error state of the tasks screen, shown above the retry button.
+  ///
+  /// In en, this message translates to:
+  /// **'Your tasks could not be loaded.'**
+  String get tasksErrorMessage;
+
+  /// Empty state shown when a filter is active and matches nothing.
+  ///
+  /// In en, this message translates to:
+  /// **'No task matches this filter.'**
+  String get tasksFilteredEmptyMessage;
+
+  /// Filter chip that clears the status filter.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get tasksFilterAll;
+
+  /// Label of the task title input.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get taskFieldTitle;
+
+  /// Placeholder of the task title input.
+  ///
+  /// In en, this message translates to:
+  /// **'What needs doing?'**
+  String get taskFieldTitleHint;
+
+  /// Validation message shown when the task title is blank.
+  ///
+  /// In en, this message translates to:
+  /// **'A title is required.'**
+  String get taskFieldTitleRequired;
+
+  /// Label of the optional task description input.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get taskFieldDescription;
+
+  /// Label of the task status selector.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get taskFieldStatus;
+
+  /// Label of the task priority selector.
+  ///
+  /// In en, this message translates to:
+  /// **'Priority'**
+  String get taskFieldPriority;
+
+  /// Label of the optional task due date.
+  ///
+  /// In en, this message translates to:
+  /// **'Due date'**
+  String get taskFieldDueDate;
+
+  /// Shown in the due date field when the task has none.
+  ///
+  /// In en, this message translates to:
+  /// **'No due date'**
+  String get taskFieldDueDateEmpty;
+
+  /// Label of the task tags input.
+  ///
+  /// In en, this message translates to:
+  /// **'Tags'**
+  String get taskFieldTags;
+
+  /// Placeholder explaining how to type several tags.
+  ///
+  /// In en, this message translates to:
+  /// **'Comma separated'**
+  String get taskFieldTagsHint;
+
+  /// Due date shown on a task card.
+  ///
+  /// In en, this message translates to:
+  /// **'Due {date}'**
+  String taskDueLabel(String date);
+
+  /// Accessible label of the control that completes a task.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as done'**
+  String get taskMarkDone;
+
+  /// Accessible label of the control that reopens a completed task.
+  ///
+  /// In en, this message translates to:
+  /// **'Reopen task'**
+  String get taskMarkNotDone;
+
+  /// Title of the destructive confirmation dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete task?'**
+  String get taskDeleteTitle;
+
+  /// Body of the destructive confirmation dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'“{title}” will be removed permanently. This cannot be undone.'**
+  String taskDeleteMessage(String title);
+
+  /// Lowest task priority.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get priorityLow;
+
+  /// Default task priority.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get priorityMedium;
+
+  /// High task priority.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get priorityHigh;
+
+  /// Highest task priority.
+  ///
+  /// In en, this message translates to:
+  /// **'Urgent'**
+  String get priorityUrgent;
+
+  /// Label of the task ordering selector.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort'**
+  String get sortLabel;
+
+  /// Ordering option: most urgent first.
+  ///
+  /// In en, this message translates to:
+  /// **'Priority'**
+  String get sortByPriority;
+
+  /// Ordering option: soonest deadline first.
+  ///
+  /// In en, this message translates to:
+  /// **'Due date'**
+  String get sortByDueDate;
 }
 
 class _AppLocalizationsDelegate

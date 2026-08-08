@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:norte/presentation/app/norte_app.dart';
+import 'package:norte/presentation/tasks/task_providers.dart';
 import 'package:norte/presentation/voice/voice_button.dart';
 
 import '../../support/platform_goldens.dart';
+import '../../support/task_fixtures.dart';
 import '../../support/test_fonts.dart';
 
 /// S00-GT-02 — responsive layout of the navigation shell
@@ -32,7 +35,16 @@ void main() {
     ThemeMode themeMode = ThemeMode.dark,
   }) async {
     tester.setSurfaceSize(size);
-    await tester.pumpWidget(NorteApp(themeMode: themeMode));
+    // Sprint 01 made the tasks destination a consumer: the shell can only be
+    // rendered inside the composition root, with the repository supplied.
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: <Override>[
+          taskRepositoryProvider.overrideWithValue(FakeTaskRepository()),
+        ],
+        child: NorteApp(themeMode: themeMode),
+      ),
+    );
     await tester.pumpAndSettle();
   }
 
