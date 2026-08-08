@@ -70,6 +70,11 @@ class FakeJiraServer {
   /// Value of `Retry-After` on a forced 429.
   String? retryAfter;
 
+  /// When `true`, every request is answered **200 with an HTML login page** —
+  /// what a self-hosted site behind single sign-on does to an unauthenticated
+  /// REST call, and the shape that used to crash the adapter.
+  bool forceSsoLoginPage = false;
+
   /// Base URL to hand to the adapter as the site URL.
   String get siteUrl => 'http://${_server.address.host}:${_server.port}';
 
@@ -94,6 +99,13 @@ class FakeJiraServer {
 
     final String raw = await utf8.decoder.bind(request).join();
     if (raw.isNotEmpty) bodies.add(jsonDecode(raw));
+
+    if (forceSsoLoginPage) {
+      request.response.statusCode = 200;
+      request.response.headers.contentType = ContentType.html;
+      request.response.write('<html><body>Sign in to continue</body></html>');
+      return;
+    }
 
     final int? forced = forceStatus;
     if (forced != null) {

@@ -326,4 +326,8 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get jiraFieldApiTokenDataCenter => 'Token di accesso personale';
+
+  @override
+  String get jiraErrorNotRestApi =>
+      'Quell\'URL ha risposto, ma non come API REST di Jira — controlla l\'indirizzo del sito e se è protetto da single sign-on.';
 }

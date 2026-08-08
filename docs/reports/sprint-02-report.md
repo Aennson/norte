@@ -20,8 +20,8 @@ Every command run at `HEAD` of the sprint branch, on the Developer's Windows mac
 |---|---|---|
 | G1 — static analysis | `flutter analyze` | `No issues found! (ran in 4.3s)` — 0 errors, 0 warnings, 0 infos ✅ |
 | G2 — formatting | `dart format --output=none --set-exit-if-changed .` | exit 0 ✅ |
-| G3 — tests | `flutter test` | `00:20 +287: All tests passed!` ✅ |
-| G4 — coverage | `flutter test --coverage` + `dart run tool/check_coverage.dart` | domain+application **96.4%** (242/251) · project **91.4%** (1826/1997) — `gate G4: OK` ✅ |
+| G3 — tests | `flutter test` | `00:15 +293: All tests passed!` ✅ |
+| G4 — coverage | `flutter test --coverage` + `dart run tool/check_coverage.dart` | domain+application **96.4%** (243/252) · project **91.5%** (1836/2007) — `gate G4: OK` ✅ |
 | G5 — dependency rule | `dart run tool/check_imports.dart` | `check_imports: OK — no layer or color violations in lib` ✅ |
 | G6 — secrets | `grep -rEn "(api[_-]?key\|token)[[:space:]]*=[[:space:]]*['\"]" lib/` | no match ✅ |
 | E2E | `flutter test integration_test/<suite> -d windows`, one per file (DEC-010) | 4 suites, 11 scenarios, all passing ✅ |
@@ -50,11 +50,11 @@ advised to revoke it. Every fixture and test credential is synthetic
 | S02-E2E-01 | Offline → online, through the UI | 3 | ✅ |
 | S02-E2E-02 | Divergence decision, both ways | 3 | ✅ |
 
-Plus 53 undocumented cases added for cover and regression (the Jira actions,
+Plus 59 undocumented cases added for cover and regression (the Jira actions,
 the settings form, the status mapping, the credential redaction) — the
 strategy permits adding, never removing (`docs/testing-strategy.md` §2.4).
 
-**287 tests, 0 skipped, 0 weakened.**
+**293 tests, 0 skipped, 0 weakened.**
 
 ### Notes on specific exit criteria
 
@@ -102,12 +102,41 @@ Two decisions were recorded in `docs/reports/decisions.md`.
 **Nothing was left undone and nothing from a future sprint was implemented.**
 No documented criterion was weakened.
 
-### One defect found and fixed during the sprint
+### Two defects found and fixed during the sprint
 
-The three enqueueing use cases let a `StorageFailure` from the queue propagate
-past them, so a user whose outbox refused an operation was told their action
-was safely waiting when it was not. Found by a widget test, fixed by returning
-it as a `Result`, and covered by a regression case
+**A response that was not the REST API vanished the user's action.** Found by
+the Developer on the first attempt at the §6 manual pass: after connecting to a
+self-hosted site, *Link to Jira* did nothing at all — no link, no error, no
+subsequent actions. The cause was one line in `JiraRestAdapter._send`:
+
+```dart
+return response.data as T;   // before
+```
+
+A site behind single sign-on answers an unauthenticated REST call with **200
+and an HTML login page**. The status says success, so no failure mapping ran;
+`response.data` was a `String`; the cast threw a raw `TypeError`, which is
+neither a `DioException` nor a `Failure`, so it went straight past
+`LinkTaskToJira`'s `on Failure` and out of the async callback as an unhandled
+error. Silence, by construction.
+
+The fix restores the port's actual guarantee — *nothing but a `Failure` leaves
+this adapter* — and names the likely cause rather than shrugging:
+`JiraUnreadableResponseFailure`, with a message pointing at SSO and the site
+address. Five regression cases drive a fake server that returns exactly that
+HTML page (`test/infrastructure/jira_rest_adapter_test.dart`, *a response that
+is not the REST API*), plus one asserting it reaches the user
+(`test/presentation/jira_task_actions_test.dart`).
+
+The same pass exposed a second gap: `RedactingLogInterceptor` existed and was
+tested, but the composition root never gave it a sink, so the app produced no
+Jira diagnostics whatsoever. `main.dart` now wires it to `debugPrint`.
+
+**A refused enqueue was reported as success.** The three enqueueing use cases
+let a `StorageFailure` from the queue propagate past them, so a user whose
+outbox refused an operation was told their action was safely waiting when it
+was not. Found by a widget test, fixed by returning it as a `Result`, and
+covered by a regression case
 (`test/presentation/jira_task_actions_test.dart`, *a rejected enqueue is
 reported, not swallowed*) — as `docs/project-rules.md` §5.6 requires.
 

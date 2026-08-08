@@ -164,7 +164,12 @@ class JiraRestAdapter implements JiraGateway {
       },
     );
 
-    final String key = created['key']! as String;
+    final Object? key = created['key'];
+    if (key is! String || key.isEmpty) {
+      throw const JiraUnreadableResponseFailure(
+        'the created issue came back without a key',
+      );
+    }
     return getIssue(key);
   }
 
@@ -205,10 +210,43 @@ class JiraRestAdapter implements JiraGateway {
       );
       final int status = response.statusCode ?? 0;
       if (status >= 400) throw _failureFor(status, response.headers);
-      return response.data as T;
+
+      final Object? data = response.data;
+      if (data is! T) throw _unreadable(data, response.headers);
+      return data;
+    } on Failure {
+      rethrow;
     } on DioException catch (error) {
       throw _failureForDio(error);
+    } catch (_) {
+      // Nothing may leave this method except a Failure. A response the
+      // adapter did not anticipate used to escape as a raw TypeError, past
+      // the use case's `on Failure` and out of the async callback entirely —
+      // so the user's action vanished without a word.
+      throw const JiraUnreadableResponseFailure();
     }
+  }
+
+  /// A 2xx whose body is not what the API documents.
+  ///
+  /// In practice this has one overwhelming cause: a self-hosted site behind
+  /// single sign-on answers an unauthenticated REST call with **200 and an
+  /// HTML login page** rather than a 401. The status says success, the body
+  /// is a `String`, and every field read from it is wrong. Naming that here
+  /// is the difference between a user who knows to check their SSO setup and
+  /// a user staring at a button that does nothing.
+  Failure _unreadable(Object? data, Headers headers) {
+    final String? contentType = headers.value(Headers.contentTypeHeader);
+    if (data is String && (contentType?.contains('html') ?? false)) {
+      return const JiraUnreadableResponseFailure(
+        'the site answered with an HTML page instead of JSON — it is most '
+        'likely behind single sign-on, which a REST token cannot pass',
+      );
+    }
+    return JiraUnreadableResponseFailure(
+      'the site returned ${contentType ?? 'an unlabelled body'} where JSON '
+      'was expected',
+    );
   }
 
   /// The `Authorization` value for [credentials].

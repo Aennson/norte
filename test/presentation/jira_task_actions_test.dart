@@ -330,6 +330,21 @@ void main() {
       );
     });
 
+    testWidgets('a site that is not the REST API says so (regression)', (
+      WidgetTester tester,
+    ) async {
+      // The manual pass hit this as silence: the failure escaped the use case
+      // and the action simply vanished. It must reach the user.
+      jira.failWith = const JiraUnreadableResponseFailure();
+      await pump(tester);
+      await openMenu(tester);
+
+      await tester.tap(find.byKey(JiraTaskActions.menuRefreshKey));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('not as the Jira REST API'), findsOneWidget);
+    });
+
     testWidgets('a divergence found by a refresh raises the banner', (
       WidgetTester tester,
     ) async {
@@ -488,6 +503,10 @@ void main() {
       expect(
         jiraFailureText(l10n, const RateLimitFailure()),
         l10n.jiraErrorRateLimited,
+      );
+      expect(
+        jiraFailureText(l10n, const JiraUnreadableResponseFailure()),
+        l10n.jiraErrorNotRestApi,
       );
       expect(
         jiraFailureText(l10n, const StorageFailure()),

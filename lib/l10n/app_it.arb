@@ -110,5 +110,6 @@
   "jiraFieldDeployment": "Tipo di Jira",
   "jiraDeploymentCloud": "Cloud",
   "jiraDeploymentDataCenter": "Server / Data Center",
-  "jiraFieldApiTokenDataCenter": "Token di accesso personale"
+  "jiraFieldApiTokenDataCenter": "Token di accesso personale",
+  "jiraErrorNotRestApi": "Quell'URL ha risposto, ma non come API REST di Jira — controlla l'indirizzo del sito e se è protetto da single sign-on."
 }

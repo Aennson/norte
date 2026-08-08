@@ -206,6 +206,7 @@ class OutboxDispatcher {
     EngineFailure() ||
     StorageFailure() => true,
     AuthFailure() ||
+    JiraUnreadableResponseFailure() ||
     NotFoundFailure() ||
     JiraIssueNotFoundFailure() ||
     NotLinkedFailure() ||

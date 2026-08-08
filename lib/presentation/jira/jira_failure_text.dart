@@ -14,6 +14,7 @@ String jiraFailureText(AppLocalizations l10n, Failure failure) =>
         l10n.jiraErrorIssueNotFound(issueKey),
       NetworkFailure() || TimeoutFailure() => l10n.jiraErrorOffline,
       AuthFailure() => l10n.jiraErrorAuth,
+      JiraUnreadableResponseFailure() => l10n.jiraErrorNotRestApi,
       RateLimitFailure() => l10n.jiraErrorRateLimited,
       _ => l10n.jiraErrorGeneric,
     };

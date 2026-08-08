@@ -34,6 +34,12 @@ Future<void> main() async {
   final JiraRestAdapter jira = JiraRestAdapter(
     dio: Dio(),
     credentialStore: credentials,
+    // Diagnostics for the Jira connection, which is the one part of the app
+    // that depends on a site nobody here controls. Safe by construction:
+    // bodies are never written and every line is swept for credentials
+    // (BR-08, `RedactingLogInterceptor`). Run the app from a terminal to
+    // read it.
+    log: (String line) => debugPrint('[jira] $line'),
   );
   final OutboxDispatcher dispatcher = OutboxDispatcher(
     outbox: outbox,

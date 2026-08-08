@@ -663,6 +663,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Personal access token'**
   String get jiraFieldApiTokenDataCenter;
+
+  /// Error when a 2xx response is not the API's JSON, typically an SSO login page.
+  ///
+  /// In en, this message translates to:
+  /// **'That URL answered, but not as the Jira REST API — check the site address, and whether the site is behind single sign-on.'**
+  String get jiraErrorNotRestApi;
 }
 
 class _AppLocalizationsDelegate

@@ -290,4 +290,63 @@ void main() {
     expect(await adapter.getStatus('PROJ-123'), 'In Progress');
     expect(server.requests.single, 'GET /rest/api/3/issue/PROJ-123');
   });
+
+  group('a response that is not the REST API (regression)', () {
+    // The defect the Developer hit during the manual pass: a self-hosted site
+    // behind SSO answers 200 with an HTML login page. `response.data as T`
+    // threw a raw TypeError, which is neither a DioException nor a Failure,
+    // so it escaped the adapter, escaped the use case's `on Failure`, and
+    // died as an unhandled async error — the user's action vanished in
+    // silence.
+
+    setUp(() => server.forceSsoLoginPage = true);
+
+    test('a read fails loudly instead of throwing past the caller', () async {
+      await expectLater(
+        adapter.getIssue('PROJ-123'),
+        throwsA(
+          isA<JiraUnreadableResponseFailure>().having(
+            (JiraUnreadableResponseFailure f) => f.message,
+            'message',
+            contains('single sign-on'),
+          ),
+        ),
+      );
+    });
+
+    test('so does a status read', () async {
+      await expectLater(
+        adapter.getStatus('PROJ-123'),
+        throwsA(isA<JiraUnreadableResponseFailure>()),
+      );
+    });
+
+    test('so does a transition', () async {
+      await expectLater(
+        adapter.transitionIssue(
+          issueKey: 'PROJ-123',
+          status: 'Done',
+          operationId: 'op-1',
+        ),
+        throwsA(isA<JiraUnreadableResponseFailure>()),
+      );
+    });
+
+    test('so does creating an issue', () async {
+      await expectLater(
+        adapter.createIssue(
+          projectKey: 'NEW',
+          summary: 'x',
+          operationId: 'op-1',
+        ),
+        throwsA(isA<JiraUnreadableResponseFailure>()),
+      );
+    });
+
+    test('nothing but a Failure ever leaves the adapter', () async {
+      // The general guarantee, stated as an assertion: whatever the site
+      // does, the caller sees a Failure it can pattern-match on.
+      await expectLater(adapter.getIssue('PROJ-123'), throwsA(isA<Failure>()));
+    });
+  });
 }

@@ -447,5 +447,9 @@
   "jiraFieldApiTokenDataCenter": "Personal access token",
   "@jiraFieldApiTokenDataCenter": {
     "description": "Label of the token field on a self-hosted site."
+  },
+  "jiraErrorNotRestApi": "That URL answered, but not as the Jira REST API — check the site address, and whether the site is behind single sign-on.",
+  "@jiraErrorNotRestApi": {
+    "description": "Error when a 2xx response is not the API's JSON, typically an SSO login page."
   }
 }
