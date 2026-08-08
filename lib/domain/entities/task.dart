@@ -71,5 +71,20 @@ abstract class Task with _$Task {
 
     /// User labels, kept in the order the user entered them.
     @Default(<String>[]) List<String> tags,
+
+    /// Id of the meeting whose action item produced this task, when one did
+    /// and that meeting was saved (`sprint-03` validation rules).
+    ///
+    /// A back-reference for navigation and nothing more: the task is a task
+    /// like any other, and deleting the meeting does not delete it.
+    String? sourceMeetingId,
   }) = _Task;
 }
+
+/// Tag every task converted from a meeting action item carries
+/// (`sprint-03` validation rules, S03-UT-05).
+///
+/// A literal rather than a localized string on purpose: it is a stored value
+/// the user can filter by, so translating it would silently split one tag into
+/// three depending on the device's locale.
+const String meetingTag = 'meeting';

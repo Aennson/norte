@@ -99,3 +99,40 @@ final class ValidationFailure extends Failure {
 final class StorageFailure extends Failure {
   const StorageFailure([super.message = 'local storage failure']);
 }
+
+/// The user has not supplied a key for the remote AI engine.
+///
+/// Norte is BYOK in v1.0 (`docs/architecture.md` §7.2): there is no key until
+/// the user pastes one into Settings. Distinct from [AuthFailure], which means
+/// a key exists and was rejected — the two send the user to different places,
+/// so the UI must be able to tell them apart (`sprint-03` validation rules).
+final class MissingApiKeyFailure extends Failure {
+  const MissingApiKeyFailure([
+    super.message = 'no Claude API key is configured — add one in Settings',
+  ]);
+}
+
+/// The engine answered, but not with a summary this app can read.
+///
+/// Raised only after the retry the policy allows has also failed
+/// (`sprint-03` validation rules, S03-UT-06). A partial or invented summary is
+/// never returned in its place: a meeting summary that quietly dropped half a
+/// retro is worse than no summary at all, because nothing about it looks wrong.
+final class AiResponseFailure extends Failure {
+  const AiResponseFailure([
+    super.message = 'the AI engine returned an unreadable summary',
+  ]);
+}
+
+/// The action item already produced a task.
+///
+/// Conversion is one-way and once-only: the item records the id of the task it
+/// created, and a second attempt is refused rather than silently making a
+/// duplicate (S03-UT-05).
+final class AlreadyConvertedFailure extends Failure {
+  const AlreadyConvertedFailure(this.taskId)
+    : super('this action item is already task $taskId');
+
+  /// The task the item produced the first time.
+  final String taskId;
+}

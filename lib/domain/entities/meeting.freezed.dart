@@ -14,8 +14,11 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ActionItem {
 
+/// Stable within the summary that produced it.
+ String get id;/// What has to be done. Becomes the task's title on conversion.
  String get description;/// Person the item was assigned to, when the transcript names one.
- String? get assignee; DateTime? get dueDate;
+ String? get assignee; DateTime? get dueDate;/// Id of the task this item became, or `null` while it is unconverted.
+ String? get convertedTaskId;
 /// Create a copy of ActionItem
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -26,16 +29,16 @@ $ActionItemCopyWith<ActionItem> get copyWith => _$ActionItemCopyWithImpl<ActionI
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ActionItem&&(identical(other.description, description) || other.description == description)&&(identical(other.assignee, assignee) || other.assignee == assignee)&&(identical(other.dueDate, dueDate) || other.dueDate == dueDate));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ActionItem&&(identical(other.id, id) || other.id == id)&&(identical(other.description, description) || other.description == description)&&(identical(other.assignee, assignee) || other.assignee == assignee)&&(identical(other.dueDate, dueDate) || other.dueDate == dueDate)&&(identical(other.convertedTaskId, convertedTaskId) || other.convertedTaskId == convertedTaskId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,description,assignee,dueDate);
+int get hashCode => Object.hash(runtimeType,id,description,assignee,dueDate,convertedTaskId);
 
 @override
 String toString() {
-  return 'ActionItem(description: $description, assignee: $assignee, dueDate: $dueDate)';
+  return 'ActionItem(id: $id, description: $description, assignee: $assignee, dueDate: $dueDate, convertedTaskId: $convertedTaskId)';
 }
 
 
@@ -46,7 +49,7 @@ abstract mixin class $ActionItemCopyWith<$Res>  {
   factory $ActionItemCopyWith(ActionItem value, $Res Function(ActionItem) _then) = _$ActionItemCopyWithImpl;
 @useResult
 $Res call({
- String description, String? assignee, DateTime? dueDate
+ String id, String description, String? assignee, DateTime? dueDate, String? convertedTaskId
 });
 
 
@@ -63,12 +66,14 @@ class _$ActionItemCopyWithImpl<$Res>
 
 /// Create a copy of ActionItem
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? description = null,Object? assignee = freezed,Object? dueDate = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? description = null,Object? assignee = freezed,Object? dueDate = freezed,Object? convertedTaskId = freezed,}) {
   return _then(_self.copyWith(
-description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String,assignee: freezed == assignee ? _self.assignee : assignee // ignore: cast_nullable_to_non_nullable
 as String?,dueDate: freezed == dueDate ? _self.dueDate : dueDate // ignore: cast_nullable_to_non_nullable
-as DateTime?,
+as DateTime?,convertedTaskId: freezed == convertedTaskId ? _self.convertedTaskId : convertedTaskId // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -153,10 +158,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String description,  String? assignee,  DateTime? dueDate)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String description,  String? assignee,  DateTime? dueDate,  String? convertedTaskId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ActionItem() when $default != null:
-return $default(_that.description,_that.assignee,_that.dueDate);case _:
+return $default(_that.id,_that.description,_that.assignee,_that.dueDate,_that.convertedTaskId);case _:
   return orElse();
 
 }
@@ -174,10 +179,10 @@ return $default(_that.description,_that.assignee,_that.dueDate);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String description,  String? assignee,  DateTime? dueDate)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String description,  String? assignee,  DateTime? dueDate,  String? convertedTaskId)  $default,) {final _that = this;
 switch (_that) {
 case _ActionItem():
-return $default(_that.description,_that.assignee,_that.dueDate);case _:
+return $default(_that.id,_that.description,_that.assignee,_that.dueDate,_that.convertedTaskId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -194,10 +199,10 @@ return $default(_that.description,_that.assignee,_that.dueDate);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String description,  String? assignee,  DateTime? dueDate)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String description,  String? assignee,  DateTime? dueDate,  String? convertedTaskId)?  $default,) {final _that = this;
 switch (_that) {
 case _ActionItem() when $default != null:
-return $default(_that.description,_that.assignee,_that.dueDate);case _:
+return $default(_that.id,_that.description,_that.assignee,_that.dueDate,_that.convertedTaskId);case _:
   return null;
 
 }
@@ -208,14 +213,19 @@ return $default(_that.description,_that.assignee,_that.dueDate);case _:
 /// @nodoc
 
 
-class _ActionItem implements ActionItem {
-  const _ActionItem({required this.description, this.assignee, this.dueDate});
+class _ActionItem extends ActionItem {
+  const _ActionItem({required this.id, required this.description, this.assignee, this.dueDate, this.convertedTaskId}): super._();
   
 
+/// Stable within the summary that produced it.
+@override final  String id;
+/// What has to be done. Becomes the task's title on conversion.
 @override final  String description;
 /// Person the item was assigned to, when the transcript names one.
 @override final  String? assignee;
 @override final  DateTime? dueDate;
+/// Id of the task this item became, or `null` while it is unconverted.
+@override final  String? convertedTaskId;
 
 /// Create a copy of ActionItem
 /// with the given fields replaced by the non-null parameter values.
@@ -227,16 +237,16 @@ _$ActionItemCopyWith<_ActionItem> get copyWith => __$ActionItemCopyWithImpl<_Act
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ActionItem&&(identical(other.description, description) || other.description == description)&&(identical(other.assignee, assignee) || other.assignee == assignee)&&(identical(other.dueDate, dueDate) || other.dueDate == dueDate));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ActionItem&&(identical(other.id, id) || other.id == id)&&(identical(other.description, description) || other.description == description)&&(identical(other.assignee, assignee) || other.assignee == assignee)&&(identical(other.dueDate, dueDate) || other.dueDate == dueDate)&&(identical(other.convertedTaskId, convertedTaskId) || other.convertedTaskId == convertedTaskId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,description,assignee,dueDate);
+int get hashCode => Object.hash(runtimeType,id,description,assignee,dueDate,convertedTaskId);
 
 @override
 String toString() {
-  return 'ActionItem(description: $description, assignee: $assignee, dueDate: $dueDate)';
+  return 'ActionItem(id: $id, description: $description, assignee: $assignee, dueDate: $dueDate, convertedTaskId: $convertedTaskId)';
 }
 
 
@@ -247,7 +257,7 @@ abstract mixin class _$ActionItemCopyWith<$Res> implements $ActionItemCopyWith<$
   factory _$ActionItemCopyWith(_ActionItem value, $Res Function(_ActionItem) _then) = __$ActionItemCopyWithImpl;
 @override @useResult
 $Res call({
- String description, String? assignee, DateTime? dueDate
+ String id, String description, String? assignee, DateTime? dueDate, String? convertedTaskId
 });
 
 
@@ -264,12 +274,14 @@ class __$ActionItemCopyWithImpl<$Res>
 
 /// Create a copy of ActionItem
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? description = null,Object? assignee = freezed,Object? dueDate = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? description = null,Object? assignee = freezed,Object? dueDate = freezed,Object? convertedTaskId = freezed,}) {
   return _then(_ActionItem(
-description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String,assignee: freezed == assignee ? _self.assignee : assignee // ignore: cast_nullable_to_non_nullable
 as String?,dueDate: freezed == dueDate ? _self.dueDate : dueDate // ignore: cast_nullable_to_non_nullable
-as DateTime?,
+as DateTime?,convertedTaskId: freezed == convertedTaskId ? _self.convertedTaskId : convertedTaskId // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -281,7 +293,9 @@ mixin _$MeetingSummary {
 
 /// Section title → section body, in the template's declared order.
  Map<String, String> get sections;/// When the summary was produced.
- DateTime get generatedAt;/// Identifier of the engine that produced it, for diagnostics.
+ DateTime get generatedAt;/// Follow-ups the engine extracted. Empty when the template has
+/// `extractActionItems == false`, or when the meeting produced none.
+ List<ActionItem> get actionItems;/// Identifier of the engine that produced it, for diagnostics.
  String? get engineId;
 /// Create a copy of MeetingSummary
 /// with the given fields replaced by the non-null parameter values.
@@ -293,16 +307,16 @@ $MeetingSummaryCopyWith<MeetingSummary> get copyWith => _$MeetingSummaryCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MeetingSummary&&const DeepCollectionEquality().equals(other.sections, sections)&&(identical(other.generatedAt, generatedAt) || other.generatedAt == generatedAt)&&(identical(other.engineId, engineId) || other.engineId == engineId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MeetingSummary&&const DeepCollectionEquality().equals(other.sections, sections)&&(identical(other.generatedAt, generatedAt) || other.generatedAt == generatedAt)&&const DeepCollectionEquality().equals(other.actionItems, actionItems)&&(identical(other.engineId, engineId) || other.engineId == engineId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(sections),generatedAt,engineId);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(sections),generatedAt,const DeepCollectionEquality().hash(actionItems),engineId);
 
 @override
 String toString() {
-  return 'MeetingSummary(sections: $sections, generatedAt: $generatedAt, engineId: $engineId)';
+  return 'MeetingSummary(sections: $sections, generatedAt: $generatedAt, actionItems: $actionItems, engineId: $engineId)';
 }
 
 
@@ -313,7 +327,7 @@ abstract mixin class $MeetingSummaryCopyWith<$Res>  {
   factory $MeetingSummaryCopyWith(MeetingSummary value, $Res Function(MeetingSummary) _then) = _$MeetingSummaryCopyWithImpl;
 @useResult
 $Res call({
- Map<String, String> sections, DateTime generatedAt, String? engineId
+ Map<String, String> sections, DateTime generatedAt, List<ActionItem> actionItems, String? engineId
 });
 
 
@@ -330,11 +344,12 @@ class _$MeetingSummaryCopyWithImpl<$Res>
 
 /// Create a copy of MeetingSummary
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? sections = null,Object? generatedAt = null,Object? engineId = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? sections = null,Object? generatedAt = null,Object? actionItems = null,Object? engineId = freezed,}) {
   return _then(_self.copyWith(
 sections: null == sections ? _self.sections : sections // ignore: cast_nullable_to_non_nullable
 as Map<String, String>,generatedAt: null == generatedAt ? _self.generatedAt : generatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,engineId: freezed == engineId ? _self.engineId : engineId // ignore: cast_nullable_to_non_nullable
+as DateTime,actionItems: null == actionItems ? _self.actionItems : actionItems // ignore: cast_nullable_to_non_nullable
+as List<ActionItem>,engineId: freezed == engineId ? _self.engineId : engineId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -420,10 +435,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Map<String, String> sections,  DateTime generatedAt,  String? engineId)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Map<String, String> sections,  DateTime generatedAt,  List<ActionItem> actionItems,  String? engineId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MeetingSummary() when $default != null:
-return $default(_that.sections,_that.generatedAt,_that.engineId);case _:
+return $default(_that.sections,_that.generatedAt,_that.actionItems,_that.engineId);case _:
   return orElse();
 
 }
@@ -441,10 +456,10 @@ return $default(_that.sections,_that.generatedAt,_that.engineId);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Map<String, String> sections,  DateTime generatedAt,  String? engineId)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Map<String, String> sections,  DateTime generatedAt,  List<ActionItem> actionItems,  String? engineId)  $default,) {final _that = this;
 switch (_that) {
 case _MeetingSummary():
-return $default(_that.sections,_that.generatedAt,_that.engineId);case _:
+return $default(_that.sections,_that.generatedAt,_that.actionItems,_that.engineId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -461,10 +476,10 @@ return $default(_that.sections,_that.generatedAt,_that.engineId);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Map<String, String> sections,  DateTime generatedAt,  String? engineId)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Map<String, String> sections,  DateTime generatedAt,  List<ActionItem> actionItems,  String? engineId)?  $default,) {final _that = this;
 switch (_that) {
 case _MeetingSummary() when $default != null:
-return $default(_that.sections,_that.generatedAt,_that.engineId);case _:
+return $default(_that.sections,_that.generatedAt,_that.actionItems,_that.engineId);case _:
   return null;
 
 }
@@ -475,8 +490,8 @@ return $default(_that.sections,_that.generatedAt,_that.engineId);case _:
 /// @nodoc
 
 
-class _MeetingSummary implements MeetingSummary {
-  const _MeetingSummary({required final  Map<String, String> sections, required this.generatedAt, this.engineId}): _sections = sections;
+class _MeetingSummary extends MeetingSummary {
+  const _MeetingSummary({required final  Map<String, String> sections, required this.generatedAt, final  List<ActionItem> actionItems = const <ActionItem>[], this.engineId}): _sections = sections,_actionItems = actionItems,super._();
   
 
 /// Section title → section body, in the template's declared order.
@@ -490,6 +505,17 @@ class _MeetingSummary implements MeetingSummary {
 
 /// When the summary was produced.
 @override final  DateTime generatedAt;
+/// Follow-ups the engine extracted. Empty when the template has
+/// `extractActionItems == false`, or when the meeting produced none.
+ final  List<ActionItem> _actionItems;
+/// Follow-ups the engine extracted. Empty when the template has
+/// `extractActionItems == false`, or when the meeting produced none.
+@override@JsonKey() List<ActionItem> get actionItems {
+  if (_actionItems is EqualUnmodifiableListView) return _actionItems;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_actionItems);
+}
+
 /// Identifier of the engine that produced it, for diagnostics.
 @override final  String? engineId;
 
@@ -503,16 +529,16 @@ _$MeetingSummaryCopyWith<_MeetingSummary> get copyWith => __$MeetingSummaryCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MeetingSummary&&const DeepCollectionEquality().equals(other._sections, _sections)&&(identical(other.generatedAt, generatedAt) || other.generatedAt == generatedAt)&&(identical(other.engineId, engineId) || other.engineId == engineId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MeetingSummary&&const DeepCollectionEquality().equals(other._sections, _sections)&&(identical(other.generatedAt, generatedAt) || other.generatedAt == generatedAt)&&const DeepCollectionEquality().equals(other._actionItems, _actionItems)&&(identical(other.engineId, engineId) || other.engineId == engineId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_sections),generatedAt,engineId);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_sections),generatedAt,const DeepCollectionEquality().hash(_actionItems),engineId);
 
 @override
 String toString() {
-  return 'MeetingSummary(sections: $sections, generatedAt: $generatedAt, engineId: $engineId)';
+  return 'MeetingSummary(sections: $sections, generatedAt: $generatedAt, actionItems: $actionItems, engineId: $engineId)';
 }
 
 
@@ -523,7 +549,7 @@ abstract mixin class _$MeetingSummaryCopyWith<$Res> implements $MeetingSummaryCo
   factory _$MeetingSummaryCopyWith(_MeetingSummary value, $Res Function(_MeetingSummary) _then) = __$MeetingSummaryCopyWithImpl;
 @override @useResult
 $Res call({
- Map<String, String> sections, DateTime generatedAt, String? engineId
+ Map<String, String> sections, DateTime generatedAt, List<ActionItem> actionItems, String? engineId
 });
 
 
@@ -540,11 +566,12 @@ class __$MeetingSummaryCopyWithImpl<$Res>
 
 /// Create a copy of MeetingSummary
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? sections = null,Object? generatedAt = null,Object? engineId = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? sections = null,Object? generatedAt = null,Object? actionItems = null,Object? engineId = freezed,}) {
   return _then(_MeetingSummary(
 sections: null == sections ? _self._sections : sections // ignore: cast_nullable_to_non_nullable
 as Map<String, String>,generatedAt: null == generatedAt ? _self.generatedAt : generatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,engineId: freezed == engineId ? _self.engineId : engineId // ignore: cast_nullable_to_non_nullable
+as DateTime,actionItems: null == actionItems ? _self._actionItems : actionItems // ignore: cast_nullable_to_non_nullable
+as List<ActionItem>,engineId: freezed == engineId ? _self.engineId : engineId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -557,7 +584,7 @@ mixin _$Meeting {
 
  String get id; String get title; DateTime get createdAt; MeetingType get type;/// Pasted by the user or produced by a transcription engine. Held in
 /// memory only while [retention] is [RetentionPolicy.ephemeral] (BR-03).
- String get rawTranscript; MeetingSummary? get summary; List<ActionItem> get actionItems; RetentionPolicy get retention;
+ String get rawTranscript; MeetingSummary? get summary; RetentionPolicy get retention;
 /// Create a copy of Meeting
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -568,16 +595,16 @@ $MeetingCopyWith<Meeting> get copyWith => _$MeetingCopyWithImpl<Meeting>(this as
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Meeting&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.type, type) || other.type == type)&&(identical(other.rawTranscript, rawTranscript) || other.rawTranscript == rawTranscript)&&(identical(other.summary, summary) || other.summary == summary)&&const DeepCollectionEquality().equals(other.actionItems, actionItems)&&(identical(other.retention, retention) || other.retention == retention));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Meeting&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.type, type) || other.type == type)&&(identical(other.rawTranscript, rawTranscript) || other.rawTranscript == rawTranscript)&&(identical(other.summary, summary) || other.summary == summary)&&(identical(other.retention, retention) || other.retention == retention));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,title,createdAt,type,rawTranscript,summary,const DeepCollectionEquality().hash(actionItems),retention);
+int get hashCode => Object.hash(runtimeType,id,title,createdAt,type,rawTranscript,summary,retention);
 
 @override
 String toString() {
-  return 'Meeting(id: $id, title: $title, createdAt: $createdAt, type: $type, rawTranscript: $rawTranscript, summary: $summary, actionItems: $actionItems, retention: $retention)';
+  return 'Meeting(id: $id, title: $title, createdAt: $createdAt, type: $type, rawTranscript: $rawTranscript, summary: $summary, retention: $retention)';
 }
 
 
@@ -588,7 +615,7 @@ abstract mixin class $MeetingCopyWith<$Res>  {
   factory $MeetingCopyWith(Meeting value, $Res Function(Meeting) _then) = _$MeetingCopyWithImpl;
 @useResult
 $Res call({
- String id, String title, DateTime createdAt, MeetingType type, String rawTranscript, MeetingSummary? summary, List<ActionItem> actionItems, RetentionPolicy retention
+ String id, String title, DateTime createdAt, MeetingType type, String rawTranscript, MeetingSummary? summary, RetentionPolicy retention
 });
 
 
@@ -605,7 +632,7 @@ class _$MeetingCopyWithImpl<$Res>
 
 /// Create a copy of Meeting
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? createdAt = null,Object? type = null,Object? rawTranscript = null,Object? summary = freezed,Object? actionItems = null,Object? retention = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? createdAt = null,Object? type = null,Object? rawTranscript = null,Object? summary = freezed,Object? retention = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -613,8 +640,7 @@ as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: 
 as DateTime,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as MeetingType,rawTranscript: null == rawTranscript ? _self.rawTranscript : rawTranscript // ignore: cast_nullable_to_non_nullable
 as String,summary: freezed == summary ? _self.summary : summary // ignore: cast_nullable_to_non_nullable
-as MeetingSummary?,actionItems: null == actionItems ? _self.actionItems : actionItems // ignore: cast_nullable_to_non_nullable
-as List<ActionItem>,retention: null == retention ? _self.retention : retention // ignore: cast_nullable_to_non_nullable
+as MeetingSummary?,retention: null == retention ? _self.retention : retention // ignore: cast_nullable_to_non_nullable
 as RetentionPolicy,
   ));
 }
@@ -712,10 +738,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  DateTime createdAt,  MeetingType type,  String rawTranscript,  MeetingSummary? summary,  List<ActionItem> actionItems,  RetentionPolicy retention)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  DateTime createdAt,  MeetingType type,  String rawTranscript,  MeetingSummary? summary,  RetentionPolicy retention)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Meeting() when $default != null:
-return $default(_that.id,_that.title,_that.createdAt,_that.type,_that.rawTranscript,_that.summary,_that.actionItems,_that.retention);case _:
+return $default(_that.id,_that.title,_that.createdAt,_that.type,_that.rawTranscript,_that.summary,_that.retention);case _:
   return orElse();
 
 }
@@ -733,10 +759,10 @@ return $default(_that.id,_that.title,_that.createdAt,_that.type,_that.rawTranscr
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  DateTime createdAt,  MeetingType type,  String rawTranscript,  MeetingSummary? summary,  List<ActionItem> actionItems,  RetentionPolicy retention)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  DateTime createdAt,  MeetingType type,  String rawTranscript,  MeetingSummary? summary,  RetentionPolicy retention)  $default,) {final _that = this;
 switch (_that) {
 case _Meeting():
-return $default(_that.id,_that.title,_that.createdAt,_that.type,_that.rawTranscript,_that.summary,_that.actionItems,_that.retention);case _:
+return $default(_that.id,_that.title,_that.createdAt,_that.type,_that.rawTranscript,_that.summary,_that.retention);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -753,10 +779,10 @@ return $default(_that.id,_that.title,_that.createdAt,_that.type,_that.rawTranscr
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  DateTime createdAt,  MeetingType type,  String rawTranscript,  MeetingSummary? summary,  List<ActionItem> actionItems,  RetentionPolicy retention)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  DateTime createdAt,  MeetingType type,  String rawTranscript,  MeetingSummary? summary,  RetentionPolicy retention)?  $default,) {final _that = this;
 switch (_that) {
 case _Meeting() when $default != null:
-return $default(_that.id,_that.title,_that.createdAt,_that.type,_that.rawTranscript,_that.summary,_that.actionItems,_that.retention);case _:
+return $default(_that.id,_that.title,_that.createdAt,_that.type,_that.rawTranscript,_that.summary,_that.retention);case _:
   return null;
 
 }
@@ -767,8 +793,8 @@ return $default(_that.id,_that.title,_that.createdAt,_that.type,_that.rawTranscr
 /// @nodoc
 
 
-class _Meeting implements Meeting {
-  const _Meeting({required this.id, required this.title, required this.createdAt, this.type = MeetingType.custom, this.rawTranscript = '', this.summary, final  List<ActionItem> actionItems = const <ActionItem>[], this.retention = RetentionPolicy.ephemeral}): _actionItems = actionItems;
+class _Meeting extends Meeting {
+  const _Meeting({required this.id, required this.title, required this.createdAt, this.type = MeetingType.custom, this.rawTranscript = '', this.summary, this.retention = RetentionPolicy.ephemeral}): super._();
   
 
 @override final  String id;
@@ -779,13 +805,6 @@ class _Meeting implements Meeting {
 /// memory only while [retention] is [RetentionPolicy.ephemeral] (BR-03).
 @override@JsonKey() final  String rawTranscript;
 @override final  MeetingSummary? summary;
- final  List<ActionItem> _actionItems;
-@override@JsonKey() List<ActionItem> get actionItems {
-  if (_actionItems is EqualUnmodifiableListView) return _actionItems;
-  // ignore: implicit_dynamic_type
-  return EqualUnmodifiableListView(_actionItems);
-}
-
 @override@JsonKey() final  RetentionPolicy retention;
 
 /// Create a copy of Meeting
@@ -798,16 +817,16 @@ _$MeetingCopyWith<_Meeting> get copyWith => __$MeetingCopyWithImpl<_Meeting>(thi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Meeting&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.type, type) || other.type == type)&&(identical(other.rawTranscript, rawTranscript) || other.rawTranscript == rawTranscript)&&(identical(other.summary, summary) || other.summary == summary)&&const DeepCollectionEquality().equals(other._actionItems, _actionItems)&&(identical(other.retention, retention) || other.retention == retention));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Meeting&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.type, type) || other.type == type)&&(identical(other.rawTranscript, rawTranscript) || other.rawTranscript == rawTranscript)&&(identical(other.summary, summary) || other.summary == summary)&&(identical(other.retention, retention) || other.retention == retention));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,title,createdAt,type,rawTranscript,summary,const DeepCollectionEquality().hash(_actionItems),retention);
+int get hashCode => Object.hash(runtimeType,id,title,createdAt,type,rawTranscript,summary,retention);
 
 @override
 String toString() {
-  return 'Meeting(id: $id, title: $title, createdAt: $createdAt, type: $type, rawTranscript: $rawTranscript, summary: $summary, actionItems: $actionItems, retention: $retention)';
+  return 'Meeting(id: $id, title: $title, createdAt: $createdAt, type: $type, rawTranscript: $rawTranscript, summary: $summary, retention: $retention)';
 }
 
 
@@ -818,7 +837,7 @@ abstract mixin class _$MeetingCopyWith<$Res> implements $MeetingCopyWith<$Res> {
   factory _$MeetingCopyWith(_Meeting value, $Res Function(_Meeting) _then) = __$MeetingCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String title, DateTime createdAt, MeetingType type, String rawTranscript, MeetingSummary? summary, List<ActionItem> actionItems, RetentionPolicy retention
+ String id, String title, DateTime createdAt, MeetingType type, String rawTranscript, MeetingSummary? summary, RetentionPolicy retention
 });
 
 
@@ -835,7 +854,7 @@ class __$MeetingCopyWithImpl<$Res>
 
 /// Create a copy of Meeting
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? createdAt = null,Object? type = null,Object? rawTranscript = null,Object? summary = freezed,Object? actionItems = null,Object? retention = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? createdAt = null,Object? type = null,Object? rawTranscript = null,Object? summary = freezed,Object? retention = null,}) {
   return _then(_Meeting(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -843,8 +862,7 @@ as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: 
 as DateTime,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as MeetingType,rawTranscript: null == rawTranscript ? _self.rawTranscript : rawTranscript // ignore: cast_nullable_to_non_nullable
 as String,summary: freezed == summary ? _self.summary : summary // ignore: cast_nullable_to_non_nullable
-as MeetingSummary?,actionItems: null == actionItems ? _self._actionItems : actionItems // ignore: cast_nullable_to_non_nullable
-as List<ActionItem>,retention: null == retention ? _self.retention : retention // ignore: cast_nullable_to_non_nullable
+as MeetingSummary?,retention: null == retention ? _self.retention : retention // ignore: cast_nullable_to_non_nullable
 as RetentionPolicy,
   ));
 }

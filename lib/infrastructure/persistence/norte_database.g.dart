@@ -100,6 +100,17 @@ class $TaskRowsTable extends TaskRows with TableInfo<$TaskRowsTable, TaskRow> {
     requiredDuringInsert: false,
     defaultValue: const Constant('[]'),
   );
+  static const VerificationMeta _sourceMeetingIdMeta = const VerificationMeta(
+    'sourceMeetingId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceMeetingId = GeneratedColumn<String>(
+    'source_meeting_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _jiraIssueKeyMeta = const VerificationMeta(
     'jiraIssueKey',
   );
@@ -154,6 +165,7 @@ class $TaskRowsTable extends TaskRows with TableInfo<$TaskRowsTable, TaskRow> {
     createdAtMs,
     updatedAtMs,
     tags,
+    sourceMeetingId,
     jiraIssueKey,
     jiraSiteUrl,
     jiraLastKnownStatus,
@@ -243,6 +255,15 @@ class $TaskRowsTable extends TaskRows with TableInfo<$TaskRowsTable, TaskRow> {
         tags.isAcceptableOrUnknown(data['tags']!, _tagsMeta),
       );
     }
+    if (data.containsKey('source_meeting_id')) {
+      context.handle(
+        _sourceMeetingIdMeta,
+        sourceMeetingId.isAcceptableOrUnknown(
+          data['source_meeting_id']!,
+          _sourceMeetingIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('jira_issue_key')) {
       context.handle(
         _jiraIssueKeyMeta,
@@ -324,6 +345,10 @@ class $TaskRowsTable extends TaskRows with TableInfo<$TaskRowsTable, TaskRow> {
         DriftSqlType.string,
         data['${effectivePrefix}tags'],
       )!,
+      sourceMeetingId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_meeting_id'],
+      ),
       jiraIssueKey: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}jira_issue_key'],
@@ -369,6 +394,11 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
 
   /// JSON array of strings, order preserved.
   final String tags;
+
+  /// Meeting whose action item produced this task, when one did
+  /// (`sprint-03` validation rules). Nullable and not a foreign key: deleting
+  /// the meeting must not delete the task.
+  final String? sourceMeetingId;
   final String? jiraIssueKey;
   final String? jiraSiteUrl;
   final String? jiraLastKnownStatus;
@@ -383,6 +413,7 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
     required this.createdAtMs,
     required this.updatedAtMs,
     required this.tags,
+    this.sourceMeetingId,
     this.jiraIssueKey,
     this.jiraSiteUrl,
     this.jiraLastKnownStatus,
@@ -404,6 +435,9 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
     map['created_at_ms'] = Variable<int>(createdAtMs);
     map['updated_at_ms'] = Variable<int>(updatedAtMs);
     map['tags'] = Variable<String>(tags);
+    if (!nullToAbsent || sourceMeetingId != null) {
+      map['source_meeting_id'] = Variable<String>(sourceMeetingId);
+    }
     if (!nullToAbsent || jiraIssueKey != null) {
       map['jira_issue_key'] = Variable<String>(jiraIssueKey);
     }
@@ -434,6 +468,9 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
       createdAtMs: Value(createdAtMs),
       updatedAtMs: Value(updatedAtMs),
       tags: Value(tags),
+      sourceMeetingId: sourceMeetingId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceMeetingId),
       jiraIssueKey: jiraIssueKey == null && nullToAbsent
           ? const Value.absent()
           : Value(jiraIssueKey),
@@ -464,6 +501,7 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
       createdAtMs: serializer.fromJson<int>(json['createdAtMs']),
       updatedAtMs: serializer.fromJson<int>(json['updatedAtMs']),
       tags: serializer.fromJson<String>(json['tags']),
+      sourceMeetingId: serializer.fromJson<String?>(json['sourceMeetingId']),
       jiraIssueKey: serializer.fromJson<String?>(json['jiraIssueKey']),
       jiraSiteUrl: serializer.fromJson<String?>(json['jiraSiteUrl']),
       jiraLastKnownStatus: serializer.fromJson<String?>(
@@ -485,6 +523,7 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
       'createdAtMs': serializer.toJson<int>(createdAtMs),
       'updatedAtMs': serializer.toJson<int>(updatedAtMs),
       'tags': serializer.toJson<String>(tags),
+      'sourceMeetingId': serializer.toJson<String?>(sourceMeetingId),
       'jiraIssueKey': serializer.toJson<String?>(jiraIssueKey),
       'jiraSiteUrl': serializer.toJson<String?>(jiraSiteUrl),
       'jiraLastKnownStatus': serializer.toJson<String?>(jiraLastKnownStatus),
@@ -502,6 +541,7 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
     int? createdAtMs,
     int? updatedAtMs,
     String? tags,
+    Value<String?> sourceMeetingId = const Value.absent(),
     Value<String?> jiraIssueKey = const Value.absent(),
     Value<String?> jiraSiteUrl = const Value.absent(),
     Value<String?> jiraLastKnownStatus = const Value.absent(),
@@ -516,6 +556,9 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
     createdAtMs: createdAtMs ?? this.createdAtMs,
     updatedAtMs: updatedAtMs ?? this.updatedAtMs,
     tags: tags ?? this.tags,
+    sourceMeetingId: sourceMeetingId.present
+        ? sourceMeetingId.value
+        : this.sourceMeetingId,
     jiraIssueKey: jiraIssueKey.present ? jiraIssueKey.value : this.jiraIssueKey,
     jiraSiteUrl: jiraSiteUrl.present ? jiraSiteUrl.value : this.jiraSiteUrl,
     jiraLastKnownStatus: jiraLastKnownStatus.present
@@ -542,6 +585,9 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
           ? data.updatedAtMs.value
           : this.updatedAtMs,
       tags: data.tags.present ? data.tags.value : this.tags,
+      sourceMeetingId: data.sourceMeetingId.present
+          ? data.sourceMeetingId.value
+          : this.sourceMeetingId,
       jiraIssueKey: data.jiraIssueKey.present
           ? data.jiraIssueKey.value
           : this.jiraIssueKey,
@@ -569,6 +615,7 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
           ..write('createdAtMs: $createdAtMs, ')
           ..write('updatedAtMs: $updatedAtMs, ')
           ..write('tags: $tags, ')
+          ..write('sourceMeetingId: $sourceMeetingId, ')
           ..write('jiraIssueKey: $jiraIssueKey, ')
           ..write('jiraSiteUrl: $jiraSiteUrl, ')
           ..write('jiraLastKnownStatus: $jiraLastKnownStatus, ')
@@ -588,6 +635,7 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
     createdAtMs,
     updatedAtMs,
     tags,
+    sourceMeetingId,
     jiraIssueKey,
     jiraSiteUrl,
     jiraLastKnownStatus,
@@ -606,6 +654,7 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
           other.createdAtMs == this.createdAtMs &&
           other.updatedAtMs == this.updatedAtMs &&
           other.tags == this.tags &&
+          other.sourceMeetingId == this.sourceMeetingId &&
           other.jiraIssueKey == this.jiraIssueKey &&
           other.jiraSiteUrl == this.jiraSiteUrl &&
           other.jiraLastKnownStatus == this.jiraLastKnownStatus &&
@@ -622,6 +671,7 @@ class TaskRowsCompanion extends UpdateCompanion<TaskRow> {
   final Value<int> createdAtMs;
   final Value<int> updatedAtMs;
   final Value<String> tags;
+  final Value<String?> sourceMeetingId;
   final Value<String?> jiraIssueKey;
   final Value<String?> jiraSiteUrl;
   final Value<String?> jiraLastKnownStatus;
@@ -637,6 +687,7 @@ class TaskRowsCompanion extends UpdateCompanion<TaskRow> {
     this.createdAtMs = const Value.absent(),
     this.updatedAtMs = const Value.absent(),
     this.tags = const Value.absent(),
+    this.sourceMeetingId = const Value.absent(),
     this.jiraIssueKey = const Value.absent(),
     this.jiraSiteUrl = const Value.absent(),
     this.jiraLastKnownStatus = const Value.absent(),
@@ -653,6 +704,7 @@ class TaskRowsCompanion extends UpdateCompanion<TaskRow> {
     required int createdAtMs,
     required int updatedAtMs,
     this.tags = const Value.absent(),
+    this.sourceMeetingId = const Value.absent(),
     this.jiraIssueKey = const Value.absent(),
     this.jiraSiteUrl = const Value.absent(),
     this.jiraLastKnownStatus = const Value.absent(),
@@ -674,6 +726,7 @@ class TaskRowsCompanion extends UpdateCompanion<TaskRow> {
     Expression<int>? createdAtMs,
     Expression<int>? updatedAtMs,
     Expression<String>? tags,
+    Expression<String>? sourceMeetingId,
     Expression<String>? jiraIssueKey,
     Expression<String>? jiraSiteUrl,
     Expression<String>? jiraLastKnownStatus,
@@ -690,6 +743,7 @@ class TaskRowsCompanion extends UpdateCompanion<TaskRow> {
       if (createdAtMs != null) 'created_at_ms': createdAtMs,
       if (updatedAtMs != null) 'updated_at_ms': updatedAtMs,
       if (tags != null) 'tags': tags,
+      if (sourceMeetingId != null) 'source_meeting_id': sourceMeetingId,
       if (jiraIssueKey != null) 'jira_issue_key': jiraIssueKey,
       if (jiraSiteUrl != null) 'jira_site_url': jiraSiteUrl,
       if (jiraLastKnownStatus != null)
@@ -710,6 +764,7 @@ class TaskRowsCompanion extends UpdateCompanion<TaskRow> {
     Value<int>? createdAtMs,
     Value<int>? updatedAtMs,
     Value<String>? tags,
+    Value<String?>? sourceMeetingId,
     Value<String?>? jiraIssueKey,
     Value<String?>? jiraSiteUrl,
     Value<String?>? jiraLastKnownStatus,
@@ -726,6 +781,7 @@ class TaskRowsCompanion extends UpdateCompanion<TaskRow> {
       createdAtMs: createdAtMs ?? this.createdAtMs,
       updatedAtMs: updatedAtMs ?? this.updatedAtMs,
       tags: tags ?? this.tags,
+      sourceMeetingId: sourceMeetingId ?? this.sourceMeetingId,
       jiraIssueKey: jiraIssueKey ?? this.jiraIssueKey,
       jiraSiteUrl: jiraSiteUrl ?? this.jiraSiteUrl,
       jiraLastKnownStatus: jiraLastKnownStatus ?? this.jiraLastKnownStatus,
@@ -764,6 +820,9 @@ class TaskRowsCompanion extends UpdateCompanion<TaskRow> {
     if (tags.present) {
       map['tags'] = Variable<String>(tags.value);
     }
+    if (sourceMeetingId.present) {
+      map['source_meeting_id'] = Variable<String>(sourceMeetingId.value);
+    }
     if (jiraIssueKey.present) {
       map['jira_issue_key'] = Variable<String>(jiraIssueKey.value);
     }
@@ -796,6 +855,7 @@ class TaskRowsCompanion extends UpdateCompanion<TaskRow> {
           ..write('createdAtMs: $createdAtMs, ')
           ..write('updatedAtMs: $updatedAtMs, ')
           ..write('tags: $tags, ')
+          ..write('sourceMeetingId: $sourceMeetingId, ')
           ..write('jiraIssueKey: $jiraIssueKey, ')
           ..write('jiraSiteUrl: $jiraSiteUrl, ')
           ..write('jiraLastKnownStatus: $jiraLastKnownStatus, ')
@@ -1493,16 +1553,894 @@ class OutboxRowsCompanion extends UpdateCompanion<OutboxRow> {
   }
 }
 
+class $MeetingRowsTable extends MeetingRows
+    with TableInfo<$MeetingRowsTable, MeetingRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MeetingRowsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+    'type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMsMeta = const VerificationMeta(
+    'createdAtMs',
+  );
+  @override
+  late final GeneratedColumn<int> createdAtMs = GeneratedColumn<int>(
+    'created_at_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _retentionMeta = const VerificationMeta(
+    'retention',
+  );
+  @override
+  late final GeneratedColumn<String> retention = GeneratedColumn<String>(
+    'retention',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _rawTranscriptMeta = const VerificationMeta(
+    'rawTranscript',
+  );
+  @override
+  late final GeneratedColumn<String> rawTranscript = GeneratedColumn<String>(
+    'raw_transcript',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _summaryMeta = const VerificationMeta(
+    'summary',
+  );
+  @override
+  late final GeneratedColumn<String> summary = GeneratedColumn<String>(
+    'summary',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    title,
+    type,
+    createdAtMs,
+    retention,
+    rawTranscript,
+    summary,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'meetings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MeetingRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+        _typeMeta,
+        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    if (data.containsKey('created_at_ms')) {
+      context.handle(
+        _createdAtMsMeta,
+        createdAtMs.isAcceptableOrUnknown(
+          data['created_at_ms']!,
+          _createdAtMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMsMeta);
+    }
+    if (data.containsKey('retention')) {
+      context.handle(
+        _retentionMeta,
+        retention.isAcceptableOrUnknown(data['retention']!, _retentionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_retentionMeta);
+    }
+    if (data.containsKey('raw_transcript')) {
+      context.handle(
+        _rawTranscriptMeta,
+        rawTranscript.isAcceptableOrUnknown(
+          data['raw_transcript']!,
+          _rawTranscriptMeta,
+        ),
+      );
+    }
+    if (data.containsKey('summary')) {
+      context.handle(
+        _summaryMeta,
+        summary.isAcceptableOrUnknown(data['summary']!, _summaryMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  MeetingRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MeetingRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type'],
+      )!,
+      createdAtMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at_ms'],
+      )!,
+      retention: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}retention'],
+      )!,
+      rawTranscript: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}raw_transcript'],
+      ),
+      summary: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}summary'],
+      ),
+    );
+  }
+
+  @override
+  $MeetingRowsTable createAlias(String alias) {
+    return $MeetingRowsTable(attachedDatabase, alias);
+  }
+}
+
+class MeetingRow extends DataClass implements Insertable<MeetingRow> {
+  final String id;
+  final String title;
+
+  /// `MeetingType.name` — the name, not the index, so reordering the enum
+  /// cannot silently reinterpret stored rows.
+  final String type;
+
+  /// Milliseconds since epoch, UTC (as in `tasks`).
+  final int createdAtMs;
+
+  /// `RetentionPolicy.name`. Kept on the row so a stored meeting still says
+  /// what the user chose, long after the choice was made.
+  final String retention;
+
+  /// Present only under `RetentionPolicy.persisted` (BR-03).
+  final String? rawTranscript;
+
+  /// The summary as JSON: `sections`, `actionItems`, `generatedAt`,
+  /// `engineId`.
+  ///
+  /// A blob rather than child tables because the shape is the template's, not
+  /// the schema's: section headings are user data and change whenever a
+  /// template is edited. Modelling them as columns would mean a migration
+  /// every time a user renames a heading.
+  final String? summary;
+  const MeetingRow({
+    required this.id,
+    required this.title,
+    required this.type,
+    required this.createdAtMs,
+    required this.retention,
+    this.rawTranscript,
+    this.summary,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['title'] = Variable<String>(title);
+    map['type'] = Variable<String>(type);
+    map['created_at_ms'] = Variable<int>(createdAtMs);
+    map['retention'] = Variable<String>(retention);
+    if (!nullToAbsent || rawTranscript != null) {
+      map['raw_transcript'] = Variable<String>(rawTranscript);
+    }
+    if (!nullToAbsent || summary != null) {
+      map['summary'] = Variable<String>(summary);
+    }
+    return map;
+  }
+
+  MeetingRowsCompanion toCompanion(bool nullToAbsent) {
+    return MeetingRowsCompanion(
+      id: Value(id),
+      title: Value(title),
+      type: Value(type),
+      createdAtMs: Value(createdAtMs),
+      retention: Value(retention),
+      rawTranscript: rawTranscript == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rawTranscript),
+      summary: summary == null && nullToAbsent
+          ? const Value.absent()
+          : Value(summary),
+    );
+  }
+
+  factory MeetingRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MeetingRow(
+      id: serializer.fromJson<String>(json['id']),
+      title: serializer.fromJson<String>(json['title']),
+      type: serializer.fromJson<String>(json['type']),
+      createdAtMs: serializer.fromJson<int>(json['createdAtMs']),
+      retention: serializer.fromJson<String>(json['retention']),
+      rawTranscript: serializer.fromJson<String?>(json['rawTranscript']),
+      summary: serializer.fromJson<String?>(json['summary']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'title': serializer.toJson<String>(title),
+      'type': serializer.toJson<String>(type),
+      'createdAtMs': serializer.toJson<int>(createdAtMs),
+      'retention': serializer.toJson<String>(retention),
+      'rawTranscript': serializer.toJson<String?>(rawTranscript),
+      'summary': serializer.toJson<String?>(summary),
+    };
+  }
+
+  MeetingRow copyWith({
+    String? id,
+    String? title,
+    String? type,
+    int? createdAtMs,
+    String? retention,
+    Value<String?> rawTranscript = const Value.absent(),
+    Value<String?> summary = const Value.absent(),
+  }) => MeetingRow(
+    id: id ?? this.id,
+    title: title ?? this.title,
+    type: type ?? this.type,
+    createdAtMs: createdAtMs ?? this.createdAtMs,
+    retention: retention ?? this.retention,
+    rawTranscript: rawTranscript.present
+        ? rawTranscript.value
+        : this.rawTranscript,
+    summary: summary.present ? summary.value : this.summary,
+  );
+  MeetingRow copyWithCompanion(MeetingRowsCompanion data) {
+    return MeetingRow(
+      id: data.id.present ? data.id.value : this.id,
+      title: data.title.present ? data.title.value : this.title,
+      type: data.type.present ? data.type.value : this.type,
+      createdAtMs: data.createdAtMs.present
+          ? data.createdAtMs.value
+          : this.createdAtMs,
+      retention: data.retention.present ? data.retention.value : this.retention,
+      rawTranscript: data.rawTranscript.present
+          ? data.rawTranscript.value
+          : this.rawTranscript,
+      summary: data.summary.present ? data.summary.value : this.summary,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MeetingRow(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('type: $type, ')
+          ..write('createdAtMs: $createdAtMs, ')
+          ..write('retention: $retention, ')
+          ..write('rawTranscript: $rawTranscript, ')
+          ..write('summary: $summary')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    title,
+    type,
+    createdAtMs,
+    retention,
+    rawTranscript,
+    summary,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MeetingRow &&
+          other.id == this.id &&
+          other.title == this.title &&
+          other.type == this.type &&
+          other.createdAtMs == this.createdAtMs &&
+          other.retention == this.retention &&
+          other.rawTranscript == this.rawTranscript &&
+          other.summary == this.summary);
+}
+
+class MeetingRowsCompanion extends UpdateCompanion<MeetingRow> {
+  final Value<String> id;
+  final Value<String> title;
+  final Value<String> type;
+  final Value<int> createdAtMs;
+  final Value<String> retention;
+  final Value<String?> rawTranscript;
+  final Value<String?> summary;
+  final Value<int> rowid;
+  const MeetingRowsCompanion({
+    this.id = const Value.absent(),
+    this.title = const Value.absent(),
+    this.type = const Value.absent(),
+    this.createdAtMs = const Value.absent(),
+    this.retention = const Value.absent(),
+    this.rawTranscript = const Value.absent(),
+    this.summary = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MeetingRowsCompanion.insert({
+    required String id,
+    required String title,
+    required String type,
+    required int createdAtMs,
+    required String retention,
+    this.rawTranscript = const Value.absent(),
+    this.summary = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       title = Value(title),
+       type = Value(type),
+       createdAtMs = Value(createdAtMs),
+       retention = Value(retention);
+  static Insertable<MeetingRow> custom({
+    Expression<String>? id,
+    Expression<String>? title,
+    Expression<String>? type,
+    Expression<int>? createdAtMs,
+    Expression<String>? retention,
+    Expression<String>? rawTranscript,
+    Expression<String>? summary,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (title != null) 'title': title,
+      if (type != null) 'type': type,
+      if (createdAtMs != null) 'created_at_ms': createdAtMs,
+      if (retention != null) 'retention': retention,
+      if (rawTranscript != null) 'raw_transcript': rawTranscript,
+      if (summary != null) 'summary': summary,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MeetingRowsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? title,
+    Value<String>? type,
+    Value<int>? createdAtMs,
+    Value<String>? retention,
+    Value<String?>? rawTranscript,
+    Value<String?>? summary,
+    Value<int>? rowid,
+  }) {
+    return MeetingRowsCompanion(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      type: type ?? this.type,
+      createdAtMs: createdAtMs ?? this.createdAtMs,
+      retention: retention ?? this.retention,
+      rawTranscript: rawTranscript ?? this.rawTranscript,
+      summary: summary ?? this.summary,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (createdAtMs.present) {
+      map['created_at_ms'] = Variable<int>(createdAtMs.value);
+    }
+    if (retention.present) {
+      map['retention'] = Variable<String>(retention.value);
+    }
+    if (rawTranscript.present) {
+      map['raw_transcript'] = Variable<String>(rawTranscript.value);
+    }
+    if (summary.present) {
+      map['summary'] = Variable<String>(summary.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MeetingRowsCompanion(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('type: $type, ')
+          ..write('createdAtMs: $createdAtMs, ')
+          ..write('retention: $retention, ')
+          ..write('rawTranscript: $rawTranscript, ')
+          ..write('summary: $summary, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $MeetingTemplateRowsTable extends MeetingTemplateRows
+    with TableInfo<$MeetingTemplateRowsTable, MeetingTemplateRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MeetingTemplateRowsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+    'type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _systemPromptMeta = const VerificationMeta(
+    'systemPrompt',
+  );
+  @override
+  late final GeneratedColumn<String> systemPrompt = GeneratedColumn<String>(
+    'system_prompt',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sectionsMeta = const VerificationMeta(
+    'sections',
+  );
+  @override
+  late final GeneratedColumn<String> sections = GeneratedColumn<String>(
+    'sections',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _extractActionItemsMeta =
+      const VerificationMeta('extractActionItems');
+  @override
+  late final GeneratedColumn<bool> extractActionItems = GeneratedColumn<bool>(
+    'extract_action_items',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("extract_action_items" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    type,
+    systemPrompt,
+    sections,
+    extractActionItems,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'meeting_templates';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MeetingTemplateRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+        _typeMeta,
+        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    if (data.containsKey('system_prompt')) {
+      context.handle(
+        _systemPromptMeta,
+        systemPrompt.isAcceptableOrUnknown(
+          data['system_prompt']!,
+          _systemPromptMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_systemPromptMeta);
+    }
+    if (data.containsKey('sections')) {
+      context.handle(
+        _sectionsMeta,
+        sections.isAcceptableOrUnknown(data['sections']!, _sectionsMeta),
+      );
+    }
+    if (data.containsKey('extract_action_items')) {
+      context.handle(
+        _extractActionItemsMeta,
+        extractActionItems.isAcceptableOrUnknown(
+          data['extract_action_items']!,
+          _extractActionItemsMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  MeetingTemplateRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MeetingTemplateRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type'],
+      )!,
+      systemPrompt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}system_prompt'],
+      )!,
+      sections: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sections'],
+      )!,
+      extractActionItems: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}extract_action_items'],
+      )!,
+    );
+  }
+
+  @override
+  $MeetingTemplateRowsTable createAlias(String alias) {
+    return $MeetingTemplateRowsTable(attachedDatabase, alias);
+  }
+}
+
+class MeetingTemplateRow extends DataClass
+    implements Insertable<MeetingTemplateRow> {
+  /// `builtin.retro` for a seeded template, a UUID for a user's own. Stable,
+  /// which is what lets the seed tell "already there" from "newly made".
+  final String id;
+
+  /// `MeetingType.name`.
+  final String type;
+  final String systemPrompt;
+
+  /// JSON array of `{"title": …, "guidance": …}`, order preserved — the order
+  /// the summary's sections come back in.
+  final String sections;
+  final bool extractActionItems;
+  const MeetingTemplateRow({
+    required this.id,
+    required this.type,
+    required this.systemPrompt,
+    required this.sections,
+    required this.extractActionItems,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['type'] = Variable<String>(type);
+    map['system_prompt'] = Variable<String>(systemPrompt);
+    map['sections'] = Variable<String>(sections);
+    map['extract_action_items'] = Variable<bool>(extractActionItems);
+    return map;
+  }
+
+  MeetingTemplateRowsCompanion toCompanion(bool nullToAbsent) {
+    return MeetingTemplateRowsCompanion(
+      id: Value(id),
+      type: Value(type),
+      systemPrompt: Value(systemPrompt),
+      sections: Value(sections),
+      extractActionItems: Value(extractActionItems),
+    );
+  }
+
+  factory MeetingTemplateRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MeetingTemplateRow(
+      id: serializer.fromJson<String>(json['id']),
+      type: serializer.fromJson<String>(json['type']),
+      systemPrompt: serializer.fromJson<String>(json['systemPrompt']),
+      sections: serializer.fromJson<String>(json['sections']),
+      extractActionItems: serializer.fromJson<bool>(json['extractActionItems']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'type': serializer.toJson<String>(type),
+      'systemPrompt': serializer.toJson<String>(systemPrompt),
+      'sections': serializer.toJson<String>(sections),
+      'extractActionItems': serializer.toJson<bool>(extractActionItems),
+    };
+  }
+
+  MeetingTemplateRow copyWith({
+    String? id,
+    String? type,
+    String? systemPrompt,
+    String? sections,
+    bool? extractActionItems,
+  }) => MeetingTemplateRow(
+    id: id ?? this.id,
+    type: type ?? this.type,
+    systemPrompt: systemPrompt ?? this.systemPrompt,
+    sections: sections ?? this.sections,
+    extractActionItems: extractActionItems ?? this.extractActionItems,
+  );
+  MeetingTemplateRow copyWithCompanion(MeetingTemplateRowsCompanion data) {
+    return MeetingTemplateRow(
+      id: data.id.present ? data.id.value : this.id,
+      type: data.type.present ? data.type.value : this.type,
+      systemPrompt: data.systemPrompt.present
+          ? data.systemPrompt.value
+          : this.systemPrompt,
+      sections: data.sections.present ? data.sections.value : this.sections,
+      extractActionItems: data.extractActionItems.present
+          ? data.extractActionItems.value
+          : this.extractActionItems,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MeetingTemplateRow(')
+          ..write('id: $id, ')
+          ..write('type: $type, ')
+          ..write('systemPrompt: $systemPrompt, ')
+          ..write('sections: $sections, ')
+          ..write('extractActionItems: $extractActionItems')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, type, systemPrompt, sections, extractActionItems);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MeetingTemplateRow &&
+          other.id == this.id &&
+          other.type == this.type &&
+          other.systemPrompt == this.systemPrompt &&
+          other.sections == this.sections &&
+          other.extractActionItems == this.extractActionItems);
+}
+
+class MeetingTemplateRowsCompanion extends UpdateCompanion<MeetingTemplateRow> {
+  final Value<String> id;
+  final Value<String> type;
+  final Value<String> systemPrompt;
+  final Value<String> sections;
+  final Value<bool> extractActionItems;
+  final Value<int> rowid;
+  const MeetingTemplateRowsCompanion({
+    this.id = const Value.absent(),
+    this.type = const Value.absent(),
+    this.systemPrompt = const Value.absent(),
+    this.sections = const Value.absent(),
+    this.extractActionItems = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MeetingTemplateRowsCompanion.insert({
+    required String id,
+    required String type,
+    required String systemPrompt,
+    this.sections = const Value.absent(),
+    this.extractActionItems = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       type = Value(type),
+       systemPrompt = Value(systemPrompt);
+  static Insertable<MeetingTemplateRow> custom({
+    Expression<String>? id,
+    Expression<String>? type,
+    Expression<String>? systemPrompt,
+    Expression<String>? sections,
+    Expression<bool>? extractActionItems,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (type != null) 'type': type,
+      if (systemPrompt != null) 'system_prompt': systemPrompt,
+      if (sections != null) 'sections': sections,
+      if (extractActionItems != null)
+        'extract_action_items': extractActionItems,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MeetingTemplateRowsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? type,
+    Value<String>? systemPrompt,
+    Value<String>? sections,
+    Value<bool>? extractActionItems,
+    Value<int>? rowid,
+  }) {
+    return MeetingTemplateRowsCompanion(
+      id: id ?? this.id,
+      type: type ?? this.type,
+      systemPrompt: systemPrompt ?? this.systemPrompt,
+      sections: sections ?? this.sections,
+      extractActionItems: extractActionItems ?? this.extractActionItems,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (systemPrompt.present) {
+      map['system_prompt'] = Variable<String>(systemPrompt.value);
+    }
+    if (sections.present) {
+      map['sections'] = Variable<String>(sections.value);
+    }
+    if (extractActionItems.present) {
+      map['extract_action_items'] = Variable<bool>(extractActionItems.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MeetingTemplateRowsCompanion(')
+          ..write('id: $id, ')
+          ..write('type: $type, ')
+          ..write('systemPrompt: $systemPrompt, ')
+          ..write('sections: $sections, ')
+          ..write('extractActionItems: $extractActionItems, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$NorteDatabase extends GeneratedDatabase {
   _$NorteDatabase(QueryExecutor e) : super(e);
   $NorteDatabaseManager get managers => $NorteDatabaseManager(this);
   late final $TaskRowsTable taskRows = $TaskRowsTable(this);
   late final $OutboxRowsTable outboxRows = $OutboxRowsTable(this);
+  late final $MeetingRowsTable meetingRows = $MeetingRowsTable(this);
+  late final $MeetingTemplateRowsTable meetingTemplateRows =
+      $MeetingTemplateRowsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [taskRows, outboxRows];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+    taskRows,
+    outboxRows,
+    meetingRows,
+    meetingTemplateRows,
+  ];
 }
 
 typedef $$TaskRowsTableCreateCompanionBuilder =
@@ -1516,6 +2454,7 @@ typedef $$TaskRowsTableCreateCompanionBuilder =
       required int createdAtMs,
       required int updatedAtMs,
       Value<String> tags,
+      Value<String?> sourceMeetingId,
       Value<String?> jiraIssueKey,
       Value<String?> jiraSiteUrl,
       Value<String?> jiraLastKnownStatus,
@@ -1533,6 +2472,7 @@ typedef $$TaskRowsTableUpdateCompanionBuilder =
       Value<int> createdAtMs,
       Value<int> updatedAtMs,
       Value<String> tags,
+      Value<String?> sourceMeetingId,
       Value<String?> jiraIssueKey,
       Value<String?> jiraSiteUrl,
       Value<String?> jiraLastKnownStatus,
@@ -1591,6 +2531,11 @@ class $$TaskRowsTableFilterComposer
 
   ColumnFilters<String> get tags => $composableBuilder(
     column: $table.tags,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceMeetingId => $composableBuilder(
+    column: $table.sourceMeetingId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1669,6 +2614,11 @@ class $$TaskRowsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get sourceMeetingId => $composableBuilder(
+    column: $table.sourceMeetingId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get jiraIssueKey => $composableBuilder(
     column: $table.jiraIssueKey,
     builder: (column) => ColumnOrderings(column),
@@ -1732,6 +2682,11 @@ class $$TaskRowsTableAnnotationComposer
   GeneratedColumn<String> get tags =>
       $composableBuilder(column: $table.tags, builder: (column) => column);
 
+  GeneratedColumn<String> get sourceMeetingId => $composableBuilder(
+    column: $table.sourceMeetingId,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get jiraIssueKey => $composableBuilder(
     column: $table.jiraIssueKey,
     builder: (column) => column,
@@ -1790,6 +2745,7 @@ class $$TaskRowsTableTableManager
                 Value<int> createdAtMs = const Value.absent(),
                 Value<int> updatedAtMs = const Value.absent(),
                 Value<String> tags = const Value.absent(),
+                Value<String?> sourceMeetingId = const Value.absent(),
                 Value<String?> jiraIssueKey = const Value.absent(),
                 Value<String?> jiraSiteUrl = const Value.absent(),
                 Value<String?> jiraLastKnownStatus = const Value.absent(),
@@ -1805,6 +2761,7 @@ class $$TaskRowsTableTableManager
                 createdAtMs: createdAtMs,
                 updatedAtMs: updatedAtMs,
                 tags: tags,
+                sourceMeetingId: sourceMeetingId,
                 jiraIssueKey: jiraIssueKey,
                 jiraSiteUrl: jiraSiteUrl,
                 jiraLastKnownStatus: jiraLastKnownStatus,
@@ -1822,6 +2779,7 @@ class $$TaskRowsTableTableManager
                 required int createdAtMs,
                 required int updatedAtMs,
                 Value<String> tags = const Value.absent(),
+                Value<String?> sourceMeetingId = const Value.absent(),
                 Value<String?> jiraIssueKey = const Value.absent(),
                 Value<String?> jiraSiteUrl = const Value.absent(),
                 Value<String?> jiraLastKnownStatus = const Value.absent(),
@@ -1837,6 +2795,7 @@ class $$TaskRowsTableTableManager
                 createdAtMs: createdAtMs,
                 updatedAtMs: updatedAtMs,
                 tags: tags,
+                sourceMeetingId: sourceMeetingId,
                 jiraIssueKey: jiraIssueKey,
                 jiraSiteUrl: jiraSiteUrl,
                 jiraLastKnownStatus: jiraLastKnownStatus,
@@ -2176,6 +3135,468 @@ typedef $$OutboxRowsTableProcessedTableManager =
       OutboxRow,
       PrefetchHooks Function()
     >;
+typedef $$MeetingRowsTableCreateCompanionBuilder =
+    MeetingRowsCompanion Function({
+      required String id,
+      required String title,
+      required String type,
+      required int createdAtMs,
+      required String retention,
+      Value<String?> rawTranscript,
+      Value<String?> summary,
+      Value<int> rowid,
+    });
+typedef $$MeetingRowsTableUpdateCompanionBuilder =
+    MeetingRowsCompanion Function({
+      Value<String> id,
+      Value<String> title,
+      Value<String> type,
+      Value<int> createdAtMs,
+      Value<String> retention,
+      Value<String?> rawTranscript,
+      Value<String?> summary,
+      Value<int> rowid,
+    });
+
+class $$MeetingRowsTableFilterComposer
+    extends Composer<_$NorteDatabase, $MeetingRowsTable> {
+  $$MeetingRowsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get retention => $composableBuilder(
+    column: $table.retention,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rawTranscript => $composableBuilder(
+    column: $table.rawTranscript,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get summary => $composableBuilder(
+    column: $table.summary,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MeetingRowsTableOrderingComposer
+    extends Composer<_$NorteDatabase, $MeetingRowsTable> {
+  $$MeetingRowsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get retention => $composableBuilder(
+    column: $table.retention,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rawTranscript => $composableBuilder(
+    column: $table.rawTranscript,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get summary => $composableBuilder(
+    column: $table.summary,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MeetingRowsTableAnnotationComposer
+    extends Composer<_$NorteDatabase, $MeetingRowsTable> {
+  $$MeetingRowsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get retention =>
+      $composableBuilder(column: $table.retention, builder: (column) => column);
+
+  GeneratedColumn<String> get rawTranscript => $composableBuilder(
+    column: $table.rawTranscript,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get summary =>
+      $composableBuilder(column: $table.summary, builder: (column) => column);
+}
+
+class $$MeetingRowsTableTableManager
+    extends
+        RootTableManager<
+          _$NorteDatabase,
+          $MeetingRowsTable,
+          MeetingRow,
+          $$MeetingRowsTableFilterComposer,
+          $$MeetingRowsTableOrderingComposer,
+          $$MeetingRowsTableAnnotationComposer,
+          $$MeetingRowsTableCreateCompanionBuilder,
+          $$MeetingRowsTableUpdateCompanionBuilder,
+          (
+            MeetingRow,
+            BaseReferences<_$NorteDatabase, $MeetingRowsTable, MeetingRow>,
+          ),
+          MeetingRow,
+          PrefetchHooks Function()
+        > {
+  $$MeetingRowsTableTableManager(_$NorteDatabase db, $MeetingRowsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MeetingRowsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MeetingRowsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MeetingRowsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> type = const Value.absent(),
+                Value<int> createdAtMs = const Value.absent(),
+                Value<String> retention = const Value.absent(),
+                Value<String?> rawTranscript = const Value.absent(),
+                Value<String?> summary = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MeetingRowsCompanion(
+                id: id,
+                title: title,
+                type: type,
+                createdAtMs: createdAtMs,
+                retention: retention,
+                rawTranscript: rawTranscript,
+                summary: summary,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String title,
+                required String type,
+                required int createdAtMs,
+                required String retention,
+                Value<String?> rawTranscript = const Value.absent(),
+                Value<String?> summary = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MeetingRowsCompanion.insert(
+                id: id,
+                title: title,
+                type: type,
+                createdAtMs: createdAtMs,
+                retention: retention,
+                rawTranscript: rawTranscript,
+                summary: summary,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MeetingRowsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$NorteDatabase,
+      $MeetingRowsTable,
+      MeetingRow,
+      $$MeetingRowsTableFilterComposer,
+      $$MeetingRowsTableOrderingComposer,
+      $$MeetingRowsTableAnnotationComposer,
+      $$MeetingRowsTableCreateCompanionBuilder,
+      $$MeetingRowsTableUpdateCompanionBuilder,
+      (
+        MeetingRow,
+        BaseReferences<_$NorteDatabase, $MeetingRowsTable, MeetingRow>,
+      ),
+      MeetingRow,
+      PrefetchHooks Function()
+    >;
+typedef $$MeetingTemplateRowsTableCreateCompanionBuilder =
+    MeetingTemplateRowsCompanion Function({
+      required String id,
+      required String type,
+      required String systemPrompt,
+      Value<String> sections,
+      Value<bool> extractActionItems,
+      Value<int> rowid,
+    });
+typedef $$MeetingTemplateRowsTableUpdateCompanionBuilder =
+    MeetingTemplateRowsCompanion Function({
+      Value<String> id,
+      Value<String> type,
+      Value<String> systemPrompt,
+      Value<String> sections,
+      Value<bool> extractActionItems,
+      Value<int> rowid,
+    });
+
+class $$MeetingTemplateRowsTableFilterComposer
+    extends Composer<_$NorteDatabase, $MeetingTemplateRowsTable> {
+  $$MeetingTemplateRowsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get systemPrompt => $composableBuilder(
+    column: $table.systemPrompt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sections => $composableBuilder(
+    column: $table.sections,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get extractActionItems => $composableBuilder(
+    column: $table.extractActionItems,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MeetingTemplateRowsTableOrderingComposer
+    extends Composer<_$NorteDatabase, $MeetingTemplateRowsTable> {
+  $$MeetingTemplateRowsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get systemPrompt => $composableBuilder(
+    column: $table.systemPrompt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sections => $composableBuilder(
+    column: $table.sections,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get extractActionItems => $composableBuilder(
+    column: $table.extractActionItems,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MeetingTemplateRowsTableAnnotationComposer
+    extends Composer<_$NorteDatabase, $MeetingTemplateRowsTable> {
+  $$MeetingTemplateRowsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<String> get systemPrompt => $composableBuilder(
+    column: $table.systemPrompt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sections =>
+      $composableBuilder(column: $table.sections, builder: (column) => column);
+
+  GeneratedColumn<bool> get extractActionItems => $composableBuilder(
+    column: $table.extractActionItems,
+    builder: (column) => column,
+  );
+}
+
+class $$MeetingTemplateRowsTableTableManager
+    extends
+        RootTableManager<
+          _$NorteDatabase,
+          $MeetingTemplateRowsTable,
+          MeetingTemplateRow,
+          $$MeetingTemplateRowsTableFilterComposer,
+          $$MeetingTemplateRowsTableOrderingComposer,
+          $$MeetingTemplateRowsTableAnnotationComposer,
+          $$MeetingTemplateRowsTableCreateCompanionBuilder,
+          $$MeetingTemplateRowsTableUpdateCompanionBuilder,
+          (
+            MeetingTemplateRow,
+            BaseReferences<
+              _$NorteDatabase,
+              $MeetingTemplateRowsTable,
+              MeetingTemplateRow
+            >,
+          ),
+          MeetingTemplateRow,
+          PrefetchHooks Function()
+        > {
+  $$MeetingTemplateRowsTableTableManager(
+    _$NorteDatabase db,
+    $MeetingTemplateRowsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MeetingTemplateRowsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MeetingTemplateRowsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$MeetingTemplateRowsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> type = const Value.absent(),
+                Value<String> systemPrompt = const Value.absent(),
+                Value<String> sections = const Value.absent(),
+                Value<bool> extractActionItems = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MeetingTemplateRowsCompanion(
+                id: id,
+                type: type,
+                systemPrompt: systemPrompt,
+                sections: sections,
+                extractActionItems: extractActionItems,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String type,
+                required String systemPrompt,
+                Value<String> sections = const Value.absent(),
+                Value<bool> extractActionItems = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MeetingTemplateRowsCompanion.insert(
+                id: id,
+                type: type,
+                systemPrompt: systemPrompt,
+                sections: sections,
+                extractActionItems: extractActionItems,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MeetingTemplateRowsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$NorteDatabase,
+      $MeetingTemplateRowsTable,
+      MeetingTemplateRow,
+      $$MeetingTemplateRowsTableFilterComposer,
+      $$MeetingTemplateRowsTableOrderingComposer,
+      $$MeetingTemplateRowsTableAnnotationComposer,
+      $$MeetingTemplateRowsTableCreateCompanionBuilder,
+      $$MeetingTemplateRowsTableUpdateCompanionBuilder,
+      (
+        MeetingTemplateRow,
+        BaseReferences<
+          _$NorteDatabase,
+          $MeetingTemplateRowsTable,
+          MeetingTemplateRow
+        >,
+      ),
+      MeetingTemplateRow,
+      PrefetchHooks Function()
+    >;
 
 class $NorteDatabaseManager {
   final _$NorteDatabase _db;
@@ -2184,4 +3605,8 @@ class $NorteDatabaseManager {
       $$TaskRowsTableTableManager(_db, _db.taskRows);
   $$OutboxRowsTableTableManager get outboxRows =>
       $$OutboxRowsTableTableManager(_db, _db.outboxRows);
+  $$MeetingRowsTableTableManager get meetingRows =>
+      $$MeetingRowsTableTableManager(_db, _db.meetingRows);
+  $$MeetingTemplateRowsTableTableManager get meetingTemplateRows =>
+      $$MeetingTemplateRowsTableTableManager(_db, _db.meetingTemplateRows);
 }

@@ -110,6 +110,7 @@ class DriftTaskRepository implements TaskRepository {
               lastSyncedAt: _dateFrom(row.jiraLastSyncedAtMs),
             ),
       tags: _tagsFrom(row.tags),
+      sourceMeetingId: row.sourceMeetingId,
       createdAt: _dateFrom(row.createdAtMs)!,
       updatedAt: _dateFrom(row.updatedAtMs)!,
     );
@@ -127,6 +128,7 @@ class DriftTaskRepository implements TaskRepository {
       createdAtMs: _msFrom(task.createdAt)!,
       updatedAtMs: _msFrom(task.updatedAt)!,
       tags: Value<String>(jsonEncode(task.tags)),
+      sourceMeetingId: Value<String?>(task.sourceMeetingId),
       jiraIssueKey: Value<String?>(link?.issueKey),
       jiraSiteUrl: Value<String?>(link?.siteUrl),
       jiraLastKnownStatus: Value<String?>(link?.lastKnownStatus),
