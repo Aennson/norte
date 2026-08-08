@@ -420,7 +420,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get summaryEmptySection => 'Non trattato in questa riunione.';
 
   @override
-  String get summaryActionItems => 'Azioni';
+  String get summaryActionItems => 'Follow-up';
 
   @override
   String get summaryConvert => 'Crea attività';

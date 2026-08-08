@@ -417,7 +417,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get summaryEmptySection => 'Não tratado nesta reunião.';
 
   @override
-  String get summaryActionItems => 'Ações';
+  String get summaryActionItems => 'Encaminhamentos';
 
   @override
   String get summaryConvert => 'Criar tarefa';

@@ -12,6 +12,7 @@ class NorteScreen extends StatelessWidget {
     required this.child,
     super.key,
     this.action,
+    this.onBack,
   });
 
   /// Localized screen title (BR-11).
@@ -21,7 +22,18 @@ class NorteScreen extends StatelessWidget {
   /// `null` keeps the header exactly as Sprint 00 shipped it.
   final Widget? action;
 
+  /// Leaves this screen. `null` — the case for the four tab destinations —
+  /// renders no control at all.
+  ///
+  /// Added in Sprint 03, which is the first sprint to *push* a screen rather
+  /// than switch tabs. Without it the meeting composer was a dead end on
+  /// desktop: no system back gesture, no chrome, no way out.
+  final VoidCallback? onBack;
+
   final Widget child;
+
+  /// Key of the back control, for the tests that drive it.
+  static const Key backButtonKey = Key('norte-screen.back');
 
   @override
   Widget build(BuildContext context) {
@@ -47,6 +59,18 @@ class NorteScreen extends StatelessWidget {
                 children: <Widget>[
                   Row(
                     children: <Widget>[
+                      if (onBack != null) ...<Widget>[
+                        IconButton(
+                          key: backButtonKey,
+                          icon: const Icon(Icons.arrow_back),
+                          color: colors.textSecondary,
+                          onPressed: onBack,
+                          tooltip: MaterialLocalizations.of(
+                            context,
+                          ).backButtonTooltip,
+                        ),
+                        const SizedBox(width: NorteSpacing.sm),
+                      ],
                       Expanded(
                         child: Text(
                           title,

@@ -568,9 +568,9 @@
   "@summaryEmptySection": {
     "description": "Body of a section the meeting did not cover."
   },
-  "summaryActionItems": "Action items",
+  "summaryActionItems": "Follow-ups",
   "@summaryActionItems": {
-    "description": "Heading of the extracted follow-ups."
+    "description": "Heading of the convertible follow-up list. Deliberately not \"Action items\": a template may itself have a section by that name, and two identical headings on one screen read as a rendering bug."
   },
   "summaryConvert": "Make a task",
   "@summaryConvert": {

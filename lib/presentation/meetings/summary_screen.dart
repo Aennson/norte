@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../domain/entities/meeting.dart';
@@ -42,6 +43,7 @@ class SummaryScreen extends ConsumerWidget {
     if (meeting == null || meeting.summary == null) {
       return NorteScreen(
         title: l10n.summaryTitle,
+        onBack: () => context.pop(),
         child: EmptyState(
           icon: LucideIcons.fileText,
           message: l10n.summaryGone,
@@ -52,6 +54,7 @@ class SummaryScreen extends ConsumerWidget {
     final MeetingSummary summary = meeting.summary!;
     return NorteScreen(
       title: meeting.title,
+      onBack: () => context.pop(),
       child: ListView(
         padding: EdgeInsets.zero,
         children: <Widget>[

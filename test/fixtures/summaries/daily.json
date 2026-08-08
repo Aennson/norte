@@ -1,0 +1,8 @@
+{
+  "sections": [
+    {"title": "Done since yesterday", "body": "Ana finished the credential store. Bruno reviewed it."},
+    {"title": "Planned for today", "body": "Ana starts the refresh job. Bruno picks up the settings form."},
+    {"title": "Blockers", "body": ""}
+  ],
+  "actionItems": []
+}

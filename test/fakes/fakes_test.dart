@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:norte/domain/failures/failure.dart';
 import 'package:norte/domain/ports/clock.dart';
+import 'package:norte/domain/entities/meeting.dart';
 import 'package:norte/domain/ports/notification_scheduler.dart';
 
+import '../support/meeting_fixtures.dart';
 import 'fakes.dart';
 
 /// Sanity suite for the six test doubles of `docs/testing-strategy.md` §3.
@@ -106,59 +108,86 @@ void main() {
     });
   });
 
+  // Promoted in Sprint 03: `FakeAiEngine` now implements the real `AiEngine`
+  // and returns a parsed `MeetingSummary`. The cases below are the sprint-00
+  // ones, unchanged in intent — fixtures in, calls recorded, unknown input
+  // loud, failures and hangs injectable — restated against that port.
   group('FakeAiEngine', () {
+    const String answer =
+        '{"sections":[{"title":"What went well","body":"Shipped."}],'
+        '"actionItems":[]}';
+
     test('answers from fixtures and records every call', () async {
       final FakeAiEngine engine = FakeAiEngine(
-        summaries: <String, String>{'transcript': 'summary'},
+        summaries: <String, String>{'transcript': answer},
         intents: <String, String>{'cria tarefa': '{"intent":"createTask"}'},
       );
 
-      expect(await engine.summarize('transcript', 'prompt'), 'summary');
+      final MeetingSummary summary = await engine.summarize(
+        'transcript',
+        retroTemplate,
+      );
+      expect(summary.sections['What went well'], 'Shipped.');
       expect(
         await engine.parseIntent('cria tarefa'),
         '{"intent":"createTask"}',
       );
 
-      expect(engine.calls, hasLength(2));
-      expect(engine.inputsFor('summarize'), <String>['transcript']);
-      expect(engine.inputsFor('parseIntent'), <String>['cria tarefa']);
+      expect(engine.calls, hasLength(1));
+      expect(engine.transcripts, <String>['transcript']);
+      // The template travels with the call, which is what S03-UT-03 asserts
+      // the prompt is built from.
+      expect(engine.calls.single.template.id, retroTemplate.id);
     });
 
     test('an unknown input is a loud test bug, not a silent empty answer', () {
       final FakeAiEngine engine = FakeAiEngine();
       expect(
-        () => engine.summarize('unseen', 'prompt'),
+        () => engine.summarize('unseen', retroTemplate),
         throwsA(isA<StateError>()),
       );
     });
 
     test('failWith surfaces an engine failure', () async {
       final FakeAiEngine engine = FakeAiEngine(
-        summaries: <String, String>{'t': 's'},
+        summaries: <String, String>{'t': answer},
       )..failWith = const EngineFailure();
 
       await expectLater(
-        engine.summarize('t', 'p'),
+        engine.summarize('t', retroTemplate),
         throwsA(isA<EngineFailure>()),
       );
 
       engine.reset();
-      expect(await engine.summarize('t', 'p'), 's');
+      expect((await engine.summarize('t', retroTemplate)).sections, isNotEmpty);
     });
 
     test(
       'hang never completes, so timeout handling can be exercised',
       () async {
         final FakeAiEngine engine = FakeAiEngine(
-          summaries: <String, String>{'t': 's'},
+          summaries: <String, String>{'t': answer},
         )..hang = true;
 
         await expectLater(
-          engine.summarize('t', 'p').timeout(const Duration(milliseconds: 20)),
+          engine
+              .summarize('t', retroTemplate)
+              .timeout(const Duration(milliseconds: 20)),
           throwsA(isA<TimeoutException>()),
         );
       },
     );
+
+    test('it parses with the production codec, not a lenient stand-in', () {
+      // The property that makes S03-CT-01 a contract test rather than two
+      // suites agreeing with themselves.
+      final FakeAiEngine engine = FakeAiEngine()..alwaysAnswer('not json');
+
+      expect(
+        () => engine.summarize('t', retroTemplate),
+        throwsA(isA<AiResponseFailure>()),
+      );
+    });
 
     test('capabilities.isLocal defaults to a remote engine', () {
       expect(FakeAiEngine().capabilities.isLocal, isFalse);

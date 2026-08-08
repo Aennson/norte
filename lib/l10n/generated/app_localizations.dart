@@ -832,10 +832,10 @@ abstract class AppLocalizations {
   /// **'Not covered in this meeting.'**
   String get summaryEmptySection;
 
-  /// Heading of the extracted follow-ups.
+  /// Heading of the convertible follow-up list. Deliberately not "Action items": a template may itself have a section by that name, and two identical headings on one screen read as a rendering bug.
   ///
   /// In en, this message translates to:
-  /// **'Action items'**
+  /// **'Follow-ups'**
   String get summaryActionItems;
 
   /// Converts one action item into a task.

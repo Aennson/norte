@@ -416,7 +416,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get summaryEmptySection => 'Not covered in this meeting.';
 
   @override
-  String get summaryActionItems => 'Action items';
+  String get summaryActionItems => 'Follow-ups';
 
   @override
   String get summaryConvert => 'Make a task';

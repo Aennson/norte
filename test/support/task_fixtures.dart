@@ -31,6 +31,17 @@ class FakeTaskRepository implements TaskRepository {
   final List<String> savedIds = <String>[];
   final List<String> deletedIds = <String>[];
 
+  /// The tasks handed to [save], in order and exactly as they arrived.
+  ///
+  /// Added in Sprint 03: converting an action item asserts on the *shape* of
+  /// the task produced — its title, tag and back-reference — not merely that
+  /// something with some id was written.
+  final List<Task> saved = <Task>[];
+
+  /// When set, every mutation throws it. Lets a use case be shown refusing to
+  /// swallow a storage failure.
+  Failure? failWith;
+
   /// Mirrors the real adapter: the current state arrives on subscription, then
   /// one emission per mutation.
   @override
@@ -60,7 +71,10 @@ class FakeTaskRepository implements TaskRepository {
 
   @override
   Future<void> save(Task task) async {
+    final Failure? failure = failWith;
+    if (failure != null) throw failure;
     savedIds.add(task.id);
+    saved.add(task);
     final int index = _tasks.indexWhere((Task stored) => stored.id == task.id);
     if (index == -1) {
       _tasks.add(task);

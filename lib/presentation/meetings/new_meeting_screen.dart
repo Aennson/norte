@@ -90,6 +90,7 @@ class _NewMeetingScreenState extends ConsumerState<NewMeetingScreen> {
       },
       child: NorteScreen(
         title: l10n.newMeetingTitle,
+        onBack: () => context.pop(),
         child: templates.when(
           loading: () =>
               LoadingSkeletonList(semanticLabel: l10n.meetingsLoadingLabel),
