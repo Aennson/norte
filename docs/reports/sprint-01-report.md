@@ -110,10 +110,13 @@ application-support directory:
   intact; the completed one still shows the `done` badge and struck-through
   title.
 
-> ⏳ **Pending the Developer's pass.** This is the one Definition-of-Done box
-> the executing AI cannot check for itself — it needs a human at the window.
-> The box in §7 stays unticked, and the sprint stays open, until the result is
-> recorded here.
+> ✅ **Executed by the Developer — passed.** Confirmed on 2026-08-07 against the
+> built Windows app: the three tasks reappeared after the relaunch with status,
+> priority, due date and tags intact, and the completed one still rendered its
+> `done` badge and struck-through title. This is the one Definition-of-Done box
+> the executing AI cannot check for itself; it is ticked in §7 on the
+> Developer's confirmation, which is the evidence of record for a manual pass
+> under `docs/testing-strategy.md` §7.
 
 ## 6. Deviations
 
@@ -132,8 +135,12 @@ the `JiraLink` entity exists and round-trips, but no code reads or writes Jira.
 
 ## 7. Definition of Done
 
-- [ ] Gates G1–G6 green; domain+application coverage ≥ 90%
-- [ ] All S01-* tests passing; goldens committed
-- [ ] Tasks persist across app restarts (§5)
-- [ ] Report with evidence
-- [ ] GitHub Actions 100% green on the sprint PR
+- [x] Gates G1–G6 green; domain+application coverage ≥ 90% — §2
+- [x] All S01-* tests passing; goldens committed — §3, 125 tests, 0 skipped
+- [x] Tasks persist across app restarts — §5, automated round-trip plus the
+      Developer's manual pass
+- [x] Report with evidence — this document
+- [x] GitHub Actions 100% green on the sprint PR — PR #3, all six checks
+      `SUCCESS`, merged into `master` on 2026-08-08
+
+**Sprint 01 closed.**
