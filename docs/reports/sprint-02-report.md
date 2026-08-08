@@ -147,4 +147,10 @@ authentication and field validation being tested, not ours.
 - [x] All S02-* tests passing; the CT contract runs for both adapters in CI — §3
 - [ ] Manual test against a real Jira — §6, awaiting the Developer
 - [x] Report `docs/reports/sprint-02-report.md` — this document
-- [ ] GitHub Actions 100% green on the sprint PR
+- [x] GitHub Actions 100% green on the sprint PR — PR #4, all six checks
+      `pass` (analyze/format/imports/secrets, tests + coverage + goldens, and
+      the E2E job across all four suites)
+
+**One box remains.** The sprint is not closed until §6 is executed and
+recorded; the PR is mergeable on CI alone, but `docs/project-rules.md` §1.3 is
+explicit that a pending item means the sprint is not complete.
