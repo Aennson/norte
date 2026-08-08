@@ -40,6 +40,14 @@ class FakeRealtimeTranscription implements RealtimeTranscription {
   /// Events emitted, in order, once [start] is called.
   final List<TranscriptEvent> script;
 
+  /// When `false`, [start] emits nothing and the test drives with [emit].
+  ///
+  /// The contract suite and the E2E flows need speech to arrive *while* the
+  /// app is on screen, not before the first frame is built. Replaying a whole
+  /// utterance in one microtask is convenient for a unit test and useless for
+  /// a widget one.
+  bool autoplay = true;
+
   /// Emits [NetworkFailure] after this many events, reproducing a drop.
   /// `null` plays the whole script.
   int? disconnectAfter;
@@ -72,6 +80,11 @@ class FakeRealtimeTranscription implements RealtimeTranscription {
       receivedChunks.add,
     );
 
+    if (!autoplay) {
+      unawaited(audio.asFuture<void>().then((_) {}, onError: (_) {}));
+      return controller.stream;
+    }
+
     scheduleMicrotask(() async {
       var emitted = 0;
       for (final TranscriptEvent event in script) {
@@ -90,6 +103,22 @@ class FakeRealtimeTranscription implements RealtimeTranscription {
 
     return controller.stream;
   }
+
+  /// Pushes one event into the open session. Ignored when none is open, which
+  /// is what makes "no event arrives after `stop`" assertable.
+  void emit(TranscriptEvent event) {
+    final StreamController<TranscriptEvent>? session = _session;
+    if (session == null || session.isClosed) return;
+    session.add(event);
+  }
+
+  /// Pushes a `partial`.
+  void emitPartial(String text) =>
+      emit(TranscriptEvent(text: text, isCommitted: false));
+
+  /// Pushes a `committed` — VAD closed the segment.
+  void emitCommitted(String text) =>
+      emit(TranscriptEvent(text: text, isCommitted: true));
 
   @override
   Future<void> stop() async {
