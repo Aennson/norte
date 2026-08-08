@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/usecases/create_reminder.dart';
@@ -19,6 +19,7 @@ import '../../domain/ports/voice_settings_store.dart';
 import '../jira/jira_providers.dart';
 import '../meetings/meeting_providers.dart';
 import '../tasks/task_providers.dart';
+import 'voice_latency_log.dart';
 import 'widgets/voice_overlay.dart';
 
 /// The microphone, as a PCM stream. Overridden in the composition root.
@@ -43,6 +44,13 @@ final Provider<ReminderRepository> reminderRepositoryProvider =
     Provider<ReminderRepository>(
       (Ref ref) => throw UnimplementedError('wired in main.dart'),
     );
+
+/// The rolling latency window the sprint's p95 is read from.
+///
+/// A provider so the manual pass can read it, and so a test can assert that
+/// the pipeline measures at all rather than merely claiming to.
+final Provider<VoiceLatencyLog> voiceLatencyLogProvider =
+    Provider<VoiceLatencyLog>((Ref ref) => VoiceLatencyLog(sink: debugPrint));
 
 /// The user's voice preferences, for the Settings screen to render.
 ///
@@ -358,9 +366,12 @@ class VoiceSession extends Notifier<VoiceSessionState> {
     final DateTime? committedAt = _committedAt;
     if (committedAt == null) return;
     _committedAt = null;
-    state = state.copyWith(
-      latency: ref.read(clockProvider).now().difference(committedAt),
-    );
+    final Duration latency = ref
+        .read(clockProvider)
+        .now()
+        .difference(committedAt);
+    ref.read(voiceLatencyLogProvider).record(latency);
+    state = state.copyWith(latency: latency);
   }
 
   /// The issue keys the user has actually linked, as grounding for the parser.
