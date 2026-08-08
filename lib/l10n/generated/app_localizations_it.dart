@@ -638,4 +638,113 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get settingsWhisperConfigured => 'Chiave configurata';
+
+  @override
+  String get voiceConnecting => 'Connessione…';
+
+  @override
+  String get voiceListening => 'In ascolto…';
+
+  @override
+  String get voiceUnderstanding => 'Sto capendo…';
+
+  @override
+  String get voiceStop => 'Ferma';
+
+  @override
+  String get voiceNotUnderstood =>
+      'Non ho colto nessun comando. Prova a dirlo in un altro modo.';
+
+  @override
+  String get voiceConfirmTitle => 'Conferma questa azione';
+
+  @override
+  String get voiceReasonJiraWrite =>
+      'Le scritture su Jira chiedono sempre conferma. Puoi cambiarlo in Impostazioni.';
+
+  @override
+  String get voiceReasonLowConfidence =>
+      'Non sono sicuro di aver capito. Controlla prima di eseguire.';
+
+  @override
+  String voiceConfidenceLabel(int percent) {
+    return 'Affidabilità $percent%';
+  }
+
+  @override
+  String get voiceAskIssueKey => 'Quale ticket?';
+
+  @override
+  String get voiceAskTransition => 'Quale stato?';
+
+  @override
+  String get voiceAskComment => 'Cosa deve dire il commento?';
+
+  @override
+  String get voiceAskTitle => 'Come si chiama l\'attività?';
+
+  @override
+  String get voiceAskText => 'Ricordarti che cosa?';
+
+  @override
+  String get voiceAskTriggerAt => 'Per quando?';
+
+  @override
+  String voiceActionUpdateJira(String issueKey, String transition) {
+    return '$issueKey → $transition';
+  }
+
+  @override
+  String voiceActionAddComment(String issueKey, String comment) {
+    return 'Commenta su $issueKey: $comment';
+  }
+
+  @override
+  String voiceActionCreateTask(String title) {
+    return 'Nuova attività: $title';
+  }
+
+  @override
+  String voiceActionCreateReminder(String text, String triggerAt) {
+    return 'Ricorda $text — $triggerAt';
+  }
+
+  @override
+  String voiceActionQueryStatus(String issueKey) {
+    return 'Stato di $issueKey';
+  }
+
+  @override
+  String get voiceDoneTask => 'Attività creata';
+
+  @override
+  String get voiceDoneQueued => 'In coda per Jira';
+
+  @override
+  String get voiceDoneReminder => 'Promemoria creato';
+
+  @override
+  String voiceDoneStatus(String issueKey, String status) {
+    return '$issueKey è $status';
+  }
+
+  @override
+  String voiceErrorNotLinked(String issueKey) {
+    return 'Nessuna attività qui è collegata a $issueKey.';
+  }
+
+  @override
+  String get settingsVoiceSection => 'Voce';
+
+  @override
+  String get settingsVoiceDescription =>
+      'Come si comportano i comandi vocali prima di cambiare qualcosa.';
+
+  @override
+  String get settingsAlwaysConfirmJira =>
+      'Conferma sempre le scritture su Jira';
+
+  @override
+  String get settingsAlwaysConfirmJiraDescription =>
+      'Chiede prima di ogni transizione o commento dettato, per quanto sicura sia l\'app. I comandi poco affidabili chiedono sempre, comunque sia impostato questo.';
 }

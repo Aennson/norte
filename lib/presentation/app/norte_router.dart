@@ -8,7 +8,7 @@ import '../meetings/summary_screen.dart';
 import '../reminders/reminders_screen.dart';
 import '../settings/settings_screen.dart';
 import '../tasks/tasks_screen.dart';
-import 'norte_shell.dart';
+import '../voice/voice_host.dart';
 
 /// Application routes.
 ///
@@ -35,7 +35,10 @@ GoRouter buildNorteRouter({String initialLocation = NorteRoutes.tasks}) {
               GoRouterState state,
               StatefulNavigationShell shell,
             ) {
-              return NorteShell(
+              // `VoiceHost` builds the shell and layers the voice panel over
+              // it, so a command can be spoken from any destination without
+              // each screen knowing the pipeline exists.
+              return VoiceHost(
                 currentIndex: shell.currentIndex,
                 onDestinationSelected: (int index) => shell.goBranch(
                   index,

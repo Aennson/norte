@@ -12,11 +12,15 @@ import 'infrastructure/jira/secure_jira_credential_store.dart';
 import 'infrastructure/persistence/drift_meeting_repository.dart';
 import 'infrastructure/persistence/drift_meeting_template_repository.dart';
 import 'infrastructure/persistence/drift_outbox_repository.dart';
+import 'infrastructure/persistence/drift_reminder_repository.dart';
 import 'infrastructure/persistence/drift_task_repository.dart';
+import 'infrastructure/persistence/drift_voice_settings_store.dart';
 import 'infrastructure/persistence/norte_database.dart';
 import 'infrastructure/persistence/norte_database_factory.dart';
 import 'infrastructure/platform/record_audio_recorder.dart';
+import 'infrastructure/platform/record_pcm_microphone.dart';
 import 'infrastructure/platform/temp_audio_store.dart';
+import 'infrastructure/transcription/scribe_realtime_engine.dart';
 import 'infrastructure/transcription/secure_transcription_credential_store.dart';
 import 'infrastructure/transcription/whisper_batch_engine.dart';
 import 'jira_background_sync.dart';
@@ -24,6 +28,7 @@ import 'presentation/app/norte_app.dart';
 import 'presentation/jira/jira_providers.dart';
 import 'presentation/meetings/meeting_providers.dart';
 import 'presentation/tasks/task_providers.dart';
+import 'presentation/voice/voice_providers.dart';
 
 /// Composition root.
 ///
@@ -77,6 +82,18 @@ Future<void> main() async {
     clock: const SystemClock(),
   );
 
+  // The voice pipeline. The microphone is a separate adapter from the meeting
+  // recorder and knows no path at all, which is what makes BR-06 structural
+  // rather than a rule someone has to remember.
+  final RecordPcmMicrophone microphone = RecordPcmMicrophone();
+  final ScribeRealtimeEngine scribe = ScribeRealtimeEngine(
+    credentialStore: whisperCredentials,
+  );
+  final DriftReminderRepository reminders = DriftReminderRepository(database);
+  final DriftVoiceSettingsStore voiceSettings = DriftVoiceSettingsStore(
+    database,
+  );
+
   final OutboxDispatcher dispatcher = OutboxDispatcher(
     outbox: outbox,
     gateway: jira,
@@ -106,6 +123,10 @@ Future<void> main() async {
       batchTranscriptionProvider.overrideWithValue(whisper),
       audioStoreProvider.overrideWithValue(audio),
       audioRecorderProvider.overrideWithValue(recorder),
+      microphoneProvider.overrideWithValue(microphone),
+      realtimeTranscriptionProvider.overrideWithValue(scribe),
+      reminderRepositoryProvider.overrideWithValue(reminders),
+      voiceSettingsStoreProvider.overrideWithValue(voiceSettings),
     ],
   );
   container.read(jiraSyncControllerProvider).start();
