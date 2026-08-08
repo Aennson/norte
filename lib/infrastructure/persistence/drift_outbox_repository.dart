@@ -23,9 +23,8 @@ class DriftOutboxRepository implements OutboxRepository {
   @override
   Future<OutboxOperation> enqueue(OutboxOperation operation) async {
     final int sequence = await _guard(
-      () => _database
-          .into(_database.outboxRows)
-          .insert(_toInsertable(operation)),
+      () =>
+          _database.into(_database.outboxRows).insert(_toInsertable(operation)),
       'enqueuing operation ${operation.operationId} failed',
     );
     return operation.copyWith(sequence: sequence);
@@ -81,10 +80,11 @@ class DriftOutboxRepository implements OutboxRepository {
   @override
   Future<OutboxOperation?> findById(String operationId) async {
     final OutboxRow? row = await _guard(
-      () => (_database.select(_database.outboxRows)..where(
-            ($OutboxRowsTable t) => t.operationId.equals(operationId),
-          ))
-          .getSingleOrNull(),
+      () =>
+          (_database.select(_database.outboxRows)..where(
+                ($OutboxRowsTable t) => t.operationId.equals(operationId),
+              ))
+              .getSingleOrNull(),
       'reading operation $operationId failed',
     );
     return row == null ? null : _toEntity(row);
@@ -192,16 +192,16 @@ DateTime? _dateFrom(int? ms) =>
 /// An unreadable name is treated as a comment: the least destructive of the
 /// three, so a row written by a future schema can never fire a transition
 /// nobody asked for.
-OutboxOperationKind _kindFrom(String name) => OutboxOperationKind.values
-    .firstWhere(
+OutboxOperationKind _kindFrom(String name) =>
+    OutboxOperationKind.values.firstWhere(
       (OutboxOperationKind value) => value.name == name,
       orElse: () => OutboxOperationKind.comment,
     );
 
 /// An unreadable state is treated as `failed`, never as `pending`: the app
 /// stops and asks rather than dispatching something it does not understand.
-OutboxOperationState _stateFrom(String name) => OutboxOperationState.values
-    .firstWhere(
+OutboxOperationState _stateFrom(String name) =>
+    OutboxOperationState.values.firstWhere(
       (OutboxOperationState value) => value.name == name,
       orElse: () => OutboxOperationState.failed,
     );

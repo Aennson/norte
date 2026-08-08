@@ -159,4 +159,157 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get sortByDueDate => 'Prazo';
+
+  @override
+  String get jiraSectionTitle => 'Jira';
+
+  @override
+  String get jiraSectionDescription =>
+      'Vincule tarefas a issues de um site Jira Cloud. Seu token de API fica no armazenamento seguro do aparelho e nunca sai de lá.';
+
+  @override
+  String get jiraFieldSiteUrl => 'URL do site';
+
+  @override
+  String get jiraFieldSiteUrlHint => 'https://seu-time.atlassian.net';
+
+  @override
+  String get jiraFieldEmail => 'E-mail da conta';
+
+  @override
+  String get jiraFieldApiToken => 'Token de API';
+
+  @override
+  String get jiraConnectAction => 'Conectar';
+
+  @override
+  String get jiraDisconnectAction => 'Desconectar';
+
+  @override
+  String jiraConnectedAs(String email) {
+    return 'Conectado como $email';
+  }
+
+  @override
+  String get jiraNotConnected => 'Não conectado.';
+
+  @override
+  String get jiraCredentialsIncomplete =>
+      'Preencha o site, o e-mail e o token.';
+
+  @override
+  String get jiraLinkAction => 'Vincular ao Jira';
+
+  @override
+  String get jiraLinkTitle => 'Vincular uma issue do Jira';
+
+  @override
+  String get jiraFieldIssueKey => 'Chave da issue';
+
+  @override
+  String get jiraFieldIssueKeyHint => 'PROJ-123';
+
+  @override
+  String get jiraUnlinkAction => 'Remover vínculo com o Jira';
+
+  @override
+  String get jiraRefreshAction => 'Atualizar pelo Jira';
+
+  @override
+  String get jiraCommentAction => 'Comentar no Jira';
+
+  @override
+  String get jiraCommentTitle => 'Adicionar um comentário';
+
+  @override
+  String get jiraFieldComment => 'Comentário';
+
+  @override
+  String get jiraPushStatusAction => 'Enviar status para o Jira';
+
+  @override
+  String get jiraCreateIssueAction => 'Criar issue no Jira';
+
+  @override
+  String get jiraCreateIssueTitle => 'Criar uma issue a partir desta tarefa';
+
+  @override
+  String get jiraFieldProjectKey => 'Chave do projeto';
+
+  @override
+  String get jiraFieldProjectKeyHint => 'PROJ';
+
+  @override
+  String get jiraQueuedMessage =>
+      'Na fila — vai chegar ao Jira assim que houver conexão.';
+
+  @override
+  String jiraErrorIssueNotFound(String issueKey) {
+    return 'Este site não tem a issue $issueKey.';
+  }
+
+  @override
+  String get jiraErrorOffline => 'Vincular uma issue exige conexão.';
+
+  @override
+  String get jiraErrorAuth =>
+      'O Jira recusou as credenciais. Confira em Configurações.';
+
+  @override
+  String get jiraErrorRateLimited =>
+      'O Jira está limitando as requisições. Tente de novo em instantes.';
+
+  @override
+  String get jiraErrorGeneric => 'Não foi possível falar com o Jira.';
+
+  @override
+  String get jiraNotConfiguredMessage =>
+      'Conecte um site do Jira em Configurações primeiro.';
+
+  @override
+  String jiraSyncPending(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count alterações esperando sincronizar',
+      one: '1 alteração esperando sincronizar',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String jiraSyncFailed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count alterações não puderam ser enviadas',
+      one: '1 alteração não pôde ser enviada',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get jiraSyncRetryAction => 'Tentar de novo';
+
+  @override
+  String jiraLastSyncedLabel(String date) {
+    return 'Sincronizado $date';
+  }
+
+  @override
+  String get jiraNeverSyncedLabel => 'Nunca sincronizado';
+
+  @override
+  String get jiraDivergenceTitle => 'O Jira discorda do status local';
+
+  @override
+  String jiraDivergenceMessage(String local, String issueKey, String remote) {
+    return 'Aqui esta tarefa está “$local”; na $issueKey está “$remote”. Nada muda até você escolher.';
+  }
+
+  @override
+  String get jiraDivergenceKeepLocal => 'Manter o local';
+
+  @override
+  String get jiraDivergenceAdoptRemote => 'Adotar o do Jira';
 }

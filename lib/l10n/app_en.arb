@@ -217,5 +217,218 @@
   "sortByDueDate": "Due date",
   "@sortByDueDate": {
     "description": "Ordering option: soonest deadline first."
+  },
+
+  "jiraSectionTitle": "Jira",
+  "@jiraSectionTitle": {
+    "description": "Title of the Jira configuration section in Settings."
+  },
+  "jiraSectionDescription": "Link tasks to issues on a Jira Cloud site. Your API token is kept in the device's secure storage and never leaves it.",
+  "@jiraSectionDescription": {
+    "description": "Explanatory text under the Jira settings title."
+  },
+  "jiraFieldSiteUrl": "Site URL",
+  "@jiraFieldSiteUrl": {
+    "description": "Label of the Jira site URL field."
+  },
+  "jiraFieldSiteUrlHint": "https://your-team.atlassian.net",
+  "@jiraFieldSiteUrlHint": {
+    "description": "Placeholder of the Jira site URL field."
+  },
+  "jiraFieldEmail": "Account e-mail",
+  "@jiraFieldEmail": {
+    "description": "Label of the Atlassian account e-mail field."
+  },
+  "jiraFieldApiToken": "API token",
+  "@jiraFieldApiToken": {
+    "description": "Label of the Jira API token field."
+  },
+  "jiraConnectAction": "Connect",
+  "@jiraConnectAction": {
+    "description": "Button that stores the Jira credentials."
+  },
+  "jiraDisconnectAction": "Disconnect",
+  "@jiraDisconnectAction": {
+    "description": "Button that clears the stored Jira credentials."
+  },
+  "jiraConnectedAs": "Connected as {email}",
+  "@jiraConnectedAs": {
+    "description": "Shown when Jira credentials are stored.",
+    "placeholders": {
+      "email": {
+        "type": "String",
+        "example": "dev@example.com"
+      }
+    }
+  },
+  "jiraNotConnected": "Not connected.",
+  "@jiraNotConnected": {
+    "description": "Shown when no Jira credentials are stored."
+  },
+  "jiraCredentialsIncomplete": "Fill in the site, the e-mail and the token.",
+  "@jiraCredentialsIncomplete": {
+    "description": "Validation message when a credential field is empty."
+  },
+
+  "jiraLinkAction": "Link to Jira",
+  "@jiraLinkAction": {
+    "description": "Task action that attaches a Jira issue."
+  },
+  "jiraLinkTitle": "Link a Jira issue",
+  "@jiraLinkTitle": {
+    "description": "Title of the link dialog."
+  },
+  "jiraFieldIssueKey": "Issue key",
+  "@jiraFieldIssueKey": {
+    "description": "Label of the Jira issue key field."
+  },
+  "jiraFieldIssueKeyHint": "PROJ-123",
+  "@jiraFieldIssueKeyHint": {
+    "description": "Placeholder of the Jira issue key field."
+  },
+  "jiraUnlinkAction": "Remove Jira link",
+  "@jiraUnlinkAction": {
+    "description": "Task action that detaches the Jira issue."
+  },
+  "jiraRefreshAction": "Refresh from Jira",
+  "@jiraRefreshAction": {
+    "description": "Task action that re-reads the issue status."
+  },
+  "jiraCommentAction": "Comment on Jira",
+  "@jiraCommentAction": {
+    "description": "Task action that posts a comment on the linked issue."
+  },
+  "jiraCommentTitle": "Add a comment",
+  "@jiraCommentTitle": {
+    "description": "Title of the comment dialog."
+  },
+  "jiraFieldComment": "Comment",
+  "@jiraFieldComment": {
+    "description": "Label of the Jira comment field."
+  },
+  "jiraPushStatusAction": "Send status to Jira",
+  "@jiraPushStatusAction": {
+    "description": "Task action that queues a transition to the local status."
+  },
+  "jiraCreateIssueAction": "Create Jira issue",
+  "@jiraCreateIssueAction": {
+    "description": "Task action that creates an issue from the task."
+  },
+  "jiraCreateIssueTitle": "Create an issue from this task",
+  "@jiraCreateIssueTitle": {
+    "description": "Title of the issue creation dialog."
+  },
+  "jiraFieldProjectKey": "Project key",
+  "@jiraFieldProjectKey": {
+    "description": "Label of the Jira project key field."
+  },
+  "jiraFieldProjectKeyHint": "PROJ",
+  "@jiraFieldProjectKeyHint": {
+    "description": "Placeholder of the Jira project key field."
+  },
+  "jiraQueuedMessage": "Queued — it will reach Jira as soon as there is a connection.",
+  "@jiraQueuedMessage": {
+    "description": "Confirmation shown after a Jira write is enqueued."
+  },
+
+  "jiraErrorIssueNotFound": "This site has no issue {issueKey}.",
+  "@jiraErrorIssueNotFound": {
+    "description": "Error when the typed Jira key does not exist.",
+    "placeholders": {
+      "issueKey": {
+        "type": "String",
+        "example": "PROJ-123"
+      }
+    }
+  },
+  "jiraErrorOffline": "Linking an issue requires a connection.",
+  "@jiraErrorOffline": {
+    "description": "Error when linking is attempted with no network."
+  },
+  "jiraErrorAuth": "Jira rejected the credentials. Check them in Settings.",
+  "@jiraErrorAuth": {
+    "description": "Error on HTTP 401/403 from Jira."
+  },
+  "jiraErrorRateLimited": "Jira is throttling requests. Try again shortly.",
+  "@jiraErrorRateLimited": {
+    "description": "Error on HTTP 429 from Jira."
+  },
+  "jiraErrorGeneric": "Jira could not be reached.",
+  "@jiraErrorGeneric": {
+    "description": "Fallback error for any other Jira failure."
+  },
+  "jiraNotConfiguredMessage": "Connect a Jira site in Settings first.",
+  "@jiraNotConfiguredMessage": {
+    "description": "Shown when a Jira action is attempted with no credentials."
+  },
+
+  "jiraSyncPending": "{count, plural, =1{1 change waiting to sync} other{{count} changes waiting to sync}}",
+  "@jiraSyncPending": {
+    "description": "Indicator for operations still queued in the outbox.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "jiraSyncFailed": "{count, plural, =1{1 change could not be sent} other{{count} changes could not be sent}}",
+  "@jiraSyncFailed": {
+    "description": "Indicator for operations that exhausted their attempts.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "jiraSyncRetryAction": "Retry",
+  "@jiraSyncRetryAction": {
+    "description": "Manual retry of the failed outbox operations."
+  },
+  "jiraLastSyncedLabel": "Synced {date}",
+  "@jiraLastSyncedLabel": {
+    "description": "When the linked issue status was last read.",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "5 Jan 2026"
+      }
+    }
+  },
+  "jiraNeverSyncedLabel": "Never synced",
+  "@jiraNeverSyncedLabel": {
+    "description": "Shown when a link has never been refreshed."
+  },
+
+  "jiraDivergenceTitle": "Jira disagrees with the local status",
+  "@jiraDivergenceTitle": {
+    "description": "Title of the divergence banner (BR-02)."
+  },
+  "jiraDivergenceMessage": "Here this task is “{local}”; on {issueKey} it is “{remote}”. Nothing changes until you choose.",
+  "@jiraDivergenceMessage": {
+    "description": "Body of the divergence banner.",
+    "placeholders": {
+      "local": {
+        "type": "String",
+        "example": "Done"
+      },
+      "issueKey": {
+        "type": "String",
+        "example": "PROJ-123"
+      },
+      "remote": {
+        "type": "String",
+        "example": "In Progress"
+      }
+    }
+  },
+  "jiraDivergenceKeepLocal": "Keep local",
+  "@jiraDivergenceKeepLocal": {
+    "description": "Divergence decision: keep the local status and tell Jira."
+  },
+  "jiraDivergenceAdoptRemote": "Adopt from Jira",
+  "@jiraDivergenceAdoptRemote": {
+    "description": "Divergence decision: take Jira's status locally."
   }
 }

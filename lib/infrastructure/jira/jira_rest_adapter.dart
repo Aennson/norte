@@ -206,7 +206,10 @@ class JiraRestAdapter implements JiraGateway {
   Failure _failureFor(int status, Headers headers) => switch (status) {
     401 || 403 => const AuthFailure('Jira rejected the credentials'),
     404 => const NotFoundFailure('the Jira site has no such issue'),
-    429 => RateLimitFailure('Jira is throttling requests', _retryAfter(headers)),
+    429 => RateLimitFailure(
+      'Jira is throttling requests',
+      _retryAfter(headers),
+    ),
     _ => EngineFailure('Jira answered $status'),
   };
 
@@ -241,9 +244,8 @@ class JiraRestAdapter implements JiraGateway {
 }
 
 /// `siteUrl` without a trailing slash, so paths concatenate cleanly.
-String _baseOf(String siteUrl) => siteUrl.endsWith('/')
-    ? siteUrl.substring(0, siteUrl.length - 1)
-    : siteUrl;
+String _baseOf(String siteUrl) =>
+    siteUrl.endsWith('/') ? siteUrl.substring(0, siteUrl.length - 1) : siteUrl;
 
 /// `fields.status.name` — the only field the app reads (BR-09).
 String _statusNameOf(Map<String, Object?> issue) {

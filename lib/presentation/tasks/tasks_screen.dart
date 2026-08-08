@@ -6,6 +6,8 @@ import '../../application/usecases/list_tasks.dart';
 import '../../application/usecases/update_task.dart';
 import '../../domain/entities/task.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../jira/jira_task_actions.dart';
+import '../jira/widgets/sync_indicator.dart';
 import '../shared/theme/norte_spacing.dart';
 import '../shared/widgets/empty_state.dart';
 import '../shared/widgets/error_state.dart';
@@ -56,6 +58,9 @@ class TasksScreen extends ConsumerWidget {
                 ref.read(taskQueryProvider.notifier).sortBy(sort),
           ),
           const SizedBox(height: NorteSpacing.lg),
+          // Above the list, because what is waiting to sync is context for
+          // everything below it.
+          const SyncIndicator(),
           Expanded(
             child: tasks.when(
               loading: () =>
@@ -107,6 +112,9 @@ class _TaskList extends ConsumerWidget {
           onTap: () => _editTask(context, ref, task),
           onToggleDone: () => _toggleDone(ref, task),
           onDelete: () => _deleteTask(context, ref, task),
+          onJiraMenu: () => JiraTaskActions.showMenu(context, ref, task),
+          onKeepLocal: () => JiraTaskActions.keepLocal(context, ref, task),
+          onAdoptRemote: () => JiraTaskActions.adoptRemote(ref, task),
         );
       },
     );

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../l10n/generated/app_localizations.dart';
-import '../shared/widgets/empty_state.dart';
+import '../shared/theme/norte_spacing.dart';
 import '../shared/widgets/norte_screen.dart';
+import 'jira_settings_section.dart';
 
-/// Settings destination — placeholder until Sprint 07.
+/// Settings destination.
+///
+/// Holds the Jira connection from Sprint 02; the AI engine settings arrive in
+/// Sprint 07.
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -14,12 +17,15 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
+    final AppLocalizations l10n = AppLocalizations.of(context);
     return NorteScreen(
       title: l10n.navSettings,
-      child: EmptyState(
-        icon: LucideIcons.settings,
-        message: l10n.settingsEmptyMessage,
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: const <Widget>[
+          JiraSettingsSection(),
+          SizedBox(height: NorteSpacing.lg),
+        ],
       ),
     );
   }

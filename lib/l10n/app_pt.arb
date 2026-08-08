@@ -59,5 +59,51 @@
 
   "sortLabel": "Ordenar",
   "sortByPriority": "Prioridade",
-  "sortByDueDate": "Prazo"
+  "sortByDueDate": "Prazo",
+
+  "jiraSectionTitle": "Jira",
+  "jiraSectionDescription": "Vincule tarefas a issues de um site Jira Cloud. Seu token de API fica no armazenamento seguro do aparelho e nunca sai de lá.",
+  "jiraFieldSiteUrl": "URL do site",
+  "jiraFieldSiteUrlHint": "https://seu-time.atlassian.net",
+  "jiraFieldEmail": "E-mail da conta",
+  "jiraFieldApiToken": "Token de API",
+  "jiraConnectAction": "Conectar",
+  "jiraDisconnectAction": "Desconectar",
+  "jiraConnectedAs": "Conectado como {email}",
+  "jiraNotConnected": "Não conectado.",
+  "jiraCredentialsIncomplete": "Preencha o site, o e-mail e o token.",
+
+  "jiraLinkAction": "Vincular ao Jira",
+  "jiraLinkTitle": "Vincular uma issue do Jira",
+  "jiraFieldIssueKey": "Chave da issue",
+  "jiraFieldIssueKeyHint": "PROJ-123",
+  "jiraUnlinkAction": "Remover vínculo com o Jira",
+  "jiraRefreshAction": "Atualizar pelo Jira",
+  "jiraCommentAction": "Comentar no Jira",
+  "jiraCommentTitle": "Adicionar um comentário",
+  "jiraFieldComment": "Comentário",
+  "jiraPushStatusAction": "Enviar status para o Jira",
+  "jiraCreateIssueAction": "Criar issue no Jira",
+  "jiraCreateIssueTitle": "Criar uma issue a partir desta tarefa",
+  "jiraFieldProjectKey": "Chave do projeto",
+  "jiraFieldProjectKeyHint": "PROJ",
+  "jiraQueuedMessage": "Na fila — vai chegar ao Jira assim que houver conexão.",
+
+  "jiraErrorIssueNotFound": "Este site não tem a issue {issueKey}.",
+  "jiraErrorOffline": "Vincular uma issue exige conexão.",
+  "jiraErrorAuth": "O Jira recusou as credenciais. Confira em Configurações.",
+  "jiraErrorRateLimited": "O Jira está limitando as requisições. Tente de novo em instantes.",
+  "jiraErrorGeneric": "Não foi possível falar com o Jira.",
+  "jiraNotConfiguredMessage": "Conecte um site do Jira em Configurações primeiro.",
+
+  "jiraSyncPending": "{count, plural, =1{1 alteração esperando sincronizar} other{{count} alterações esperando sincronizar}}",
+  "jiraSyncFailed": "{count, plural, =1{1 alteração não pôde ser enviada} other{{count} alterações não puderam ser enviadas}}",
+  "jiraSyncRetryAction": "Tentar de novo",
+  "jiraLastSyncedLabel": "Sincronizado {date}",
+  "jiraNeverSyncedLabel": "Nunca sincronizado",
+
+  "jiraDivergenceTitle": "O Jira discorda do status local",
+  "jiraDivergenceMessage": "Aqui esta tarefa está “{local}”; na {issueKey} está “{remote}”. Nada muda até você escolher.",
+  "jiraDivergenceKeepLocal": "Manter o local",
+  "jiraDivergenceAdoptRemote": "Adotar o do Jira"
 }

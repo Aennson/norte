@@ -160,4 +160,158 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get sortByDueDate => 'Scadenza';
+
+  @override
+  String get jiraSectionTitle => 'Jira';
+
+  @override
+  String get jiraSectionDescription =>
+      'Collega le attività alle issue di un sito Jira Cloud. Il token API resta nell\'archivio sicuro del dispositivo e non lo lascia mai.';
+
+  @override
+  String get jiraFieldSiteUrl => 'URL del sito';
+
+  @override
+  String get jiraFieldSiteUrlHint => 'https://il-tuo-team.atlassian.net';
+
+  @override
+  String get jiraFieldEmail => 'E-mail dell\'account';
+
+  @override
+  String get jiraFieldApiToken => 'Token API';
+
+  @override
+  String get jiraConnectAction => 'Connetti';
+
+  @override
+  String get jiraDisconnectAction => 'Disconnetti';
+
+  @override
+  String jiraConnectedAs(String email) {
+    return 'Connesso come $email';
+  }
+
+  @override
+  String get jiraNotConnected => 'Non connesso.';
+
+  @override
+  String get jiraCredentialsIncomplete =>
+      'Compila il sito, l\'e-mail e il token.';
+
+  @override
+  String get jiraLinkAction => 'Collega a Jira';
+
+  @override
+  String get jiraLinkTitle => 'Collega una issue di Jira';
+
+  @override
+  String get jiraFieldIssueKey => 'Chiave della issue';
+
+  @override
+  String get jiraFieldIssueKeyHint => 'PROJ-123';
+
+  @override
+  String get jiraUnlinkAction => 'Rimuovi il collegamento a Jira';
+
+  @override
+  String get jiraRefreshAction => 'Aggiorna da Jira';
+
+  @override
+  String get jiraCommentAction => 'Commenta su Jira';
+
+  @override
+  String get jiraCommentTitle => 'Aggiungi un commento';
+
+  @override
+  String get jiraFieldComment => 'Commento';
+
+  @override
+  String get jiraPushStatusAction => 'Invia lo stato a Jira';
+
+  @override
+  String get jiraCreateIssueAction => 'Crea una issue su Jira';
+
+  @override
+  String get jiraCreateIssueTitle => 'Crea una issue da questa attività';
+
+  @override
+  String get jiraFieldProjectKey => 'Chiave del progetto';
+
+  @override
+  String get jiraFieldProjectKeyHint => 'PROJ';
+
+  @override
+  String get jiraQueuedMessage =>
+      'In coda — arriverà a Jira appena ci sarà connessione.';
+
+  @override
+  String jiraErrorIssueNotFound(String issueKey) {
+    return 'Questo sito non ha la issue $issueKey.';
+  }
+
+  @override
+  String get jiraErrorOffline =>
+      'Collegare una issue richiede una connessione.';
+
+  @override
+  String get jiraErrorAuth =>
+      'Jira ha rifiutato le credenziali. Controllale in Impostazioni.';
+
+  @override
+  String get jiraErrorRateLimited =>
+      'Jira sta limitando le richieste. Riprova tra poco.';
+
+  @override
+  String get jiraErrorGeneric => 'Non è stato possibile raggiungere Jira.';
+
+  @override
+  String get jiraNotConfiguredMessage =>
+      'Collega prima un sito Jira in Impostazioni.';
+
+  @override
+  String jiraSyncPending(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count modifiche in attesa di sincronizzazione',
+      one: '1 modifica in attesa di sincronizzazione',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String jiraSyncFailed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count modifiche non sono state inviate',
+      one: '1 modifica non è stata inviata',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get jiraSyncRetryAction => 'Riprova';
+
+  @override
+  String jiraLastSyncedLabel(String date) {
+    return 'Sincronizzato $date';
+  }
+
+  @override
+  String get jiraNeverSyncedLabel => 'Mai sincronizzato';
+
+  @override
+  String get jiraDivergenceTitle => 'Jira non concorda con lo stato locale';
+
+  @override
+  String jiraDivergenceMessage(String local, String issueKey, String remote) {
+    return 'Qui questa attività è “$local”; su $issueKey è “$remote”. Non cambia nulla finché non scegli.';
+  }
+
+  @override
+  String get jiraDivergenceKeepLocal => 'Mantieni il locale';
+
+  @override
+  String get jiraDivergenceAdoptRemote => 'Adotta quello di Jira';
 }

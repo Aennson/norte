@@ -51,11 +51,12 @@ final Provider<JiraCredentialStore> jiraCredentialStoreProvider =
       ),
     );
 
-final Provider<OutboxDispatch> outboxDispatchProvider = Provider<OutboxDispatch>(
-  (Ref ref) => throw UnimplementedError(
-    'outboxDispatchProvider must be overridden in the composition root',
-  ),
-);
+final Provider<OutboxDispatch> outboxDispatchProvider =
+    Provider<OutboxDispatch>(
+      (Ref ref) => throw UnimplementedError(
+        'outboxDispatchProvider must be overridden in the composition root',
+      ),
+    );
 
 final Provider<OutboxRetry> outboxRetryProvider = Provider<OutboxRetry>(
   (Ref ref) => throw UnimplementedError(
