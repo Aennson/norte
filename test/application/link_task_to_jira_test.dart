@@ -42,11 +42,7 @@ void main() {
     jira = FakeJiraGateway.fromFixture();
     outbox = FakeOutboxRepository();
     clock = FakeClock(t1);
-    link = LinkTaskToJira(
-      repository: repository,
-      gateway: jira,
-      clock: clock,
-    );
+    link = LinkTaskToJira(repository: repository, gateway: jira, clock: clock);
     unlink = UnlinkTask(repository: repository, clock: clock);
   });
 

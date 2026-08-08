@@ -219,16 +219,19 @@ void main() {
     expect(server.issues['PROJ-123'], 'In Progress');
   });
 
-  test('a transition the workflow does not offer is a validation failure', () async {
-    await expectLater(
-      adapter.transitionIssue(
-        issueKey: 'PROJ-123',
-        status: 'Awaiting Legal Review',
-        operationId: 'op-1',
-      ),
-      throwsA(isA<ValidationFailure>()),
-    );
-  });
+  test(
+    'a transition the workflow does not offer is a validation failure',
+    () async {
+      await expectLater(
+        adapter.transitionIssue(
+          issueKey: 'PROJ-123',
+          status: 'Awaiting Legal Review',
+          operationId: 'op-1',
+        ),
+        throwsA(isA<ValidationFailure>()),
+      );
+    },
+  );
 
   test('a comment carries its operationId as a property', () async {
     await adapter.addComment(

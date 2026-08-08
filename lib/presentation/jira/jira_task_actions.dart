@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../application/usecases/refresh_jira_status.dart';
+import '../../domain/entities/jira_credentials.dart';
 import '../../domain/entities/jira_status_mapping.dart';
 import '../../domain/entities/outbox_operation.dart';
 import '../../domain/entities/task.dart';
@@ -50,7 +51,14 @@ abstract final class JiraTaskActions {
     Task task,
   ) async {
     final AppLocalizations l10n = AppLocalizations.of(context);
-    if (!ref.read(jiraConfiguredProvider)) {
+    // Awaited rather than read from a snapshot: the secure store is async, and
+    // on the first tap after launch a synchronous read would still be loading
+    // and wrongly report Jira as unconfigured.
+    final JiraCredentials? credentials = await ref.read(
+      jiraCredentialsProvider.future,
+    );
+    if (!context.mounted) return;
+    if (credentials == null || !credentials.isComplete) {
       _tell(context, l10n.jiraNotConfiguredMessage);
       return;
     }
@@ -242,46 +250,103 @@ abstract final class JiraTaskActions {
     String? hint,
     int maxLines = 1,
   }) {
-    final TextEditingController controller = TextEditingController();
     return showDialog<String>(
       context: context,
-      builder: (BuildContext dialogContext) {
-        final NorteColors colors = NorteColors.of(dialogContext);
-        return AlertDialog(
-          backgroundColor: colors.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(NorteSpacing.radius),
-          ),
-          title: Text(
-            title,
-            style: NorteTypography.title.copyWith(color: colors.textPrimary),
-          ),
-          content: NorteTextField(
-            key: fieldKey,
-            label: label,
-            hint: hint,
-            controller: controller,
-            autofocus: true,
-            maxLines: maxLines,
-          ),
-          actions: <Widget>[
-            NorteButton(
-              label: AppLocalizations.of(dialogContext).actionCancel,
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              variant: NorteButtonVariant.secondary,
-            ),
-            NorteButton(
-              key: confirmButtonKey,
-              label: confirmLabel,
-              onPressed: () {
-                final String value = controller.text.trim();
-                Navigator.of(dialogContext).pop(value.isEmpty ? null : value);
-              },
-            ),
-          ],
-        );
-      },
-    ).whenComplete(controller.dispose);
+      builder: (BuildContext dialogContext) => _AskDialog(
+        title: title,
+        label: label,
+        confirmLabel: confirmLabel,
+        fieldKey: fieldKey,
+        hint: hint,
+        maxLines: maxLines,
+      ),
+    );
+  }
+}
+
+/// The one-field dialog behind [JiraTaskActions._ask].
+///
+/// A widget rather than a closure over a controller, because the controller's
+/// lifetime has to be the dialog's: disposing it when `showDialog` completes
+/// kills it while the route is still animating out, and the field it is still
+/// driving throws.
+class _AskDialog extends StatefulWidget {
+  const _AskDialog({
+    required this.title,
+    required this.label,
+    required this.confirmLabel,
+    required this.fieldKey,
+    required this.maxLines,
+    this.hint,
+  });
+
+  final String title;
+  final String label;
+  final String confirmLabel;
+  final Key fieldKey;
+  final String? hint;
+  final int maxLines;
+
+  /// Width of the dialog body. `AlertDialog` gives its content an unbounded
+  /// height, which a `Column` cannot lay out, so the field gets a box.
+  static const double contentWidth = 320;
+
+  @override
+  State<_AskDialog> createState() => _AskDialogState();
+}
+
+class _AskDialogState extends State<_AskDialog> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final String value = _controller.text.trim();
+    Navigator.of(context).pop(value.isEmpty ? null : value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final NorteColors colors = NorteColors.of(context);
+
+    return AlertDialog(
+      backgroundColor: colors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(NorteSpacing.radius),
+      ),
+      title: Text(
+        widget.title,
+        style: NorteTypography.title.copyWith(color: colors.textPrimary),
+      ),
+      content: SizedBox(
+        width: _AskDialog.contentWidth,
+        child: NorteTextField(
+          key: widget.fieldKey,
+          label: widget.label,
+          hint: widget.hint,
+          controller: _controller,
+          autofocus: true,
+          maxLines: widget.maxLines,
+          onSubmitted: (_) => _submit(),
+        ),
+      ),
+      actions: <Widget>[
+        NorteButton(
+          label: AppLocalizations.of(context).actionCancel,
+          onPressed: () => Navigator.of(context).pop(),
+          variant: NorteButtonVariant.secondary,
+        ),
+        NorteButton(
+          key: JiraTaskActions.confirmButtonKey,
+          label: widget.confirmLabel,
+          onPressed: _submit,
+        ),
+      ],
+    );
   }
 }
 

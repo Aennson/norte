@@ -48,11 +48,7 @@ void main() {
       clock: clock,
       idGenerator: ids,
     );
-    addComment = AddJiraComment(
-      outbox: outbox,
-      clock: clock,
-      idGenerator: ids,
-    );
+    addComment = AddJiraComment(outbox: outbox, clock: clock, idGenerator: ids);
     createIssue = CreateJiraIssueFromTask(
       outbox: outbox,
       clock: clock,

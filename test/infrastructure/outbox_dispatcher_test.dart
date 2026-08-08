@@ -53,90 +53,87 @@ void main() {
 
   tearDown(() => database.close());
 
-  test('S02-IT-01: a lost response does not apply the operation twice', () async {
-    await outbox.enqueue(operation(operationId: 'op-1'));
-
-    // First dispatch: the site applies the transition and then the connection
-    // drops before the answer arrives. From here it is indistinguishable from
-    // the operation never having run.
-    jira.failAfterApply = const TimeoutFailure();
-    expect(await dispatcher.dispatch(), 0);
-
-    final OutboxOperation afterLoss = (await outbox.findById('op-1'))!;
-    expect(afterLoss.state, OutboxOperationState.pending);
-    expect(afterLoss.attempts, 1);
-    // The site did apply it, even though we could not know that.
-    expect(jira.writesFor('PROJ-123'), hasLength(1));
-
-    // Second dispatch: same operationId, so the site recognises the replay.
-    jira.failAfterApply = null;
-    clock.advance(const Duration(seconds: 2));
-    expect(await dispatcher.dispatch(), 1);
-
-    // Applied exactly once (BR-05).
-    expect(jira.writesFor('PROJ-123'), hasLength(1));
-    expect(jira.writesFor('PROJ-123').single.operationId, 'op-1');
-    expect(jira.issues['PROJ-123']!.status, 'Done');
-
-    // And the queue holds one settled row, not two.
-    final OutboxOperation settled = (await outbox.findById('op-1'))!;
-    expect(settled.state, OutboxOperationState.completed);
-    expect(await outbox.unsettled(), isEmpty);
-    expect(
-      (await outbox.pending(t0.add(const Duration(days: 1)))),
-      isEmpty,
-    );
-  });
-
   test(
-    'S02-IT-02: five attempts at 0s/2s/4s/8s/16s, then failed',
+    'S02-IT-01: a lost response does not apply the operation twice',
     () async {
-      // A site that is throttling and never stops.
-      jira.failWith = const RateLimitFailure();
       await outbox.enqueue(operation(operationId: 'op-1'));
 
-      /// Every attempt, as the offset from the previous one.
-      final List<Duration> offsets = <Duration>[];
-      Duration elapsed = Duration.zero;
-      Duration lastAttemptAt = Duration.zero;
-      int attemptsSeen = 0;
+      // First dispatch: the site applies the transition and then the connection
+      // drops before the answer arrives. From here it is indistinguishable from
+      // the operation never having run.
+      jira.failAfterApply = const TimeoutFailure();
+      expect(await dispatcher.dispatch(), 0);
 
-      // Walk a whole minute one second at a time and let the dispatcher take
-      // whatever it is entitled to. Nothing here waits on real time: the clock
-      // is the fake, and `pending` gates on it.
-      for (int second = 0; second <= 60; second++) {
-        await dispatcher.dispatch();
-        final OutboxOperation current = (await outbox.findById('op-1'))!;
-        if (current.attempts > attemptsSeen) {
-          attemptsSeen = current.attempts;
-          offsets.add(elapsed - lastAttemptAt);
-          lastAttemptAt = elapsed;
-        }
-        clock.advance(const Duration(seconds: 1));
-        elapsed += const Duration(seconds: 1);
-      }
+      final OutboxOperation afterLoss = (await outbox.findById('op-1'))!;
+      expect(afterLoss.state, OutboxOperationState.pending);
+      expect(afterLoss.attempts, 1);
+      // The site did apply it, even though we could not know that.
+      expect(jira.writesFor('PROJ-123'), hasLength(1));
 
-      expect(offsets, <Duration>[
-        Duration.zero,
-        const Duration(seconds: 2),
-        const Duration(seconds: 4),
-        const Duration(seconds: 8),
-        const Duration(seconds: 16),
-      ]);
-      expect(offsets, hasLength(OutboxDispatcher.maxAttempts));
+      // Second dispatch: same operationId, so the site recognises the replay.
+      jira.failAfterApply = null;
+      clock.advance(const Duration(seconds: 2));
+      expect(await dispatcher.dispatch(), 1);
 
-      final OutboxOperation done = (await outbox.findById('op-1'))!;
-      expect(done.attempts, OutboxDispatcher.maxAttempts);
-      expect(done.state, OutboxOperationState.failed);
-      expect(done.nextAttemptAt, isNull);
-      expect(done.lastError, isNotNull);
+      // Applied exactly once (BR-05).
+      expect(jira.writesFor('PROJ-123'), hasLength(1));
+      expect(jira.writesFor('PROJ-123').single.operationId, 'op-1');
+      expect(jira.issues['PROJ-123']!.status, 'Done');
 
-      // No sixth attempt, however long we wait.
-      clock.advance(const Duration(hours: 1));
-      await dispatcher.dispatch();
-      expect((await outbox.findById('op-1'))!.attempts, 5);
+      // And the queue holds one settled row, not two.
+      final OutboxOperation settled = (await outbox.findById('op-1'))!;
+      expect(settled.state, OutboxOperationState.completed);
+      expect(await outbox.unsettled(), isEmpty);
+      expect((await outbox.pending(t0.add(const Duration(days: 1)))), isEmpty);
     },
   );
+
+  test('S02-IT-02: five attempts at 0s/2s/4s/8s/16s, then failed', () async {
+    // A site that is throttling and never stops.
+    jira.failWith = const RateLimitFailure();
+    await outbox.enqueue(operation(operationId: 'op-1'));
+
+    /// Every attempt, as the offset from the previous one.
+    final List<Duration> offsets = <Duration>[];
+    Duration elapsed = Duration.zero;
+    Duration lastAttemptAt = Duration.zero;
+    int attemptsSeen = 0;
+
+    // Walk a whole minute one second at a time and let the dispatcher take
+    // whatever it is entitled to. Nothing here waits on real time: the clock
+    // is the fake, and `pending` gates on it.
+    for (int second = 0; second <= 60; second++) {
+      await dispatcher.dispatch();
+      final OutboxOperation current = (await outbox.findById('op-1'))!;
+      if (current.attempts > attemptsSeen) {
+        attemptsSeen = current.attempts;
+        offsets.add(elapsed - lastAttemptAt);
+        lastAttemptAt = elapsed;
+      }
+      clock.advance(const Duration(seconds: 1));
+      elapsed += const Duration(seconds: 1);
+    }
+
+    expect(offsets, <Duration>[
+      Duration.zero,
+      const Duration(seconds: 2),
+      const Duration(seconds: 4),
+      const Duration(seconds: 8),
+      const Duration(seconds: 16),
+    ]);
+    expect(offsets, hasLength(OutboxDispatcher.maxAttempts));
+
+    final OutboxOperation done = (await outbox.findById('op-1'))!;
+    expect(done.attempts, OutboxDispatcher.maxAttempts);
+    expect(done.state, OutboxOperationState.failed);
+    expect(done.nextAttemptAt, isNull);
+    expect(done.lastError, isNotNull);
+
+    // No sixth attempt, however long we wait.
+    clock.advance(const Duration(hours: 1));
+    await dispatcher.dispatch();
+    expect((await outbox.findById('op-1'))!.attempts, 5);
+  });
 
   test('S02-IT-02: a manual retry puts a failed operation back', () async {
     jira.failWith = const RateLimitFailure();
@@ -171,10 +168,10 @@ void main() {
 
     expect(await dispatcher.dispatch(), 2);
 
-    expect(
-      jira.writesFor('PROJ-123').map((JiraWrite w) => w.kind),
-      <String>['transition', 'comment'],
-    );
+    expect(jira.writesFor('PROJ-123').map((JiraWrite w) => w.kind), <String>[
+      'transition',
+      'comment',
+    ]);
     expect(
       jira.writesFor('PROJ-123').map((JiraWrite w) => w.operationId),
       <String>['op-1', 'op-2'],
@@ -195,10 +192,13 @@ void main() {
 
     await dispatcher.dispatch();
 
-    expect(
-      jira.writesFor('PROJ-123').map((JiraWrite w) => w.value),
-      <String>['comment 1', 'comment 2', 'comment 3', 'comment 4', 'comment 5'],
-    );
+    expect(jira.writesFor('PROJ-123').map((JiraWrite w) => w.value), <String>[
+      'comment 1',
+      'comment 2',
+      'comment 3',
+      'comment 4',
+      'comment 5',
+    ]);
   });
 
   test('a failure time cannot fix does not burn five attempts', () async {
@@ -242,21 +242,26 @@ void main() {
     expect(linked.copyWith(jiraLink: null), task);
   });
 
-  test('a task deleted while its creation was queued is not an error', () async {
-    await outbox.enqueue(
-      operation(
-        operationId: 'op-1',
-        kind: OutboxOperationKind.createIssue,
-        issueKey: 'NEW',
-        payload: 'orphan',
-        taskId: 'ghost',
-      ),
-    );
+  test(
+    'a task deleted while its creation was queued is not an error',
+    () async {
+      await outbox.enqueue(
+        operation(
+          operationId: 'op-1',
+          kind: OutboxOperationKind.createIssue,
+          issueKey: 'NEW',
+          payload: 'orphan',
+          taskId: 'ghost',
+        ),
+      );
 
-    expect(await dispatcher.dispatch(), 1);
-    expect((await outbox.findById('op-1'))!.state,
-        OutboxOperationState.completed);
-  });
+      expect(await dispatcher.dispatch(), 1);
+      expect(
+        (await outbox.findById('op-1'))!.state,
+        OutboxOperationState.completed,
+      );
+    },
+  );
 
   test('an operation still in its backoff window is left alone', () async {
     jira.failWith = const NetworkFailure();
@@ -292,17 +297,26 @@ void main() {
   });
 
   group('the queue survives what a queue has to survive', () {
-    test('a comment on an unlinked-away issue fails, others still go', () async {
-      await outbox.enqueue(operation(operationId: 'op-1', issueKey: 'GONE-9'));
-      await outbox.enqueue(operation(operationId: 'op-2'));
+    test(
+      'a comment on an unlinked-away issue fails, others still go',
+      () async {
+        await outbox.enqueue(
+          operation(operationId: 'op-1', issueKey: 'GONE-9'),
+        );
+        await outbox.enqueue(operation(operationId: 'op-2'));
 
-      expect(await dispatcher.dispatch(), 1);
+        expect(await dispatcher.dispatch(), 1);
 
-      expect((await outbox.findById('op-1'))!.state,
-          OutboxOperationState.failed);
-      expect((await outbox.findById('op-2'))!.state,
-          OutboxOperationState.completed);
-    });
+        expect(
+          (await outbox.findById('op-1'))!.state,
+          OutboxOperationState.failed,
+        );
+        expect(
+          (await outbox.findById('op-2'))!.state,
+          OutboxOperationState.completed,
+        );
+      },
+    );
 
     test('completed rows are purgeable, unsettled ones are not', () async {
       await outbox.enqueue(operation(operationId: 'op-1'));

@@ -50,6 +50,5 @@ class _SequencedIds implements IdGenerator {
   int _index = 0;
 
   @override
-  String newId() =>
-      _ids[_index < _ids.length ? _index++ : _ids.length - 1];
+  String newId() => _ids[_index < _ids.length ? _index++ : _ids.length - 1];
 }

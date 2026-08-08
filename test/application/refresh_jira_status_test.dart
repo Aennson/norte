@@ -187,8 +187,10 @@ void main() {
       expect(divergences, hasLength(1));
       expect(divergences.single.remoteStatus, 'To Do');
       // Still nothing resolved (BR-02).
-      expect((await repository.findById('task-1'))!.status,
-          TaskStatus.inProgress);
+      expect(
+        (await repository.findById('task-1'))!.status,
+        TaskStatus.inProgress,
+      );
     });
 
     test('one unreachable issue does not abort the pass', () async {
