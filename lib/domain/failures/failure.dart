@@ -124,6 +124,44 @@ final class AiResponseFailure extends Failure {
   ]);
 }
 
+/// The transcription engine failed, or answered with something unreadable.
+///
+/// Distinct from [EngineFailure] because of what the UI owes the user when it
+/// happens: the recording is still on disk and the operation can be retried
+/// without speaking it all again, which is the whole point of the sprint's
+/// retry rule (S04-UT-02). A generic engine failure carries no such promise.
+final class TranscriptionFailure extends Failure {
+  const TranscriptionFailure([
+    super.message = 'the audio could not be transcribed',
+  ]);
+}
+
+/// The user has not granted access to the microphone.
+///
+/// Not an error to retry: nothing the app does changes the answer until the
+/// user changes it. The UI explains why the permission is needed and offers a
+/// way into the system settings — and, because [isPermanentlyDenied] tells the
+/// two apart, it can ask again in-place when asking again would actually
+/// produce a prompt (S04-E2E-02).
+final class MicrophonePermissionFailure extends Failure {
+  const MicrophonePermissionFailure({this.isPermanentlyDenied = false})
+    : super('microphone access was not granted');
+
+  /// `true` when the platform will no longer show its prompt, so the only
+  /// route left is the system settings.
+  final bool isPermanentlyDenied;
+}
+
+/// Audio capture itself failed — no input device, the encoder refused, or the
+/// platform ended the session.
+///
+/// Separate from [MicrophonePermissionFailure] because permission is the
+/// user's to give and this is not: there is nothing for them to grant, so the
+/// UI offers a retry rather than a trip to settings.
+final class RecordingFailure extends Failure {
+  const RecordingFailure([super.message = 'the recording could not be made']);
+}
+
 /// The action item already produced a task.
 ///
 /// Conversion is one-way and once-only: the item records the id of the task it

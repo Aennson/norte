@@ -4,7 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:norte/domain/failures/failure.dart';
 import 'package:norte/domain/ports/clock.dart';
 import 'package:norte/domain/entities/meeting.dart';
+import 'package:norte/domain/entities/transcript.dart';
 import 'package:norte/domain/ports/notification_scheduler.dart';
+import 'package:norte/domain/ports/transcription_engine.dart';
 
 import '../support/meeting_fixtures.dart';
 import 'fakes.dart';
@@ -317,9 +319,11 @@ void main() {
       final FakeBatchTranscription engine = FakeBatchTranscription();
       addTearDown(engine.dispose);
 
+      // The fixture map is the fake's filesystem, so an unknown path is a
+      // missing file and fails as the real adapter fails for one (S04-CT-01).
       await expectLater(
         engine.transcribeFile('missing.m4a'),
-        throwsA(isA<StateError>()),
+        throwsA(isA<NotFoundFailure>()),
       );
 
       engine.failWith = const NetworkFailure();
@@ -327,6 +331,13 @@ void main() {
         engine.transcribeFile('missing.m4a'),
         throwsA(isA<NetworkFailure>()),
       );
+    });
+
+    test('declares the batch mode', () {
+      final FakeBatchTranscription engine = FakeBatchTranscription();
+      addTearDown(engine.dispose);
+
+      expect(engine.mode, TranscriptionMode.batch);
     });
   });
 

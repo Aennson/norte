@@ -702,5 +702,137 @@
   "templatesExtractActionItems": "Extract action items",
   "@templatesExtractActionItems": {
     "description": "Toggle for whether the template asks for follow-ups."
+  },
+
+  "recordMeetingTitle": "Record meeting",
+  "@recordMeetingTitle": {
+    "description": "Title of the recording screen."
+  },
+  "recordMeetingStart": "Record audio",
+  "@recordMeetingStart": {
+    "description": "Opens the recording screen from the new-meeting screen."
+  },
+  "recordMeetingStartHint": "Record the meeting and have it transcribed for you.",
+  "@recordMeetingStartHint": {
+    "description": "Explains the recording option."
+  },
+  "recordMeetingReady": "Ready to record",
+  "@recordMeetingReady": {
+    "description": "Idle state of the recording screen."
+  },
+  "recordMeetingRecording": "Recording",
+  "@recordMeetingRecording": {
+    "description": "Label shown while audio is being captured."
+  },
+  "recordMeetingPaused": "Paused",
+  "@recordMeetingPaused": {
+    "description": "Label shown while the recording is paused."
+  },
+  "recordMeetingPause": "Pause",
+  "@recordMeetingPause": {
+    "description": "Pauses the recording."
+  },
+  "recordMeetingResume": "Resume",
+  "@recordMeetingResume": {
+    "description": "Resumes a paused recording."
+  },
+  "recordMeetingStop": "Stop and transcribe",
+  "@recordMeetingStop": {
+    "description": "Ends the recording and starts transcription."
+  },
+  "recordMeetingDiscard": "Discard recording",
+  "@recordMeetingDiscard": {
+    "description": "Deletes the recording without transcribing it."
+  },
+  "recordMeetingDiscardConfirm": "Discard this recording? The audio is deleted and cannot be recovered.",
+  "@recordMeetingDiscardConfirm": {
+    "description": "Confirmation for discarding a recording."
+  },
+  "recordMeetingLimitLabel": "Maximum length",
+  "@recordMeetingLimitLabel": {
+    "description": "Label of the recording limit setting."
+  },
+  "recordMeetingLimitValue": "{minutes} min",
+  "@recordMeetingLimitValue": {
+    "description": "The recording limit, in minutes.",
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+  "recordMeetingInterrupted": "Recording paused by the system. Resume when you are ready - nothing was lost.",
+  "@recordMeetingInterrupted": {
+    "description": "Shown when the platform paused the recording."
+  },
+  "recordMeetingStageUploading": "Uploading the audio",
+  "@recordMeetingStageUploading": {
+    "description": "First stage of the transcription pipeline."
+  },
+  "recordMeetingStageTranscribing": "Transcribing",
+  "@recordMeetingStageTranscribing": {
+    "description": "Second stage of the transcription pipeline."
+  },
+  "recordMeetingStageSummarizing": "Summarizing",
+  "@recordMeetingStageSummarizing": {
+    "description": "Third stage of the transcription pipeline."
+  },
+  "recordMeetingKeepAudio": "The recording is kept so you can try again without recording it over.",
+  "@recordMeetingKeepAudio": {
+    "description": "Reassurance shown when transcription fails."
+  },
+  "recordMeetingPermissionTitle": "Microphone access is off",
+  "@recordMeetingPermissionTitle": {
+    "description": "Title of the permission screen."
+  },
+  "recordMeetingPermissionBody": "Norte needs the microphone to record a meeting. The audio stays on this device until you send it for transcription, and it is deleted afterwards.",
+  "@recordMeetingPermissionBody": {
+    "description": "Explains why the microphone is needed."
+  },
+  "recordMeetingPermissionAllow": "Allow microphone",
+  "@recordMeetingPermissionAllow": {
+    "description": "Asks for the permission again."
+  },
+  "recordMeetingPermissionSettings": "Open settings",
+  "@recordMeetingPermissionSettings": {
+    "description": "Opens the system settings page for the app."
+  },
+  "recordMeetingPermissionPermanent": "The prompt will not appear again - grant microphone access in your system settings.",
+  "@recordMeetingPermissionPermanent": {
+    "description": "Shown when the permission is permanently denied."
+  },
+  "transcriptionErrorFailed": "The audio could not be transcribed. Try again.",
+  "@transcriptionErrorFailed": {
+    "description": "Failure when transcription fails."
+  },
+  "transcriptionErrorNoKey": "No transcription key is configured. Add one in Settings.",
+  "@transcriptionErrorNoKey": {
+    "description": "Failure when no Whisper key is stored."
+  },
+  "transcriptionErrorRejected": "The transcription key was rejected. Check it in Settings.",
+  "@transcriptionErrorRejected": {
+    "description": "Failure when the Whisper key is rejected."
+  },
+  "transcriptionErrorTooLong": "The recording is too long to upload.",
+  "@transcriptionErrorTooLong": {
+    "description": "Failure when the audio exceeds the service limit."
+  },
+  "recordingErrorFailed": "The recording could not be made. Try again.",
+  "@recordingErrorFailed": {
+    "description": "Failure when audio capture fails."
+  },
+  "settingsWhisperSection": "Transcription",
+  "@settingsWhisperSection": {
+    "description": "Title of the Whisper settings section."
+  },
+  "settingsWhisperDescription": "Your own transcription key. It is stored in this device's secure store and never leaves it except to transcribe your audio.",
+  "@settingsWhisperDescription": {
+    "description": "Explains the BYOK transcription key."
+  },
+  "settingsWhisperKeyField": "Transcription API key",
+  "@settingsWhisperKeyField": {
+    "description": "Label of the Whisper key field."
+  },
+  "settingsWhisperConfigured": "Key configured",
+  "@settingsWhisperConfigured": {
+    "description": "Shown when a Whisper key is stored."
   }
 }

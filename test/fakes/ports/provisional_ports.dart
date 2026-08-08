@@ -11,19 +11,17 @@
 /// (`Clock`, `NotificationScheduler`) and their fakes implement the real thing.
 library;
 
-// `JiraGateway` and `JiraIssueSnapshot` were promoted in Sprint 02, and
-// `AiEngine` and `AiCapabilities` in Sprint 03 — all four now live in
-// `lib/domain/`, and their fakes implement the real ports. `AiEngine`'s
-// `parseIntent` still returns raw text; it is promoted to `VoiceIntent` in
-// Sprint 05, which is where that entity acquires a caller.
-
-/// Result of a batch transcription.
-class Transcript {
-  const Transcript({required this.text, required this.language});
-
-  final String text;
-  final String language;
-}
+// `JiraGateway` and `JiraIssueSnapshot` were promoted in Sprint 02, `AiEngine`
+// and `AiCapabilities` in Sprint 03, and `BatchTranscription` with `Transcript`
+// in Sprint 04 — all now live in `lib/domain/`, and their fakes implement the
+// real ports. `AiEngine`'s `parseIntent` still returns raw text; it is promoted
+// to `VoiceIntent` in Sprint 05, which is where that entity acquires a caller
+// (DEC-017).
+//
+// `Transcript` was promoted **unchanged**, which is the useful thing to know
+// about it: the provisional shape written in Sprint 00 without a caller turned
+// out to be the shape Sprint 04 needed. `BatchTranscription` was promoted
+// unchanged too, `String path` and all (DEC-021).
 
 /// A realtime transcription event — `partial` while the speaker is mid-phrase,
 /// `committed` once VAD closes the segment (`docs/architecture.md` §9.3).
@@ -32,15 +30,6 @@ class TranscriptEvent {
 
   final String text;
   final bool isCommitted;
-}
-
-/// Provisional `BatchTranscription` — promoted in Sprint 04.
-abstract interface class BatchTranscription {
-  /// Transcribes the audio file at [path].
-  Future<Transcript> transcribeFile(String path, {String? language});
-
-  /// Progress in `0.0..1.0` for the file currently being transcribed.
-  Stream<double> get progress;
 }
 
 /// Provisional `RealtimeTranscription` — promoted in Sprint 05.

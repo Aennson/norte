@@ -22,6 +22,7 @@ dependencies:
   flutter_secure_storage: ^9.2.4 # secrets (Keychain/Keystore/DPAPI)
   dio: ^5.9.0 # HTTP + interceptors
   record: ^7.1.1 # audio capture
+  permission_handler: ^13.0.0 # microphone permission + settings deep link (DEC-022)
   web_socket_channel: ^3.0.3 # realtime transcription transport
   workmanager: ^0.10.7 # background sync (mobile)
   freezed_annotation: ^3.1.0 # immutable domain entities

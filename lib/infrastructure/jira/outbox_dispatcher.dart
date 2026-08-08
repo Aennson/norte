@@ -211,12 +211,16 @@ class OutboxDispatcher {
     JiraIssueNotFoundFailure() ||
     NotLinkedFailure() ||
     ValidationFailure() => false,
-    // None of the AI failures can reach the Jira queue — no operation kind
-    // calls an engine. They are listed rather than swept up by a wildcard so
-    // that the next failure added to the domain still has to be classified
-    // here instead of silently defaulting to "retry forever".
+    // None of the AI, transcription or recording failures can reach the Jira
+    // queue — no operation kind calls an engine or a microphone. They are
+    // listed rather than swept up by a wildcard so that the next failure added
+    // to the domain still has to be classified here instead of silently
+    // defaulting to "retry forever".
     MissingApiKeyFailure() ||
     AiResponseFailure() ||
-    AlreadyConvertedFailure() => false,
+    AlreadyConvertedFailure() ||
+    TranscriptionFailure() ||
+    MicrophonePermissionFailure() ||
+    RecordingFailure() => false,
   };
 }

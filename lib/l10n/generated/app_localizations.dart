@@ -1029,6 +1029,198 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Extract action items'**
   String get templatesExtractActionItems;
+
+  /// Title of the recording screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Record meeting'**
+  String get recordMeetingTitle;
+
+  /// Opens the recording screen from the new-meeting screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Record audio'**
+  String get recordMeetingStart;
+
+  /// Explains the recording option.
+  ///
+  /// In en, this message translates to:
+  /// **'Record the meeting and have it transcribed for you.'**
+  String get recordMeetingStartHint;
+
+  /// Idle state of the recording screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to record'**
+  String get recordMeetingReady;
+
+  /// Label shown while audio is being captured.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording'**
+  String get recordMeetingRecording;
+
+  /// Label shown while the recording is paused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get recordMeetingPaused;
+
+  /// Pauses the recording.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get recordMeetingPause;
+
+  /// Resumes a paused recording.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get recordMeetingResume;
+
+  /// Ends the recording and starts transcription.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop and transcribe'**
+  String get recordMeetingStop;
+
+  /// Deletes the recording without transcribing it.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard recording'**
+  String get recordMeetingDiscard;
+
+  /// Confirmation for discarding a recording.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard this recording? The audio is deleted and cannot be recovered.'**
+  String get recordMeetingDiscardConfirm;
+
+  /// Label of the recording limit setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum length'**
+  String get recordMeetingLimitLabel;
+
+  /// The recording limit, in minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String recordMeetingLimitValue(int minutes);
+
+  /// Shown when the platform paused the recording.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording paused by the system. Resume when you are ready - nothing was lost.'**
+  String get recordMeetingInterrupted;
+
+  /// First stage of the transcription pipeline.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading the audio'**
+  String get recordMeetingStageUploading;
+
+  /// Second stage of the transcription pipeline.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcribing'**
+  String get recordMeetingStageTranscribing;
+
+  /// Third stage of the transcription pipeline.
+  ///
+  /// In en, this message translates to:
+  /// **'Summarizing'**
+  String get recordMeetingStageSummarizing;
+
+  /// Reassurance shown when transcription fails.
+  ///
+  /// In en, this message translates to:
+  /// **'The recording is kept so you can try again without recording it over.'**
+  String get recordMeetingKeepAudio;
+
+  /// Title of the permission screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone access is off'**
+  String get recordMeetingPermissionTitle;
+
+  /// Explains why the microphone is needed.
+  ///
+  /// In en, this message translates to:
+  /// **'Norte needs the microphone to record a meeting. The audio stays on this device until you send it for transcription, and it is deleted afterwards.'**
+  String get recordMeetingPermissionBody;
+
+  /// Asks for the permission again.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow microphone'**
+  String get recordMeetingPermissionAllow;
+
+  /// Opens the system settings page for the app.
+  ///
+  /// In en, this message translates to:
+  /// **'Open settings'**
+  String get recordMeetingPermissionSettings;
+
+  /// Shown when the permission is permanently denied.
+  ///
+  /// In en, this message translates to:
+  /// **'The prompt will not appear again - grant microphone access in your system settings.'**
+  String get recordMeetingPermissionPermanent;
+
+  /// Failure when transcription fails.
+  ///
+  /// In en, this message translates to:
+  /// **'The audio could not be transcribed. Try again.'**
+  String get transcriptionErrorFailed;
+
+  /// Failure when no Whisper key is stored.
+  ///
+  /// In en, this message translates to:
+  /// **'No transcription key is configured. Add one in Settings.'**
+  String get transcriptionErrorNoKey;
+
+  /// Failure when the Whisper key is rejected.
+  ///
+  /// In en, this message translates to:
+  /// **'The transcription key was rejected. Check it in Settings.'**
+  String get transcriptionErrorRejected;
+
+  /// Failure when the audio exceeds the service limit.
+  ///
+  /// In en, this message translates to:
+  /// **'The recording is too long to upload.'**
+  String get transcriptionErrorTooLong;
+
+  /// Failure when audio capture fails.
+  ///
+  /// In en, this message translates to:
+  /// **'The recording could not be made. Try again.'**
+  String get recordingErrorFailed;
+
+  /// Title of the Whisper settings section.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcription'**
+  String get settingsWhisperSection;
+
+  /// Explains the BYOK transcription key.
+  ///
+  /// In en, this message translates to:
+  /// **'Your own transcription key. It is stored in this device\'s secure store and never leaves it except to transcribe your audio.'**
+  String get settingsWhisperDescription;
+
+  /// Label of the Whisper key field.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcription API key'**
+  String get settingsWhisperKeyField;
+
+  /// Shown when a Whisper key is stored.
+  ///
+  /// In en, this message translates to:
+  /// **'Key configured'**
+  String get settingsWhisperConfigured;
 }
 
 class _AppLocalizationsDelegate

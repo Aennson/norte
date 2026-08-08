@@ -6,6 +6,7 @@ import '../shared/widgets/norte_screen.dart';
 import 'ai_settings_section.dart';
 import 'jira_settings_section.dart';
 import 'template_settings_section.dart';
+import 'transcription_settings_section.dart';
 
 /// Settings destination.
 ///
@@ -29,6 +30,8 @@ class SettingsScreen extends StatelessWidget {
           JiraSettingsSection(),
           SizedBox(height: NorteSpacing.lg),
           AiSettingsSection(),
+          SizedBox(height: NorteSpacing.lg),
+          TranscriptionSettingsSection(),
           SizedBox(height: NorteSpacing.lg),
           TemplateSettingsSection(),
           SizedBox(height: NorteSpacing.lg),

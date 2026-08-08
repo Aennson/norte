@@ -379,7 +379,9 @@ authored by the Developer with the AI as `Co-Authored-By`, and a single PR to
 
 ## DEC-014 — The Sprint 02 manual Jira pass is carried to Sprint 09 (Sprint 02 → 03)
 
-**Status:** accepted · decided by the Developer on 2026-08-08, when Sprint 03 was
+**Status:** ~~accepted~~ **superseded by DEC-016** — the pass was executed. The
+entry stays as written, because it is the record of why the box was open for as
+long as it was. Decided by the Developer on 2026-08-08, when Sprint 03 was
 opened.
 
 **Context.** Sprint 02's Definition of Done requires a manual pass against a
@@ -442,3 +444,217 @@ Sprint 02 (DEC-013), the execution environment pins the branch to
 in a worktree, with every other §7 rule honoured: `master` untouched, commits
 authored by the Developer with the AI as `Co-Authored-By`, and a single PR to
 `master` that merges only on 100% green Actions.
+
+---
+
+## DEC-016 — The Sprint 02 manual Jira pass was executed (Sprint 02 → 04)
+
+**Status:** accepted · attested by the Developer on 2026-08-08. **Supersedes
+DEC-014.**
+
+**Context.** DEC-014 discharged Sprint 02's manual box into S09-MT-01 because a
+Zscaler Browser Access gateway made the Developer's Jira site unreachable from
+the Developer's machine. That put a v1.0 obligation inside a v1.1 sprint —
+Sprint 09 opens only once v1.0 has closed — so the debt could not be settled
+until after the release it belonged to.
+
+**Decision.** The script was run and reported as passing. The Sprint 02 box is
+closed on that pass, in the report that owns it, and Sprint 09 no longer
+inherits another sprint's obligation. S09-MT-01 keeps its own purpose: it
+validates the *route through the gateway*, not the Jira operations, which are
+now proven independently.
+
+**What this rests on.** The Developer's attestation, which is what a manual box
+is. No token was shared with the executing AI, none reached this repository, and
+none appears in any commit. The failed first attempt and its `curl` transcript
+stay in the Sprint 02 report: they found two defects and motivated Sprint 09,
+and deleting them would make the record worse, not cleaner.
+
+**Left open deliberately.** Which route made the site reachable is not recorded.
+It does not affect this box, but Sprint 09's entry criteria require it to be
+established before that sprint opens, since the whole sprint is premised on the
+interception being real and current.
+
+**Impact.** `docs/reports/sprint-02-report.md` §6–7;
+`docs/sprints/sprint-09-gateway-access.md` Definition of Done.
+
+---
+
+## DEC-017 — The `AiEngine` port ships only the surface that has a caller (Sprint 03 → 04)
+
+**Status:** accepted.
+
+**Context.** `docs/architecture.md` §7.1 declares four members on `AiEngine`.
+Sprint 03 implemented the port and shipped two of them plus `capabilities`.
+`complete(AiRequest)` — documented as "generic use" — has no caller anywhere in
+Sprints 00–08, and `parseIntent` is specified as returning `VoiceIntent`, a type
+whose only consumer arrives in Sprint 05. The gap was explained in the Sprint 03
+report but never written back into the architecture document, which left the
+technical source of truth stating something the code does not do.
+
+**Decision.** `complete(AiRequest)` is **not implemented** until a sprint has a
+use for it: every adapter would otherwise have to satisfy a method no test
+exercises, and it would sit in the coverage figure pretending to be work.
+`parseIntent` keeps its provisional `String` return until **Sprint 05**, which
+is the plan the provisional port itself recorded. `docs/architecture.md` §7.1 is
+amended to say both things, so the next sprint reads a document that is true.
+
+**Rejected alternative.** *Implement `complete` to match the document* — an
+untested method on two adapters, written to satisfy a doc rather than a caller,
+is the definition of dead code. Correcting the document is cheaper and honest.
+
+**Impact.** `docs/architecture.md` §7.1; `lib/domain/ports/ai_engine.dart`.
+
+---
+
+## DEC-018 — `ActionItem` belongs to `MeetingSummary`, not to `Meeting` (Sprint 03 → 04)
+
+**Status:** accepted.
+
+**Context.** `docs/architecture.md` §3.1 placed `List<ActionItem> actionItems`
+on `Meeting`. But `AiEngine.summarize` returns a `MeetingSummary`, and the
+action items *are* output of summarization — extracted by the model, carrying
+their own conversion state once the user turns one into a task.
+
+**Decision.** The items live on `MeetingSummary`. `Meeting.actionItems` remains
+as a **read-through getter**, so every caller and the accessor named in §3.1
+still read true. Holding the list in two places would let the extracted items
+and their conversion state disagree, and there is no correct answer to which
+copy wins.
+
+**Impact.** `docs/architecture.md` §3.1; `lib/domain/entities/meeting.dart`.
+
+---
+
+## DEC-019 — Template prompts and section headings are user data, not ARB resources (Sprint 03 → 04)
+
+**Status:** accepted.
+
+**Context.** BR-11 requires every UI string to come from ARB resources in three
+languages. A `MeetingTemplate`'s `systemPrompt` and its section headings are
+rendered in the UI, so the rule appears to reach them.
+
+**Decision.** It does not, and they are stored as data. BR-11 governs the
+**app's interface**; a template is the **user's content**. The prompt is sent to
+a model and the headings become the keys of a stored summary, so translating
+either at render time would rewrite the user's own edits, or make a summary
+saved under one locale unreadable under another. The four seeded defaults ship
+in English and the user edits them into whatever language their team runs
+meetings in — the only answer that stays true for a bilingual team. Every string
+of the app's own interface around them is localized in all three languages, and
+S00-UT-06 still enforces key parity.
+
+**Impact.** `lib/infrastructure/persistence` (seeded templates); BR-11's scope
+as applied in Sprints 03+.
+
+---
+
+## DEC-020 — "Available platform" means Windows and Android (Sprint 00 → 04)
+
+**Status:** accepted · decided by the Developer on 2026-08-08.
+
+**Context.** Norte targets Android, iOS and Windows. Sprint 00 §5.1 closed the
+Android and Windows builds with real artifacts and left **iOS unverified**: it
+requires a macOS host, which the project does not have. Several sprints have a
+manual script phrased "on each available platform" — Sprint 04's is the first
+where that phrase decides whether a box can be ticked, since it asks for a real
+recording per platform.
+
+**Decision.** For every manual script in v1.0, **"available platform" means
+Windows and Android** — the two the Developer's machine can build and run. iOS
+is a declared target that remains **unverified**, and it is recorded as an open
+platform obligation rather than silently dropped: the first build, the first
+manual pass, and the `test/presentation/goldens/images/macos/` golden set are
+all deferred until a macOS host exists. No sprint may tick an iOS-specific box
+before then.
+
+**Rejected alternatives.**
+
+- *Block Sprint 04 until a Mac exists* — blocks the project indefinitely on
+  hardware, for a platform whose code path is the same `record` plugin.
+- *Quietly read "available" as "whatever was tested"* — the phrase would then
+  mean nothing and every future sprint would reinterpret it.
+
+**Impact.** Every v1.0 manual script; `docs/reports/sprint-00-report.md` §5.1;
+the missing `macos/` golden set.
+
+---
+
+## DEC-021 — `BatchTranscription` takes a path, not a `dart:io` `File` (Sprint 04)
+
+**Status:** accepted.
+
+**Context.** `docs/architecture.md` §9.1 declares
+`Future<Transcript> transcribeFile(File audio, {String? language})`. Sprint 00
+wrote the provisional port with `String path` instead, at a point when it had
+no caller and no entity types; Sprint 04 promoted it and had to choose which
+of the two the real port would be.
+
+**Decision.** The port keeps **`String path`**. `File` is a `dart:io` type, and
+putting it on a domain port drags a platform dependency into the one layer the
+project keeps free of them: the layer rule permits `dart:` imports, so nothing
+would have failed the gate — it would simply have been wrong quietly. The
+practical cost is immediate and testable: `FakeAudioStore` can model a
+directory as a `Set<String>`, and `S04-UT-03` can assert "no audio file remains
+in the directory" without touching a real filesystem it would then have to
+clean up. `WhisperBatchEngine` constructs its own `File` from the path, which
+is where a platform type belongs.
+
+`docs/architecture.md` §9.1 is amended to match, and the promoted port is
+otherwise byte-for-byte the provisional one — including `progress`, which the
+architecture document never named but the recording screen needs.
+
+**Impact.** `docs/architecture.md` §9.1;
+`lib/domain/ports/transcription_engine.dart`.
+
+---
+
+## DEC-022 — `permission_handler` added to the stack (Sprint 04)
+
+**Status:** accepted.
+
+**Context.** Sprint 04 requires that a denied microphone produce "an
+explanatory screen with a link to system settings; never a crash". The `record`
+package — the stack's audio dependency (`docs/architecture.md` §2.1) — exposes
+only `hasPermission()`, a boolean. It cannot distinguish *denied* from
+*permanently denied*, and it cannot open the system settings at all.
+
+Those two gaps are the whole screen. Without the distinction, the app shows an
+"Allow microphone" button that produces no prompt on a platform that has
+stopped asking — a control that silently does nothing, which is worse than no
+control. Without the settings deep link, there is no route out at all, and the
+sprint's rule cannot be delivered.
+
+**Decision.** Add `permission_handler: ^13.0.0`, used **only** by
+`RecordAudioRecorder` and only for the microphone permission. Capture itself
+stays with `record`. `MicrophonePermission` — the domain's three-state enum —
+is what the rest of the app sees, so the package appears nowhere above
+`infrastructure/platform/`.
+
+**Rejected alternatives.**
+
+- *Ship the boolean and always show the settings link* — a user whose refusal
+  was a mis-tap is sent on a trip through system settings for a permission the
+  prompt would have granted in one tap.
+- *Write the platform channels by hand* — three platforms of native code, for a
+  problem a maintained package solves, in a sprint whose subject is audio.
+
+**Impact.** `pubspec.yaml`; `lib/infrastructure/platform/record_audio_recorder.dart`;
+`docs/architecture.md` §2.1's dependency list gains one entry.
+
+---
+
+## DEC-023 — Development branch for Sprint 04 (Sprint 04)
+
+**Status:** accepted.
+
+**Context.** `docs/project-rules.md` §7.1 names sprint branches
+`sprint-XX/<slug>`. As in Sprint 00 (DEC-003), Sprint 01 (DEC-009), Sprint 02
+(DEC-013) and Sprint 03 (DEC-015), the execution environment pins the branch
+and forbids pushing anywhere else.
+
+**Decision.** Sprint 04 is developed and pushed on
+`claude/sprint-verification-04e4a6`, in a worktree, with every other §7 rule
+honoured: `master` untouched, commits authored by the Developer with the AI as
+`Co-Authored-By`, and a single PR to `master` that merges only on 100% green
+Actions.
