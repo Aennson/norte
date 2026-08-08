@@ -12,8 +12,14 @@ name: Generate Linux goldens
 # It never pushes: the goldens enter the repository through a normal commit,
 # reviewed like any other change.
 
+# `workflow_dispatch` only works once the file is on the default branch, so a
+# sprint that changes the UI before its first merge cannot use it. Pushing the
+# work to a `goldens/**` branch runs the same job — that branch exists only to
+# mint the files and is deleted afterwards.
 on:
   workflow_dispatch:
+  push:
+    branches: ["goldens/**"]
 
 jobs:
   goldens:
