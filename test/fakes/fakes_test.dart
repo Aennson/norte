@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:norte/domain/failures/failure.dart';
@@ -349,7 +350,7 @@ void main() {
             FakeRealtimeTranscription.fromFixture();
 
         final List<TranscriptEvent> events = await engine
-            .start(Stream<List<int>>.value(<int>[0, 1, 2]))
+            .start(Stream<Uint8List>.value(Uint8List.fromList(<int>[0, 1, 2])))
             .toList();
 
         expect(events, hasLength(4));
@@ -359,8 +360,8 @@ void main() {
         );
         expect(events.last.isCommitted, isTrue);
         expect(events.last.text, 'muda o PROJ-123 pra concluído');
-        expect(engine.receivedChunks, <List<int>>[
-          <int>[0, 1, 2],
+        expect(engine.receivedChunks, <Uint8List>[
+          Uint8List.fromList(<int>[0, 1, 2]),
         ]);
       },
     );
@@ -376,7 +377,7 @@ void main() {
       // `asFuture` would intercept the error before onError sees it, so the
       // subscription is drained through an explicit onDone instead.
       engine
-          .start(const Stream<List<int>>.empty())
+          .start(const Stream<Uint8List>.empty())
           .listen(
             received.add,
             onError: (Object e) => error = e,

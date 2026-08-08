@@ -1,16 +1,20 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:norte/domain/failures/failure.dart';
-
-import 'ports/provisional_ports.dart';
+import 'package:norte/domain/ports/transcription_engine.dart';
 
 /// Deterministic [RealtimeTranscription] (`docs/testing-strategy.md` §3).
 ///
 /// Replays a scripted `partial`/`committed` sequence instead of opening a
 /// WebSocket. [disconnectAfter] reproduces the dropped-connection path the
 /// adapter must recover from (`docs/architecture.md` §9.3).
+///
+/// It implements the promoted port, so S05-CT-01 can run the same script
+/// through this and through `ScribeRealtimeEngine` and hold both to one
+/// contract.
 class FakeRealtimeTranscription implements RealtimeTranscription {
   FakeRealtimeTranscription({List<TranscriptEvent>? script})
     : script = script ?? <TranscriptEvent>[];
@@ -47,15 +51,24 @@ class FakeRealtimeTranscription implements RealtimeTranscription {
   int stopCount = 0;
 
   /// Audio chunks received from the caller.
-  final List<List<int>> receivedChunks = <List<int>>[];
+  ///
+  /// **BR-06's assertion surface**: they are here, in memory, and a test can
+  /// check that nowhere else has a copy.
+  final List<Uint8List> receivedChunks = <Uint8List>[];
+
+  StreamController<TranscriptEvent>? _session;
 
   @override
-  Stream<TranscriptEvent> start(Stream<List<int>> pcm16k) {
+  TranscriptionMode get mode => TranscriptionMode.realtime;
+
+  @override
+  Stream<TranscriptEvent> start(Stream<Uint8List> pcm16k) {
     isRunning = true;
     final StreamController<TranscriptEvent> controller =
         StreamController<TranscriptEvent>();
+    _session = controller;
 
-    final StreamSubscription<List<int>> audio = pcm16k.listen(
+    final StreamSubscription<Uint8List> audio = pcm16k.listen(
       receivedChunks.add,
     );
 
@@ -82,5 +95,8 @@ class FakeRealtimeTranscription implements RealtimeTranscription {
   Future<void> stop() async {
     stopCount++;
     isRunning = false;
+    final StreamController<TranscriptEvent>? session = _session;
+    _session = null;
+    if (session != null && !session.isClosed) await session.close();
   }
 }

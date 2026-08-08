@@ -1,0 +1,84 @@
+{
+  "locale": "en",
+  "description": "English smoke set (BR-11): the five intents plus two ambiguous utterances, enough to catch a parser tuned to PT-BR alone.",
+  "rows": [
+    {
+      "id": "en-001",
+      "utterance": "move PROJ-123 to done",
+      "expected": { "intent": "updateJira", "slots": { "issueKey": "PROJ-123", "transition": "Done" } },
+      "response": "{\"intent\":\"updateJira\",\"slots\":{\"issueKey\":\"PROJ-123\",\"transition\":\"Done\"},\"confidence\":0.95}"
+    },
+    {
+      "id": "en-002",
+      "utterance": "set NORTE-45 to in progress",
+      "expected": { "intent": "updateJira", "slots": { "issueKey": "NORTE-45", "transition": "In Progress" } },
+      "response": "{\"intent\":\"updateJira\",\"slots\":{\"issueKey\":\"NORTE-45\",\"transition\":\"In Progress\"},\"confidence\":0.92}"
+    },
+    {
+      "id": "en-003",
+      "utterance": "mark API-7 as blocked",
+      "expected": { "intent": "updateJira", "slots": { "issueKey": "API-7", "transition": "Blocked" } },
+      "response": "```json\n{\"intent\":\"updateJira\",\"slots\":{\"issueKey\":\"API-7\",\"transition\":\"Blocked\"},\"confidence\":0.9}\n```"
+    },
+    {
+      "id": "en-004",
+      "utterance": "comment on PROJ-45: deployed to staging",
+      "expected": { "intent": "addComment", "slots": { "issueKey": "PROJ-45", "comment": "deployed to staging" } },
+      "response": "{\"intent\":\"addComment\",\"slots\":{\"issueKey\":\"PROJ-45\",\"comment\":\"deployed to staging\"},\"confidence\":0.93}"
+    },
+    {
+      "id": "en-005",
+      "utterance": "add a comment on WEB-77 saying we are waiting on the client",
+      "expected": { "intent": "addComment", "slots": { "issueKey": "WEB-77", "comment": "we are waiting on the client" } },
+      "response": "{\"intent\":\"addComment\",\"slots\":{\"issueKey\":\"WEB-77\",\"comment\":\"we are waiting on the client\"},\"confidence\":0.88}"
+    },
+    {
+      "id": "en-006",
+      "utterance": "create a task to review the connector PR",
+      "expected": { "intent": "createTask", "slots": { "title": "review the connector PR" } },
+      "response": "{\"intent\":\"createTask\",\"slots\":{\"title\":\"review the connector PR\"},\"confidence\":0.94}"
+    },
+    {
+      "id": "en-007",
+      "utterance": "new task renew the TLS certificate",
+      "expected": { "intent": "createTask", "slots": { "title": "renew the TLS certificate" } },
+      "response": "{\"intent\":\"createTask\",\"slots\":{\"title\":\"renew the TLS certificate\"},\"confidence\":0.91}"
+    },
+    {
+      "id": "en-008",
+      "utterance": "remind me in 20 minutes to check the build",
+      "expected": { "intent": "createReminder", "slots": { "text": "check the build", "triggerAt": "+20m" } },
+      "response": "{\"intent\":\"createReminder\",\"slots\":{\"text\":\"check the build\",\"triggerAt\":\"+20m\"},\"confidence\":0.93}"
+    },
+    {
+      "id": "en-009",
+      "utterance": "remind me tomorrow at 9 to review the budget",
+      "expected": { "intent": "createReminder", "slots": { "text": "review the budget", "triggerAt": "tomorrow 09:00" } },
+      "response": "{\"intent\":\"createReminder\",\"slots\":{\"text\":\"review the budget\",\"triggerAt\":\"tomorrow 09:00\"},\"confidence\":0.9}"
+    },
+    {
+      "id": "en-010",
+      "utterance": "what's the status of PROJ-99?",
+      "expected": { "intent": "queryStatus", "slots": { "issueKey": "PROJ-99" } },
+      "response": "{\"intent\":\"queryStatus\",\"slots\":{\"issueKey\":\"PROJ-99\"},\"confidence\":0.96}"
+    },
+    {
+      "id": "en-011",
+      "utterance": "how is INFRA-33 doing",
+      "expected": { "intent": "queryStatus", "slots": { "issueKey": "INFRA-33" } },
+      "response": "{\"intent\":\"queryStatus\",\"slots\":{\"issueKey\":\"INFRA-33\"},\"confidence\":0.89}"
+    },
+    {
+      "id": "en-012",
+      "utterance": "do that thing we talked about",
+      "expected": { "intent": "unknown", "slots": {} },
+      "response": "{\"intent\":\"unknown\",\"slots\":{},\"confidence\":0.19}"
+    },
+    {
+      "id": "en-013",
+      "utterance": "morning",
+      "expected": { "intent": "unknown", "slots": {} },
+      "response": "I could not find a command in that."
+    }
+  ]
+}
