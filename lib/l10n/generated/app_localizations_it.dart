@@ -166,7 +166,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get jiraSectionDescription =>
-      'Collega le attività alle issue di un sito Jira Cloud. Il token API resta nell\'archivio sicuro del dispositivo e non lo lascia mai.';
+      'Collega le attività alle issue di un sito Jira Cloud o Server/Data Center. Il token resta nell\'archivio sicuro del dispositivo e non lo lascia mai.';
 
   @override
   String get jiraFieldSiteUrl => 'URL del sito';

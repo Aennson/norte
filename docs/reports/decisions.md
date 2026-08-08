@@ -324,9 +324,10 @@ records the procedure.
 
 **Context.** `docs/architecture.md` §4 and the Sprint 02 scope both name **Jira
 Cloud REST v3** with Basic auth. During the sprint the Developer identified the
-target site as `jira.dedalus.com` — a self-hosted **Jira Server/Data Center**
-instance. The two products are not interchangeable in the three places an HTTP
-client cannot paper over:
+target site as a self-hosted **Jira Server/Data Center** instance. (The
+hostname is deliberately not recorded here: it is internal infrastructure, and
+a decision record is a public document.) The two products are not
+interchangeable in the three places an HTTP client cannot paper over:
 
 | | Cloud | Data Center |
 |---|---|---|
@@ -357,3 +358,19 @@ the default so the specified behaviour is what an unconfigured install gets.
 `JiraSettingsSection`, the three ARB files, `FakeJiraServer` and the contract
 suite. OAuth 2.0 (3LO) remains the Cloud evolution path; Data Center's is
 unchanged, since a PAT is already its long-lived credential.
+
+---
+
+## DEC-013 — Development branch for Sprint 02 (Sprint 02)
+
+**Status:** accepted.
+
+**Context.** `docs/project-rules.md` §7.1 names sprint branches
+`sprint-XX/<slug>`. As in Sprint 00 (DEC-003) and Sprint 01 (DEC-009), the
+execution environment pins the branch to `claude/proxima-fase-e56000` and
+forbids pushing anywhere else.
+
+**Decision.** Sprint 02 is developed and pushed on `claude/proxima-fase-e56000`,
+in a worktree, with every other §7 rule honoured: `master` untouched, commits
+authored by the Developer with the AI as `Co-Authored-By`, and a single PR to
+`master` that merges only on 100% green Actions.

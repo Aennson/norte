@@ -165,7 +165,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get jiraSectionDescription =>
-      'Vincule tarefas a issues de um site Jira Cloud. Seu token de API fica no armazenamento seguro do aparelho e nunca sai de lá.';
+      'Vincule tarefas a issues de um site Jira Cloud ou Server/Data Center. Seu token fica no armazenamento seguro do aparelho e nunca sai de lá.';
 
   @override
   String get jiraFieldSiteUrl => 'URL do site';
