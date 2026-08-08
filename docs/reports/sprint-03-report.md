@@ -198,15 +198,28 @@ output being tested against the real parser, not ours against ours.
   meeting shows *Transcript discarded*; the task list contains the follow-up.
   No key appears in any log.
 
-> ⏳ **Pending the Developer's pass.** This is the one Definition-of-Done box
-> the executing AI cannot check for itself — it needs a human, a real key, and a
-> real meeting. The box in §8 stays unticked until the result is recorded here.
+### Result
+
+**Executed by the Developer on 2026-08-08 against the real Claude API, and
+reported as passing.** The pipeline works end to end with a real key and a real
+transcript: the summary came back in the template's sections, the conversion
+produced a task, and the saved meeting kept its summary.
+
+This is the Developer's own attestation, not something the executing AI
+observed — which is the nature of the box. No key was shared with the AI, none
+reached this repository, and none appears in any commit.
+
+What the automated suite could not have caught, and this pass therefore covers:
+that the real model, given the real system prompt, returns an answer the real
+codec can read. Every automated case proves the parser against fixtures; only
+this one proves the fixtures resemble the model.
 
 ## 8. Definition of Done
 
 - [x] Gates G1–G6 green; domain+application coverage ≥ 90% — §2, **96.1%**
 - [x] All S03-* tests passing — §3, 419 tests and 18 E2E scenarios
-- [ ] Manual test with the real Claude API — §7, awaiting the Developer
+- [x] Manual test with the real Claude API — §7, executed by the Developer on
+      2026-08-08 and reported as passing; key not committed
 - [x] Report `docs/reports/sprint-03-report.md` — this document
 - [ ] Linux golden set committed from the workflow artifact — §6
 - [ ] GitHub Actions 100% green on the sprint PR
