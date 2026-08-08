@@ -176,19 +176,83 @@ class MeetingTemplateRows extends Table {
   Set<Column<Object>> get primaryKey => <Column<Object>>{id};
 }
 
+/// Storage for voice-captured reminders (`docs/architecture.md` §8).
+///
+/// **There is no audio column, and there never will be.** `Reminder` carries a
+/// transient `sourceAudioNote`; the repository drops it on write and the schema
+/// gives it nowhere to land (BR-06). A column here would be the one place a
+/// forgetful caller could leave voice audio on the user's disk.
+///
+/// Sprint 05 fills this table; Sprint 06 schedules from it.
+class ReminderRows extends Table {
+  @override
+  String get tableName => 'reminders';
+
+  TextColumn get id => text()();
+
+  /// The transcribed text. Never the audio it came from (BR-06).
+  ///
+  /// Named `body` in Dart because `text` is `Table`'s own column builder;
+  /// the column itself is `text`, which is what the entity calls it.
+  TextColumn get body => text().named('text')();
+
+  /// Milliseconds since epoch, UTC (as in `tasks`).
+  IntColumn get triggerAtMs => integer().named('trigger_at_ms')();
+  IntColumn get createdAtMs => integer().named('created_at_ms')();
+
+  /// `true` once the notification has been delivered. Sprint 06 sets it; the
+  /// column exists now so the Windows check-on-launch has something to read
+  /// rather than a migration to wait for.
+  BoolColumn get isFired =>
+      boolean().named('is_fired').withDefault(const Constant(false))();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
+/// Key–value storage for the user's preferences.
+///
+/// A single narrow table rather than a column per setting: preferences are
+/// added by nearly every sprint, and a schema migration per checkbox would be
+/// a migration nobody reads. Values are JSON, so a preference can grow from a
+/// boolean into an object without a fifth migration.
+///
+/// Note what is **not** here — no API key, no token. Those live in the
+/// platform's secure store and nowhere else (BR-08).
+class SettingsRows extends Table {
+  @override
+  String get tableName => 'settings';
+
+  /// Namespaced key, e.g. `voice`.
+  TextColumn get key => text()();
+
+  /// The value as JSON.
+  TextColumn get value => text()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{key};
+}
+
 /// The application database.
 ///
 /// Lives behind the repository ports; nothing outside
 /// `infrastructure/persistence/` may reference it (`sprint-01` validation
 /// rules, enforced by gate G5).
 @DriftDatabase(
-  tables: <Type>[TaskRows, OutboxRows, MeetingRows, MeetingTemplateRows],
+  tables: <Type>[
+    TaskRows,
+    OutboxRows,
+    MeetingRows,
+    MeetingTemplateRows,
+    ReminderRows,
+    SettingsRows,
+  ],
 )
 class NorteDatabase extends _$NorteDatabase {
   NorteDatabase(super.executor);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   /// Every upgrade is additive, and deliberately so: a user who has been
   /// running Norte since Sprint 01 keeps every task, link and queued
@@ -197,6 +261,7 @@ class NorteDatabase extends _$NorteDatabase {
   /// * 1 → 2 adds the outbox.
   /// * 2 → 3 adds meetings and templates, and the tasks table gains the
   ///   back-reference to the meeting an action item came from.
+  /// * 3 → 4 adds reminders and the preferences table.
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (Migrator m) => m.createAll(),
@@ -206,6 +271,10 @@ class NorteDatabase extends _$NorteDatabase {
         await m.createTable(meetingRows);
         await m.createTable(meetingTemplateRows);
         await m.addColumn(taskRows, taskRows.sourceMeetingId);
+      }
+      if (from < 4) {
+        await m.createTable(reminderRows);
+        await m.createTable(settingsRows);
       }
     },
   );

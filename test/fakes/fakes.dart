@@ -17,7 +17,9 @@ export 'fake_meeting_template_repository.dart';
 export 'fake_notification_scheduler.dart';
 export 'fake_outbox_repository.dart';
 export 'fake_realtime_transcription.dart';
+export 'fake_reminder_repository.dart';
 export 'fake_transcription_credential_store.dart';
+export 'fake_voice_settings_store.dart';
 
 // `ports/provisional_ports.dart` is gone as of Sprint 05: every port Sprint 00
 // could only sketch in primitives — `JiraGateway`, `AiEngine`,

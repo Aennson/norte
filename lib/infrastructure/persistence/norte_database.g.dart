@@ -2423,6 +2423,599 @@ class MeetingTemplateRowsCompanion extends UpdateCompanion<MeetingTemplateRow> {
   }
 }
 
+class $ReminderRowsTable extends ReminderRows
+    with TableInfo<$ReminderRowsTable, ReminderRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ReminderRowsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+    'text',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _triggerAtMsMeta = const VerificationMeta(
+    'triggerAtMs',
+  );
+  @override
+  late final GeneratedColumn<int> triggerAtMs = GeneratedColumn<int>(
+    'trigger_at_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMsMeta = const VerificationMeta(
+    'createdAtMs',
+  );
+  @override
+  late final GeneratedColumn<int> createdAtMs = GeneratedColumn<int>(
+    'created_at_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isFiredMeta = const VerificationMeta(
+    'isFired',
+  );
+  @override
+  late final GeneratedColumn<bool> isFired = GeneratedColumn<bool>(
+    'is_fired',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_fired" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    body,
+    triggerAtMs,
+    createdAtMs,
+    isFired,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'reminders';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ReminderRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('text')) {
+      context.handle(
+        _bodyMeta,
+        body.isAcceptableOrUnknown(data['text']!, _bodyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bodyMeta);
+    }
+    if (data.containsKey('trigger_at_ms')) {
+      context.handle(
+        _triggerAtMsMeta,
+        triggerAtMs.isAcceptableOrUnknown(
+          data['trigger_at_ms']!,
+          _triggerAtMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_triggerAtMsMeta);
+    }
+    if (data.containsKey('created_at_ms')) {
+      context.handle(
+        _createdAtMsMeta,
+        createdAtMs.isAcceptableOrUnknown(
+          data['created_at_ms']!,
+          _createdAtMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMsMeta);
+    }
+    if (data.containsKey('is_fired')) {
+      context.handle(
+        _isFiredMeta,
+        isFired.isAcceptableOrUnknown(data['is_fired']!, _isFiredMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ReminderRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ReminderRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      body: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}text'],
+      )!,
+      triggerAtMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}trigger_at_ms'],
+      )!,
+      createdAtMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at_ms'],
+      )!,
+      isFired: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_fired'],
+      )!,
+    );
+  }
+
+  @override
+  $ReminderRowsTable createAlias(String alias) {
+    return $ReminderRowsTable(attachedDatabase, alias);
+  }
+}
+
+class ReminderRow extends DataClass implements Insertable<ReminderRow> {
+  final String id;
+
+  /// The transcribed text. Never the audio it came from (BR-06).
+  ///
+  /// Named `body` in Dart because `text` is `Table`'s own column builder;
+  /// the column itself is `text`, which is what the entity calls it.
+  final String body;
+
+  /// Milliseconds since epoch, UTC (as in `tasks`).
+  final int triggerAtMs;
+  final int createdAtMs;
+
+  /// `true` once the notification has been delivered. Sprint 06 sets it; the
+  /// column exists now so the Windows check-on-launch has something to read
+  /// rather than a migration to wait for.
+  final bool isFired;
+  const ReminderRow({
+    required this.id,
+    required this.body,
+    required this.triggerAtMs,
+    required this.createdAtMs,
+    required this.isFired,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['text'] = Variable<String>(body);
+    map['trigger_at_ms'] = Variable<int>(triggerAtMs);
+    map['created_at_ms'] = Variable<int>(createdAtMs);
+    map['is_fired'] = Variable<bool>(isFired);
+    return map;
+  }
+
+  ReminderRowsCompanion toCompanion(bool nullToAbsent) {
+    return ReminderRowsCompanion(
+      id: Value(id),
+      body: Value(body),
+      triggerAtMs: Value(triggerAtMs),
+      createdAtMs: Value(createdAtMs),
+      isFired: Value(isFired),
+    );
+  }
+
+  factory ReminderRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ReminderRow(
+      id: serializer.fromJson<String>(json['id']),
+      body: serializer.fromJson<String>(json['body']),
+      triggerAtMs: serializer.fromJson<int>(json['triggerAtMs']),
+      createdAtMs: serializer.fromJson<int>(json['createdAtMs']),
+      isFired: serializer.fromJson<bool>(json['isFired']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'body': serializer.toJson<String>(body),
+      'triggerAtMs': serializer.toJson<int>(triggerAtMs),
+      'createdAtMs': serializer.toJson<int>(createdAtMs),
+      'isFired': serializer.toJson<bool>(isFired),
+    };
+  }
+
+  ReminderRow copyWith({
+    String? id,
+    String? body,
+    int? triggerAtMs,
+    int? createdAtMs,
+    bool? isFired,
+  }) => ReminderRow(
+    id: id ?? this.id,
+    body: body ?? this.body,
+    triggerAtMs: triggerAtMs ?? this.triggerAtMs,
+    createdAtMs: createdAtMs ?? this.createdAtMs,
+    isFired: isFired ?? this.isFired,
+  );
+  ReminderRow copyWithCompanion(ReminderRowsCompanion data) {
+    return ReminderRow(
+      id: data.id.present ? data.id.value : this.id,
+      body: data.body.present ? data.body.value : this.body,
+      triggerAtMs: data.triggerAtMs.present
+          ? data.triggerAtMs.value
+          : this.triggerAtMs,
+      createdAtMs: data.createdAtMs.present
+          ? data.createdAtMs.value
+          : this.createdAtMs,
+      isFired: data.isFired.present ? data.isFired.value : this.isFired,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ReminderRow(')
+          ..write('id: $id, ')
+          ..write('body: $body, ')
+          ..write('triggerAtMs: $triggerAtMs, ')
+          ..write('createdAtMs: $createdAtMs, ')
+          ..write('isFired: $isFired')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, body, triggerAtMs, createdAtMs, isFired);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ReminderRow &&
+          other.id == this.id &&
+          other.body == this.body &&
+          other.triggerAtMs == this.triggerAtMs &&
+          other.createdAtMs == this.createdAtMs &&
+          other.isFired == this.isFired);
+}
+
+class ReminderRowsCompanion extends UpdateCompanion<ReminderRow> {
+  final Value<String> id;
+  final Value<String> body;
+  final Value<int> triggerAtMs;
+  final Value<int> createdAtMs;
+  final Value<bool> isFired;
+  final Value<int> rowid;
+  const ReminderRowsCompanion({
+    this.id = const Value.absent(),
+    this.body = const Value.absent(),
+    this.triggerAtMs = const Value.absent(),
+    this.createdAtMs = const Value.absent(),
+    this.isFired = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ReminderRowsCompanion.insert({
+    required String id,
+    required String body,
+    required int triggerAtMs,
+    required int createdAtMs,
+    this.isFired = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       body = Value(body),
+       triggerAtMs = Value(triggerAtMs),
+       createdAtMs = Value(createdAtMs);
+  static Insertable<ReminderRow> custom({
+    Expression<String>? id,
+    Expression<String>? body,
+    Expression<int>? triggerAtMs,
+    Expression<int>? createdAtMs,
+    Expression<bool>? isFired,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (body != null) 'text': body,
+      if (triggerAtMs != null) 'trigger_at_ms': triggerAtMs,
+      if (createdAtMs != null) 'created_at_ms': createdAtMs,
+      if (isFired != null) 'is_fired': isFired,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ReminderRowsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? body,
+    Value<int>? triggerAtMs,
+    Value<int>? createdAtMs,
+    Value<bool>? isFired,
+    Value<int>? rowid,
+  }) {
+    return ReminderRowsCompanion(
+      id: id ?? this.id,
+      body: body ?? this.body,
+      triggerAtMs: triggerAtMs ?? this.triggerAtMs,
+      createdAtMs: createdAtMs ?? this.createdAtMs,
+      isFired: isFired ?? this.isFired,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (body.present) {
+      map['text'] = Variable<String>(body.value);
+    }
+    if (triggerAtMs.present) {
+      map['trigger_at_ms'] = Variable<int>(triggerAtMs.value);
+    }
+    if (createdAtMs.present) {
+      map['created_at_ms'] = Variable<int>(createdAtMs.value);
+    }
+    if (isFired.present) {
+      map['is_fired'] = Variable<bool>(isFired.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ReminderRowsCompanion(')
+          ..write('id: $id, ')
+          ..write('body: $body, ')
+          ..write('triggerAtMs: $triggerAtMs, ')
+          ..write('createdAtMs: $createdAtMs, ')
+          ..write('isFired: $isFired, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SettingsRowsTable extends SettingsRows
+    with TableInfo<$SettingsRowsTable, SettingsRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SettingsRowsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _keyMeta = const VerificationMeta('key');
+  @override
+  late final GeneratedColumn<String> key = GeneratedColumn<String>(
+    'key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _valueMeta = const VerificationMeta('value');
+  @override
+  late final GeneratedColumn<String> value = GeneratedColumn<String>(
+    'value',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [key, value];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'settings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SettingsRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('key')) {
+      context.handle(
+        _keyMeta,
+        key.isAcceptableOrUnknown(data['key']!, _keyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_keyMeta);
+    }
+    if (data.containsKey('value')) {
+      context.handle(
+        _valueMeta,
+        value.isAcceptableOrUnknown(data['value']!, _valueMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_valueMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {key};
+  @override
+  SettingsRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SettingsRow(
+      key: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}key'],
+      )!,
+      value: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}value'],
+      )!,
+    );
+  }
+
+  @override
+  $SettingsRowsTable createAlias(String alias) {
+    return $SettingsRowsTable(attachedDatabase, alias);
+  }
+}
+
+class SettingsRow extends DataClass implements Insertable<SettingsRow> {
+  /// Namespaced key, e.g. `voice`.
+  final String key;
+
+  /// The value as JSON.
+  final String value;
+  const SettingsRow({required this.key, required this.value});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['key'] = Variable<String>(key);
+    map['value'] = Variable<String>(value);
+    return map;
+  }
+
+  SettingsRowsCompanion toCompanion(bool nullToAbsent) {
+    return SettingsRowsCompanion(key: Value(key), value: Value(value));
+  }
+
+  factory SettingsRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SettingsRow(
+      key: serializer.fromJson<String>(json['key']),
+      value: serializer.fromJson<String>(json['value']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'key': serializer.toJson<String>(key),
+      'value': serializer.toJson<String>(value),
+    };
+  }
+
+  SettingsRow copyWith({String? key, String? value}) =>
+      SettingsRow(key: key ?? this.key, value: value ?? this.value);
+  SettingsRow copyWithCompanion(SettingsRowsCompanion data) {
+    return SettingsRow(
+      key: data.key.present ? data.key.value : this.key,
+      value: data.value.present ? data.value.value : this.value,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SettingsRow(')
+          ..write('key: $key, ')
+          ..write('value: $value')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(key, value);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SettingsRow &&
+          other.key == this.key &&
+          other.value == this.value);
+}
+
+class SettingsRowsCompanion extends UpdateCompanion<SettingsRow> {
+  final Value<String> key;
+  final Value<String> value;
+  final Value<int> rowid;
+  const SettingsRowsCompanion({
+    this.key = const Value.absent(),
+    this.value = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SettingsRowsCompanion.insert({
+    required String key,
+    required String value,
+    this.rowid = const Value.absent(),
+  }) : key = Value(key),
+       value = Value(value);
+  static Insertable<SettingsRow> custom({
+    Expression<String>? key,
+    Expression<String>? value,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (key != null) 'key': key,
+      if (value != null) 'value': value,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SettingsRowsCompanion copyWith({
+    Value<String>? key,
+    Value<String>? value,
+    Value<int>? rowid,
+  }) {
+    return SettingsRowsCompanion(
+      key: key ?? this.key,
+      value: value ?? this.value,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (key.present) {
+      map['key'] = Variable<String>(key.value);
+    }
+    if (value.present) {
+      map['value'] = Variable<String>(value.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SettingsRowsCompanion(')
+          ..write('key: $key, ')
+          ..write('value: $value, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$NorteDatabase extends GeneratedDatabase {
   _$NorteDatabase(QueryExecutor e) : super(e);
   $NorteDatabaseManager get managers => $NorteDatabaseManager(this);
@@ -2431,6 +3024,8 @@ abstract class _$NorteDatabase extends GeneratedDatabase {
   late final $MeetingRowsTable meetingRows = $MeetingRowsTable(this);
   late final $MeetingTemplateRowsTable meetingTemplateRows =
       $MeetingTemplateRowsTable(this);
+  late final $ReminderRowsTable reminderRows = $ReminderRowsTable(this);
+  late final $SettingsRowsTable settingsRows = $SettingsRowsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2440,6 +3035,8 @@ abstract class _$NorteDatabase extends GeneratedDatabase {
     outboxRows,
     meetingRows,
     meetingTemplateRows,
+    reminderRows,
+    settingsRows,
   ];
 }
 
@@ -3597,6 +4194,349 @@ typedef $$MeetingTemplateRowsTableProcessedTableManager =
       MeetingTemplateRow,
       PrefetchHooks Function()
     >;
+typedef $$ReminderRowsTableCreateCompanionBuilder =
+    ReminderRowsCompanion Function({
+      required String id,
+      required String body,
+      required int triggerAtMs,
+      required int createdAtMs,
+      Value<bool> isFired,
+      Value<int> rowid,
+    });
+typedef $$ReminderRowsTableUpdateCompanionBuilder =
+    ReminderRowsCompanion Function({
+      Value<String> id,
+      Value<String> body,
+      Value<int> triggerAtMs,
+      Value<int> createdAtMs,
+      Value<bool> isFired,
+      Value<int> rowid,
+    });
+
+class $$ReminderRowsTableFilterComposer
+    extends Composer<_$NorteDatabase, $ReminderRowsTable> {
+  $$ReminderRowsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get triggerAtMs => $composableBuilder(
+    column: $table.triggerAtMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isFired => $composableBuilder(
+    column: $table.isFired,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ReminderRowsTableOrderingComposer
+    extends Composer<_$NorteDatabase, $ReminderRowsTable> {
+  $$ReminderRowsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get triggerAtMs => $composableBuilder(
+    column: $table.triggerAtMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isFired => $composableBuilder(
+    column: $table.isFired,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ReminderRowsTableAnnotationComposer
+    extends Composer<_$NorteDatabase, $ReminderRowsTable> {
+  $$ReminderRowsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => column);
+
+  GeneratedColumn<int> get triggerAtMs => $composableBuilder(
+    column: $table.triggerAtMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isFired =>
+      $composableBuilder(column: $table.isFired, builder: (column) => column);
+}
+
+class $$ReminderRowsTableTableManager
+    extends
+        RootTableManager<
+          _$NorteDatabase,
+          $ReminderRowsTable,
+          ReminderRow,
+          $$ReminderRowsTableFilterComposer,
+          $$ReminderRowsTableOrderingComposer,
+          $$ReminderRowsTableAnnotationComposer,
+          $$ReminderRowsTableCreateCompanionBuilder,
+          $$ReminderRowsTableUpdateCompanionBuilder,
+          (
+            ReminderRow,
+            BaseReferences<_$NorteDatabase, $ReminderRowsTable, ReminderRow>,
+          ),
+          ReminderRow,
+          PrefetchHooks Function()
+        > {
+  $$ReminderRowsTableTableManager(_$NorteDatabase db, $ReminderRowsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ReminderRowsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ReminderRowsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ReminderRowsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> body = const Value.absent(),
+                Value<int> triggerAtMs = const Value.absent(),
+                Value<int> createdAtMs = const Value.absent(),
+                Value<bool> isFired = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ReminderRowsCompanion(
+                id: id,
+                body: body,
+                triggerAtMs: triggerAtMs,
+                createdAtMs: createdAtMs,
+                isFired: isFired,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String body,
+                required int triggerAtMs,
+                required int createdAtMs,
+                Value<bool> isFired = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ReminderRowsCompanion.insert(
+                id: id,
+                body: body,
+                triggerAtMs: triggerAtMs,
+                createdAtMs: createdAtMs,
+                isFired: isFired,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ReminderRowsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$NorteDatabase,
+      $ReminderRowsTable,
+      ReminderRow,
+      $$ReminderRowsTableFilterComposer,
+      $$ReminderRowsTableOrderingComposer,
+      $$ReminderRowsTableAnnotationComposer,
+      $$ReminderRowsTableCreateCompanionBuilder,
+      $$ReminderRowsTableUpdateCompanionBuilder,
+      (
+        ReminderRow,
+        BaseReferences<_$NorteDatabase, $ReminderRowsTable, ReminderRow>,
+      ),
+      ReminderRow,
+      PrefetchHooks Function()
+    >;
+typedef $$SettingsRowsTableCreateCompanionBuilder =
+    SettingsRowsCompanion Function({
+      required String key,
+      required String value,
+      Value<int> rowid,
+    });
+typedef $$SettingsRowsTableUpdateCompanionBuilder =
+    SettingsRowsCompanion Function({
+      Value<String> key,
+      Value<String> value,
+      Value<int> rowid,
+    });
+
+class $$SettingsRowsTableFilterComposer
+    extends Composer<_$NorteDatabase, $SettingsRowsTable> {
+  $$SettingsRowsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SettingsRowsTableOrderingComposer
+    extends Composer<_$NorteDatabase, $SettingsRowsTable> {
+  $$SettingsRowsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SettingsRowsTableAnnotationComposer
+    extends Composer<_$NorteDatabase, $SettingsRowsTable> {
+  $$SettingsRowsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => column);
+
+  GeneratedColumn<String> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
+}
+
+class $$SettingsRowsTableTableManager
+    extends
+        RootTableManager<
+          _$NorteDatabase,
+          $SettingsRowsTable,
+          SettingsRow,
+          $$SettingsRowsTableFilterComposer,
+          $$SettingsRowsTableOrderingComposer,
+          $$SettingsRowsTableAnnotationComposer,
+          $$SettingsRowsTableCreateCompanionBuilder,
+          $$SettingsRowsTableUpdateCompanionBuilder,
+          (
+            SettingsRow,
+            BaseReferences<_$NorteDatabase, $SettingsRowsTable, SettingsRow>,
+          ),
+          SettingsRow,
+          PrefetchHooks Function()
+        > {
+  $$SettingsRowsTableTableManager(_$NorteDatabase db, $SettingsRowsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SettingsRowsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SettingsRowsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SettingsRowsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> key = const Value.absent(),
+                Value<String> value = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SettingsRowsCompanion(key: key, value: value, rowid: rowid),
+          createCompanionCallback:
+              ({
+                required String key,
+                required String value,
+                Value<int> rowid = const Value.absent(),
+              }) => SettingsRowsCompanion.insert(
+                key: key,
+                value: value,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SettingsRowsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$NorteDatabase,
+      $SettingsRowsTable,
+      SettingsRow,
+      $$SettingsRowsTableFilterComposer,
+      $$SettingsRowsTableOrderingComposer,
+      $$SettingsRowsTableAnnotationComposer,
+      $$SettingsRowsTableCreateCompanionBuilder,
+      $$SettingsRowsTableUpdateCompanionBuilder,
+      (
+        SettingsRow,
+        BaseReferences<_$NorteDatabase, $SettingsRowsTable, SettingsRow>,
+      ),
+      SettingsRow,
+      PrefetchHooks Function()
+    >;
 
 class $NorteDatabaseManager {
   final _$NorteDatabase _db;
@@ -3609,4 +4549,8 @@ class $NorteDatabaseManager {
       $$MeetingRowsTableTableManager(_db, _db.meetingRows);
   $$MeetingTemplateRowsTableTableManager get meetingTemplateRows =>
       $$MeetingTemplateRowsTableTableManager(_db, _db.meetingTemplateRows);
+  $$ReminderRowsTableTableManager get reminderRows =>
+      $$ReminderRowsTableTableManager(_db, _db.reminderRows);
+  $$SettingsRowsTableTableManager get settingsRows =>
+      $$SettingsRowsTableTableManager(_db, _db.settingsRows);
 }
