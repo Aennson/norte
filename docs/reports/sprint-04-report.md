@@ -240,9 +240,19 @@ and the Definition of Done in §8 reflects that honestly.
       **outstanding**. The script is written and ready to run; it is the one box
       the executing AI cannot close.
 - [x] Report `docs/reports/sprint-04-report.md` — this document
-- [ ] Linux golden set committed from the workflow artifact (DEC-011) — §6
-- [ ] GitHub Actions 100% green on the sprint PR
+- [x] Linux golden set committed from the workflow artifact (DEC-011) — §6,
+      [run 31273625525](https://github.com/Aennson/norte/actions/runs/31273625525):
+      twenty files added, exactly two changed, forty-nine byte-identical
+- [x] GitHub Actions 100% green on the sprint PR — **PR #6**, all six checks
+      `pass` on the branch push
+      ([run 31273722794](https://github.com/Aennson/norte/actions/runs/31273722794))
+      and again on the pull request
+      ([run 31273739671](https://github.com/Aennson/norte/actions/runs/31273739671)):
+      analyze/format/imports/secrets, tests + coverage + goldens, and the E2E
+      job across all eight suites. The PR reports `MERGEABLE` / `CLEAN`
 
-**Four boxes of six.** The two unchecked ones are stated as unchecked rather
-than explained away: §1's audit of the previous sprints exists precisely because
-a box ticked on a promise is worse than a box left open.
+**Five boxes of six.** The one still open is §7's manual script, and it is left
+open rather than explained away: §1's audit of the previous sprints exists
+precisely because a box ticked on a promise is worse than a box left open. The
+sprint is complete on everything the executing AI can complete; it closes when
+the Developer runs the recording pass and records the result here.
