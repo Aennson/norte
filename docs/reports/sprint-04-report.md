@@ -222,23 +222,35 @@ carried as an open platform obligation, not silently ticked.
 
 ### Result
 
-**Not yet executed.** This box is the Developer's to run: it needs their own
-Whisper key and a real microphone on each of the two platforms, neither of which
-the executing AI has or should have.
+**Executed by the Developer on 2026-08-08 against a real microphone and the
+real Whisper API, and reported as passing.** The recording flow works end to
+end with a real key: the audio was captured, uploaded and transcribed, the
+summary came back in the daily template's sections, and the recording was gone
+from the temp directory afterwards.
 
-The record for it is prepared above and nothing else in the sprint depends on
-it. It is stated here as **outstanding rather than ticked** — by
-`docs/project-rules.md` §1.3, a pending item means the sprint is not complete,
-and the Definition of Done in §8 reflects that honestly.
+This is the Developer's own attestation, not something the executing AI
+observed — which is the nature of this box. No Whisper key was shared with the
+AI, none reached this repository, and none appears in any commit.
+
+What the automated suite could not have caught, and this pass therefore covers:
+that a real microphone, a real AAC encoder and the real model produce a file the
+adapter can upload and a transcript the summarizer can read. Every automated
+case proves the pipeline against fixtures; only this one proves the fixtures
+resemble a recording.
+
+**Scope of the attestation.** Recorded here as the Developer reported it. Per
+**DEC-020** the script covers Windows and Android; **iOS remains unverified**
+for want of a macOS host, and stays an open platform obligation carried by
+DEC-020 rather than discharged here.
 
 ## 8. Definition of Done
 
 - [x] Gates G1–G6 green; domain+application coverage ≥ 90% — §2, **94.5%**
 - [x] All S04-* tests passing — §3, 491 tests and 26 E2E scenarios
-- [ ] **Manual script: a real ~1 min recording on Windows and Android (DEC-020)
-      plus a real Whisper transcription with the Developer's own key** — §7,
-      **outstanding**. The script is written and ready to run; it is the one box
-      the executing AI cannot close.
+- [x] Manual script: a real ~1 min recording (Windows and Android, DEC-020) plus
+      a real Whisper transcription with the Developer's own key — §7, **executed
+      by the Developer on 2026-08-08 and reported as passing**; key not
+      committed
 - [x] Report `docs/reports/sprint-04-report.md` — this document
 - [x] Linux golden set committed from the workflow artifact (DEC-011) — §6,
       [run 31273625525](https://github.com/Aennson/norte/actions/runs/31273625525):
@@ -251,8 +263,13 @@ and the Definition of Done in §8 reflects that honestly.
       analyze/format/imports/secrets, tests + coverage + goldens, and the E2E
       job across all eight suites. The PR reports `MERGEABLE` / `CLEAN`
 
-**Five boxes of six.** The one still open is §7's manual script, and it is left
-open rather than explained away: §1's audit of the previous sprints exists
-precisely because a box ticked on a promise is worse than a box left open. The
-sprint is complete on everything the executing AI can complete; it closes when
-the Developer runs the recording pass and records the result here.
+**Every box is checked**, and each one on evidence rather than on a promise —
+which is the standard §1's audit of the earlier sprints was carried out to
+restore. The sprint is complete and PR #6 is ready for the Developer to merge;
+merging is theirs to do, not the executing AI's.
+
+**One obligation leaves this sprint still open**, and is carried explicitly
+rather than closed by silence: **iOS has never been built or tested**, and the
+`test/presentation/goldens/images/macos/` set does not exist. DEC-020 holds both
+until a macOS host does. Sprint 08 (hardening) is where that decision — a
+three-platform v1.0 or a two-platform one — has to be made.
