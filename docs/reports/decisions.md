@@ -426,3 +426,19 @@ though it could not produce a green pass.
 
 **Impact.** `docs/reports/sprint-02-report.md` §6 and §7;
 `docs/sprints/sprint-09-gateway-access.md` Definition of Done.
+
+---
+
+## DEC-015 — Development branch for Sprint 03 (Sprint 03)
+
+**Status:** accepted.
+
+**Context.** `docs/project-rules.md` §7.1 names sprint branches
+`sprint-XX/<slug>`. As in Sprint 00 (DEC-003), Sprint 01 (DEC-009) and
+Sprint 02 (DEC-013), the execution environment pins the branch to
+`claude/next-phase-273c71` and forbids pushing anywhere else.
+
+**Decision.** Sprint 03 is developed and pushed on `claude/next-phase-273c71`,
+in a worktree, with every other §7 rule honoured: `master` untouched, commits
+authored by the Developer with the AI as `Co-Authored-By`, and a single PR to
+`master` that merges only on 100% green Actions.
