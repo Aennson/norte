@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:norte/l10n/generated/app_localizations.dart';
 import 'package:norte/presentation/app/norte_app.dart';
+import 'package:norte/presentation/tasks/task_providers.dart';
+
+import '../support/task_fixtures.dart';
 
 /// S00-UT-05 — locale resolution and fallback (BR-11).
 ///
@@ -12,6 +16,15 @@ void main() {
   const Locale brazilianPortuguese = Locale('pt', 'BR');
   const Locale italian = Locale('it');
   const Locale unsupported = Locale('fr');
+
+  /// The app under its real composition root — the tasks destination reads the
+  /// repository, so it must be supplied even when the test only checks text.
+  Widget app() => ProviderScope(
+    overrides: <Override>[
+      taskRepositoryProvider.overrideWithValue(FakeTaskRepository()),
+    ],
+    child: const NorteApp(),
+  );
 
   test(
     'S00-UT-05: en, pt-BR and it each resolve to their own translation',
@@ -78,7 +91,7 @@ void main() {
       tester.platformDispatcher.localesTestValue = <Locale>[unsupported];
       addTearDown(tester.platformDispatcher.clearLocalesTestValue);
 
-      await tester.pumpWidget(const NorteApp());
+      await tester.pumpWidget(app());
       await tester.pumpAndSettle();
 
       expect(find.text('Tasks'), findsWidgets);
@@ -93,7 +106,7 @@ void main() {
     tester.platformDispatcher.localesTestValue = <Locale>[brazilianPortuguese];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
 
-    await tester.pumpWidget(const NorteApp());
+    await tester.pumpWidget(app());
     await tester.pumpAndSettle();
 
     expect(find.text('Tarefas'), findsWidgets);
