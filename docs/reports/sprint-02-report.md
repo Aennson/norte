@@ -187,29 +187,50 @@ found both defects in §5, and it is the entire reason
 [`docs/sprints/sprint-09-gateway-access.md`](../sprints/sprint-09-gateway-access.md)
 exists.
 
-**Where this pass now lives.** Per **DEC-014**, the obligation is discharged
-into **S09-MT-01**, whose steps 4 and 5 are this script — link, comment,
-transition, refresh, verify in a browser, verify no token in any log — run
-against this same site once Sprint 09 provides a route to it. Sprint 09's
-Definition of Done carries the inherited obligation explicitly, so it cannot be
-dropped there either.
+### What happened afterwards
 
-The box below is ticked on that basis and on nothing else. **No pass was
-performed, and none is recorded as performed.**
+**The script was subsequently executed by the Developer and reported as
+passing** — attested on 2026-08-08, after this report was first written and
+after Sprint 03 had closed. The obligation is therefore discharged here, in the
+sprint that owns it, and **DEC-016 supersedes DEC-014**: the pass is no longer
+carried into S09-MT-01.
+
+Every exit criterion above is reported as met — the chip showed the key, the
+comment appeared on the issue with the text that was typed, the transition
+landed, the sync strip cleared once both operations applied, the refresh brought
+the cached status in line, and no token appeared in any log.
+
+This is the Developer's own attestation, not something the executing AI
+observed, which is the nature of a manual box: no token was shared with the AI,
+none reached this repository, and none appears in any commit. What the automated
+suite could not have caught, and this pass therefore covers: that a real Jira
+site, with real permissions and a real token, answers the adapter the way the
+loopback server does.
+
+**What this does not settle.** The route that made the site reachable is not
+recorded here. That detail is not needed to close this box — the script ran and
+passed — but it bears directly on
+[`docs/sprints/sprint-09-gateway-access.md`](../sprints/sprint-09-gateway-access.md),
+whose entire premise is the interception transcript above. Sprint 09's entry
+criteria require it to be established before that sprint opens; it is v1.1 work
+and nothing in v1.0 depends on it.
 
 ## 7. Definition of Done
 
 - [x] Gates G1–G6 green; domain+application coverage ≥ 90% — §2, 96.4%
 - [x] All S02-* tests passing; the CT contract runs for both adapters in CI — §3
-- [x] Manual test against a real Jira — §6: **not performed; impossible on the
-      Developer's network** (gateway interception, transcript in §6). Carried to
-      **S09-MT-01** by **DEC-014**, which supersedes it.
+- [x] Manual test against a real Jira — §6: **executed by the Developer and
+      reported as passing** (attested 2026-08-08). The first attempt was
+      intercepted by the network gateway (transcript in §6) and the obligation
+      was carried to **S09-MT-01** by **DEC-014**; the pass was then performed
+      here, and **DEC-016** supersedes that carry. Token not committed.
 - [x] Report `docs/reports/sprint-02-report.md` — this document
 - [x] GitHub Actions 100% green on the sprint PR — PR #4, all six checks
       `pass` (analyze/format/imports/secrets, tests + coverage + goldens, and
       the E2E job across all four suites)
 
-**Closed on 2026-08-08.** Every box is accounted for. The one that could not be
-executed is not silently ticked: §6 records exactly why, and DEC-014 records
-where the obligation went and what would have to be true for it to be
-discharged. Sprint 03 opens on that basis.
+**Closed on 2026-08-08.** Every box is accounted for, and the manual box is now
+closed on a pass that actually happened rather than on a promise. The record of
+the failed first attempt stays in §6 deliberately: it is what found both defects
+in §5 and what motivated Sprint 09, and a report that erased it would be a worse
+record than one that keeps it.

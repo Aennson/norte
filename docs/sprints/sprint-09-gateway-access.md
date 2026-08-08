@@ -240,11 +240,11 @@ work around the platform.
       with no session and no proxy configured.
 - [ ] S09-MT-01 executed and recorded, including which of the two routes was the
       one that worked.
-- [ ] **Inherited from Sprint 02 (DEC-014):** S09-MT-01 steps 4–5 *are* the
-      Sprint 02 §6 manual script against the real site. Sprint 02's Definition
-      of Done was closed on the promise of this line. Recording it here as
-      passed also discharges that box; leaving it open leaves both open. This
-      sprint does not close on the automated suite alone.
+- [ ] ~~**Inherited from Sprint 02 (DEC-014).**~~ **Discharged by DEC-016** —
+      the Sprint 02 §6 manual script was executed against the real site and
+      recorded in that sprint's own report, so this sprint no longer carries
+      another sprint's box. S09-MT-01 stands on its own terms: it validates the
+      *gateway route*, not the Jira operations, which are already proven.
 - [ ] A decision record for the WebView dependency (`docs/architecture.md` §2.1)
       and for session material as a stored credential (§10).
 - [ ] Report `docs/reports/sprint-09-report.md`.
