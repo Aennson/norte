@@ -77,5 +77,145 @@
   "actionRetry": "Retry",
   "@actionRetry": {
     "description": "Button label that retries the failed operation."
+  },
+  "actionSave": "Save",
+  "@actionSave": {
+    "description": "Button label that saves an edited task."
+  },
+  "actionCreate": "Create",
+  "@actionCreate": {
+    "description": "Button label that creates a new task."
+  },
+  "actionClear": "Clear",
+  "@actionClear": {
+    "description": "Button label that empties an optional field, such as a due date."
+  },
+
+  "tasksNewTask": "New task",
+  "@tasksNewTask": {
+    "description": "Label of the action that opens the task editor for a new task."
+  },
+  "tasksEditTask": "Edit task",
+  "@tasksEditTask": {
+    "description": "Title of the task editor when changing an existing task."
+  },
+  "tasksLoadingLabel": "Loading tasks",
+  "@tasksLoadingLabel": {
+    "description": "Accessible label of the loading skeleton on the tasks screen."
+  },
+  "tasksErrorMessage": "Your tasks could not be loaded.",
+  "@tasksErrorMessage": {
+    "description": "Error state of the tasks screen, shown above the retry button."
+  },
+  "tasksFilteredEmptyMessage": "No task matches this filter.",
+  "@tasksFilteredEmptyMessage": {
+    "description": "Empty state shown when a filter is active and matches nothing."
+  },
+  "tasksFilterAll": "All",
+  "@tasksFilterAll": {
+    "description": "Filter chip that clears the status filter."
+  },
+  "taskFieldTitle": "Title",
+  "@taskFieldTitle": {
+    "description": "Label of the task title input."
+  },
+  "taskFieldTitleHint": "What needs doing?",
+  "@taskFieldTitleHint": {
+    "description": "Placeholder of the task title input."
+  },
+  "taskFieldTitleRequired": "A title is required.",
+  "@taskFieldTitleRequired": {
+    "description": "Validation message shown when the task title is blank."
+  },
+  "taskFieldDescription": "Description",
+  "@taskFieldDescription": {
+    "description": "Label of the optional task description input."
+  },
+  "taskFieldStatus": "Status",
+  "@taskFieldStatus": {
+    "description": "Label of the task status selector."
+  },
+  "taskFieldPriority": "Priority",
+  "@taskFieldPriority": {
+    "description": "Label of the task priority selector."
+  },
+  "taskFieldDueDate": "Due date",
+  "@taskFieldDueDate": {
+    "description": "Label of the optional task due date."
+  },
+  "taskFieldDueDateEmpty": "No due date",
+  "@taskFieldDueDateEmpty": {
+    "description": "Shown in the due date field when the task has none."
+  },
+  "taskFieldTags": "Tags",
+  "@taskFieldTags": {
+    "description": "Label of the task tags input."
+  },
+  "taskFieldTagsHint": "Comma separated",
+  "@taskFieldTagsHint": {
+    "description": "Placeholder explaining how to type several tags."
+  },
+  "taskDueLabel": "Due {date}",
+  "@taskDueLabel": {
+    "description": "Due date shown on a task card.",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "5 Jan 2026"
+      }
+    }
+  },
+
+  "taskMarkDone": "Mark as done",
+  "@taskMarkDone": {
+    "description": "Accessible label of the control that completes a task."
+  },
+  "taskMarkNotDone": "Reopen task",
+  "@taskMarkNotDone": {
+    "description": "Accessible label of the control that reopens a completed task."
+  },
+  "taskDeleteTitle": "Delete task?",
+  "@taskDeleteTitle": {
+    "description": "Title of the destructive confirmation dialog."
+  },
+  "taskDeleteMessage": "“{title}” will be removed permanently. This cannot be undone.",
+  "@taskDeleteMessage": {
+    "description": "Body of the destructive confirmation dialog.",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Buy coffee"
+      }
+    }
+  },
+
+  "priorityLow": "Low",
+  "@priorityLow": {
+    "description": "Lowest task priority."
+  },
+  "priorityMedium": "Medium",
+  "@priorityMedium": {
+    "description": "Default task priority."
+  },
+  "priorityHigh": "High",
+  "@priorityHigh": {
+    "description": "High task priority."
+  },
+  "priorityUrgent": "Urgent",
+  "@priorityUrgent": {
+    "description": "Highest task priority."
+  },
+
+  "sortLabel": "Sort",
+  "@sortLabel": {
+    "description": "Label of the task ordering selector."
+  },
+  "sortByPriority": "Priority",
+  "@sortByPriority": {
+    "description": "Ordering option: most urgent first."
+  },
+  "sortByDueDate": "Due date",
+  "@sortByDueDate": {
+    "description": "Ordering option: soonest deadline first."
   }
 }

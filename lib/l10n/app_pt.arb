@@ -23,5 +23,41 @@
   "actionConfirm": "Confirmar",
   "actionCancel": "Cancelar",
   "actionDelete": "Excluir",
-  "actionRetry": "Tentar novamente"
+  "actionRetry": "Tentar novamente",
+  "actionSave": "Salvar",
+  "actionCreate": "Criar",
+  "actionClear": "Limpar",
+
+  "tasksNewTask": "Nova tarefa",
+  "tasksEditTask": "Editar tarefa",
+  "tasksLoadingLabel": "Carregando tarefas",
+  "tasksErrorMessage": "Não foi possível carregar suas tarefas.",
+  "tasksFilteredEmptyMessage": "Nenhuma tarefa corresponde a este filtro.",
+  "tasksFilterAll": "Todas",
+
+  "taskFieldTitle": "Título",
+  "taskFieldTitleHint": "O que precisa ser feito?",
+  "taskFieldTitleRequired": "O título é obrigatório.",
+  "taskFieldDescription": "Descrição",
+  "taskFieldStatus": "Status",
+  "taskFieldPriority": "Prioridade",
+  "taskFieldDueDate": "Prazo",
+  "taskFieldDueDateEmpty": "Sem prazo",
+  "taskFieldTags": "Etiquetas",
+  "taskFieldTagsHint": "Separadas por vírgula",
+  "taskDueLabel": "Prazo {date}",
+
+  "taskMarkDone": "Marcar como concluída",
+  "taskMarkNotDone": "Reabrir tarefa",
+  "taskDeleteTitle": "Excluir tarefa?",
+  "taskDeleteMessage": "“{title}” será removida permanentemente. Não é possível desfazer.",
+
+  "priorityLow": "Baixa",
+  "priorityMedium": "Média",
+  "priorityHigh": "Alta",
+  "priorityUrgent": "Urgente",
+
+  "sortLabel": "Ordenar",
+  "sortByPriority": "Prioridade",
+  "sortByDueDate": "Prazo"
 }

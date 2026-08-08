@@ -10,9 +10,9 @@
 
   "voiceCommandLabel": "Comando vocale",
 
-  "tasksEmptyMessage": "Nessuna attività al momento.",
-  "meetingsEmptyMessage": "Nessuna riunione al momento.",
-  "remindersEmptyMessage": "Nessun promemoria al momento.",
+  "tasksEmptyMessage": "Ancora nessuna attività.",
+  "meetingsEmptyMessage": "Ancora nessuna riunione.",
+  "remindersEmptyMessage": "Ancora nessun promemoria.",
   "settingsEmptyMessage": "Nessuna impostazione disponibile.",
 
   "statusTodo": "Da fare",
@@ -23,5 +23,41 @@
   "actionConfirm": "Conferma",
   "actionCancel": "Annulla",
   "actionDelete": "Elimina",
-  "actionRetry": "Riprova"
+  "actionRetry": "Riprova",
+  "actionSave": "Salva",
+  "actionCreate": "Crea",
+  "actionClear": "Cancella",
+
+  "tasksNewTask": "Nuova attività",
+  "tasksEditTask": "Modifica attività",
+  "tasksLoadingLabel": "Caricamento attività",
+  "tasksErrorMessage": "Non è stato possibile caricare le tue attività.",
+  "tasksFilteredEmptyMessage": "Nessuna attività corrisponde a questo filtro.",
+  "tasksFilterAll": "Tutte",
+
+  "taskFieldTitle": "Titolo",
+  "taskFieldTitleHint": "Che cosa c'è da fare?",
+  "taskFieldTitleRequired": "Il titolo è obbligatorio.",
+  "taskFieldDescription": "Descrizione",
+  "taskFieldStatus": "Stato",
+  "taskFieldPriority": "Priorità",
+  "taskFieldDueDate": "Scadenza",
+  "taskFieldDueDateEmpty": "Nessuna scadenza",
+  "taskFieldTags": "Etichette",
+  "taskFieldTagsHint": "Separate da virgola",
+  "taskDueLabel": "Scadenza {date}",
+
+  "taskMarkDone": "Segna come completata",
+  "taskMarkNotDone": "Riapri attività",
+  "taskDeleteTitle": "Eliminare l'attività?",
+  "taskDeleteMessage": "“{title}” sarà rimossa definitivamente. L'operazione non è reversibile.",
+
+  "priorityLow": "Bassa",
+  "priorityMedium": "Media",
+  "priorityHigh": "Alta",
+  "priorityUrgent": "Urgente",
+
+  "sortLabel": "Ordina",
+  "sortByPriority": "Priorità",
+  "sortByDueDate": "Scadenza"
 }
