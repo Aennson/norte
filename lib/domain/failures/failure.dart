@@ -29,6 +29,27 @@ final class NotFoundFailure extends Failure {
   const NotFoundFailure([super.message = 'not found']);
 }
 
+/// The Jira site has no issue with the key the user typed.
+///
+/// Distinct from [NotFoundFailure] because the user's next move is different:
+/// there is nothing to retry and nothing to queue — the key is wrong, and the
+/// UI says so next to the input (`sprint-02` validation rules, S02-UT-02).
+final class JiraIssueNotFoundFailure extends Failure {
+  const JiraIssueNotFoundFailure(this.issueKey)
+    : super('no Jira issue with key $issueKey');
+
+  /// The key that was not found.
+  final String issueKey;
+}
+
+/// An operation that needs Jira was attempted while the task carries no link.
+///
+/// A programming error rather than something the user can act on: the UI only
+/// offers Jira actions on linked tasks.
+final class NotLinkedFailure extends Failure {
+  const NotLinkedFailure([super.message = 'task is not linked to Jira']);
+}
+
 /// The remote service is throttling us (HTTP 429).
 final class RateLimitFailure extends Failure {
   const RateLimitFailure([super.message = 'rate limited', this.retryAfter]);

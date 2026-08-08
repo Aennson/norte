@@ -41,41 +41,8 @@ abstract interface class AiEngine {
   AiCapabilities get capabilities;
 }
 
-/// The three fields the app is allowed to keep about a Jira issue (BR-09):
-/// never a mirror of the ticket.
-class JiraIssueSnapshot {
-  const JiraIssueSnapshot({
-    required this.issueKey,
-    required this.siteUrl,
-    required this.status,
-  });
-
-  final String issueKey;
-  final String siteUrl;
-
-  /// Display cache only — Jira remains the source of truth.
-  final String status;
-}
-
-/// Provisional `JiraGateway` — promoted in Sprint 02.
-abstract interface class JiraGateway {
-  /// Reads the current snapshot of [issueKey].
-  Future<JiraIssueSnapshot> fetchIssue(String issueKey);
-
-  /// Moves [issueKey] to [status]. Idempotent by [operationId] (BR-05).
-  Future<void> transition({
-    required String issueKey,
-    required String status,
-    required String operationId,
-  });
-
-  /// Comments on [issueKey]. Idempotent by [operationId] (BR-05).
-  Future<void> addComment({
-    required String issueKey,
-    required String body,
-    required String operationId,
-  });
-}
+// `JiraGateway` and `JiraIssueSnapshot` were promoted in Sprint 02 and now
+// live in `lib/domain/` — `FakeJiraGateway` implements the real port.
 
 /// Result of a batch transcription.
 class Transcript {
