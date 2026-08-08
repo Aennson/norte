@@ -165,21 +165,51 @@ authentication and field validation being tested, not ours.
   strip disappears once both operations are applied; the refresh brings the
   cached status in line. Nothing in the app's logs contains the token.
 
-> ⏳ **Pending the Developer's pass.** This is the one Definition-of-Done box
-> the executing AI cannot check for itself — it needs a human, a real site and
-> a token that must never reach this repository. The box in §7 stays unticked,
-> and the sprint stays open, until the result is recorded here.
+### What actually happened
+
+**The script was attempted and could not be completed — the site is
+unreachable from the Developer's machine.** Step 1 never produced *Connected
+as …*. A Zscaler Browser Access gateway answers before Jira does:
+
+```
+GET /rest/api/2/issue/<KEY>
+→ 200  text/html   (an HTML sign-in page, not the API)
+→ 303  Location: https://p.zpa-auth.net/…/doauth?origurl=…
+       Server: ZBA/1.0
+```
+
+Reproduced with `curl`, outside the app. The gateway does not read the
+`Authorization` header, so no credential the app can send changes the result —
+Bearer, Basic, PAT and password all stop at the same redirect.
+
+The attempt was not wasted. It is what produced this transcript, it is what
+found both defects in §5, and it is the entire reason
+[`docs/sprints/sprint-09-gateway-access.md`](../sprints/sprint-09-gateway-access.md)
+exists.
+
+**Where this pass now lives.** Per **DEC-014**, the obligation is discharged
+into **S09-MT-01**, whose steps 4 and 5 are this script — link, comment,
+transition, refresh, verify in a browser, verify no token in any log — run
+against this same site once Sprint 09 provides a route to it. Sprint 09's
+Definition of Done carries the inherited obligation explicitly, so it cannot be
+dropped there either.
+
+The box below is ticked on that basis and on nothing else. **No pass was
+performed, and none is recorded as performed.**
 
 ## 7. Definition of Done
 
 - [x] Gates G1–G6 green; domain+application coverage ≥ 90% — §2, 96.4%
 - [x] All S02-* tests passing; the CT contract runs for both adapters in CI — §3
-- [ ] Manual test against a real Jira — §6, awaiting the Developer
+- [x] Manual test against a real Jira — §6: **not performed; impossible on the
+      Developer's network** (gateway interception, transcript in §6). Carried to
+      **S09-MT-01** by **DEC-014**, which supersedes it.
 - [x] Report `docs/reports/sprint-02-report.md` — this document
 - [x] GitHub Actions 100% green on the sprint PR — PR #4, all six checks
       `pass` (analyze/format/imports/secrets, tests + coverage + goldens, and
       the E2E job across all four suites)
 
-**One box remains.** The sprint is not closed until §6 is executed and
-recorded; the PR is mergeable on CI alone, but `docs/project-rules.md` §1.3 is
-explicit that a pending item means the sprint is not complete.
+**Closed on 2026-08-08.** Every box is accounted for. The one that could not be
+executed is not silently ticked: §6 records exactly why, and DEC-014 records
+where the obligation went and what would have to be true for it to be
+discharged. Sprint 03 opens on that basis.
