@@ -147,8 +147,9 @@ Task (local, Drift) ──optional──> JiraLink ──REST──> Jira Cloud
 
 ### 4.2 Authentication
 
-- **v1.0:** API Token (Basic auth) for simplicity — stored in `flutter_secure_storage`.
-- **Evolution:** OAuth 2.0 (3LO) once there is public distribution.
+- **v1.0 — Jira Cloud:** API Token (Basic auth: account e-mail + token) — stored in `flutter_secure_storage`.
+- **v1.0 — Jira Server/Data Center:** Personal Access Token (`Bearer`) against REST v2 — same storage. The deployment is chosen by the user in Settings, never inferred from the URL (see `docs/reports/decisions.md` — **DEC-012**).
+- **Evolution:** OAuth 2.0 (3LO) on Cloud once there is public distribution.
 
 ### 4.3 Synchronization
 
@@ -396,6 +397,10 @@ lib/
 8. **Hardening:** PII redactor, wipe, intent evals in CI.
 
 **Out of scope for v1.0:** Jira OAuth, system audio capture (loopback), automatic bidirectional sync, multi-user, TTS responses.
+
+### 14.1 v1.1 — first item
+
+9. **Gateway access:** proxy support, and a browser session held by the app, for a Jira that a corporate network control stands in front of (`docs/sprints/sprint-09-gateway-access.md`). Scheduled after v1.0 closes: nothing in Sprints 03–08 depends on it, and it is the only sprint whose acceptance needs a particular corporate network to demonstrate.
 
 ---
 

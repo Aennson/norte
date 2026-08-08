@@ -59,5 +59,57 @@
 
   "sortLabel": "Ordina",
   "sortByPriority": "Priorità",
-  "sortByDueDate": "Scadenza"
+  "sortByDueDate": "Scadenza",
+
+  "jiraSectionTitle": "Jira",
+  "jiraSectionDescription": "Collega le attività alle issue di un sito Jira Cloud o Server/Data Center. Il token resta nell'archivio sicuro del dispositivo e non lo lascia mai.",
+  "jiraFieldSiteUrl": "URL del sito",
+  "jiraFieldSiteUrlHint": "https://il-tuo-team.atlassian.net",
+  "jiraFieldEmail": "E-mail dell'account",
+  "jiraFieldApiToken": "Token API",
+  "jiraConnectAction": "Connetti",
+  "jiraDisconnectAction": "Disconnetti",
+  "jiraConnectedAs": "Connesso come {email}",
+  "jiraNotConnected": "Non connesso.",
+  "jiraCredentialsIncomplete": "Compila il sito, l'e-mail e il token.",
+
+  "jiraLinkAction": "Collega a Jira",
+  "jiraLinkTitle": "Collega una issue di Jira",
+  "jiraFieldIssueKey": "Chiave della issue",
+  "jiraFieldIssueKeyHint": "PROJ-123",
+  "jiraUnlinkAction": "Rimuovi il collegamento a Jira",
+  "jiraRefreshAction": "Aggiorna da Jira",
+  "jiraCommentAction": "Commenta su Jira",
+  "jiraCommentTitle": "Aggiungi un commento",
+  "jiraFieldComment": "Commento",
+  "jiraPushStatusAction": "Invia lo stato a Jira",
+  "jiraCreateIssueAction": "Crea una issue su Jira",
+  "jiraCreateIssueTitle": "Crea una issue da questa attività",
+  "jiraFieldProjectKey": "Chiave del progetto",
+  "jiraFieldProjectKeyHint": "PROJ",
+  "jiraQueuedMessage": "In coda — arriverà a Jira appena ci sarà connessione.",
+
+  "jiraErrorIssueNotFound": "Questo sito non ha la issue {issueKey}.",
+  "jiraErrorOffline": "Collegare una issue richiede una connessione.",
+  "jiraErrorAuth": "Jira ha rifiutato le credenziali. Controllale in Impostazioni.",
+  "jiraErrorRateLimited": "Jira sta limitando le richieste. Riprova tra poco.",
+  "jiraErrorGeneric": "Non è stato possibile raggiungere Jira.",
+  "jiraNotConfiguredMessage": "Collega prima un sito Jira in Impostazioni.",
+
+  "jiraSyncPending": "{count, plural, =1{1 modifica in attesa di sincronizzazione} other{{count} modifiche in attesa di sincronizzazione}}",
+  "jiraSyncFailed": "{count, plural, =1{1 modifica non è stata inviata} other{{count} modifiche non sono state inviate}}",
+  "jiraSyncRetryAction": "Riprova",
+  "jiraLastSyncedLabel": "Sincronizzato {date}",
+  "jiraNeverSyncedLabel": "Mai sincronizzato",
+
+  "jiraDivergenceTitle": "Jira non concorda con lo stato locale",
+  "jiraDivergenceMessage": "Qui questa attività è “{local}”; su {issueKey} è “{remote}”. Non cambia nulla finché non scegli.",
+  "jiraDivergenceKeepLocal": "Mantieni il locale",
+  "jiraDivergenceAdoptRemote": "Adotta quello di Jira",
+
+  "jiraFieldDeployment": "Tipo di Jira",
+  "jiraDeploymentCloud": "Cloud",
+  "jiraDeploymentDataCenter": "Server / Data Center",
+  "jiraFieldApiTokenDataCenter": "Token di accesso personale",
+  "jiraErrorNotRestApi": "Quell'URL ha risposto, ma non come API REST di Jira — controlla l'indirizzo del sito e se è protetto da single sign-on."
 }

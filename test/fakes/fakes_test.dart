@@ -170,7 +170,7 @@ void main() {
       final FakeJiraGateway jira = FakeJiraGateway.fromFixture();
 
       expect(jira.issues.keys, contains('PROJ-123'));
-      expect((await jira.fetchIssue('NORTE-1')).status, 'To Do');
+      expect((await jira.getIssue('NORTE-1')).status, 'To Do');
       expect(jira.reads, <String>['NORTE-1']);
     });
 
@@ -179,19 +179,19 @@ void main() {
       () async {
         final FakeJiraGateway jira = FakeJiraGateway.fromFixture();
 
-        await jira.transition(
+        await jira.transitionIssue(
           issueKey: 'NORTE-1',
           status: 'Done',
           operationId: 'op-1',
         );
-        await jira.transition(
+        await jira.transitionIssue(
           issueKey: 'NORTE-1',
           status: 'Done',
           operationId: 'op-1',
         );
 
         expect(jira.writesFor('NORTE-1'), hasLength(1));
-        expect((await jira.fetchIssue('NORTE-1')).status, 'Done');
+        expect((await jira.getIssue('NORTE-1')).status, 'Done');
       },
     );
 
@@ -219,11 +219,15 @@ void main() {
       final FakeJiraGateway jira = FakeJiraGateway.fromFixture();
 
       await expectLater(
-        jira.fetchIssue('NOPE-1'),
+        jira.getIssue('NOPE-1'),
         throwsA(isA<NotFoundFailure>()),
       );
       await expectLater(
-        jira.transition(issueKey: 'NOPE-1', status: 'Done', operationId: 'op'),
+        jira.transitionIssue(
+          issueKey: 'NOPE-1',
+          status: 'Done',
+          operationId: 'op',
+        ),
         throwsA(isA<NotFoundFailure>()),
       );
       await expectLater(
@@ -241,11 +245,11 @@ void main() {
         const NetworkFailure(),
       ]) {
         jira.failWith = failure;
-        await expectLater(jira.fetchIssue('NORTE-1'), throwsA(same(failure)));
+        await expectLater(jira.getIssue('NORTE-1'), throwsA(same(failure)));
       }
 
       jira.reset();
-      expect((await jira.fetchIssue('NORTE-1')).issueKey, 'NORTE-1');
+      expect((await jira.getIssue('NORTE-1')).issueKey, 'NORTE-1');
     });
   });
 

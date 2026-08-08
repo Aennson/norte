@@ -158,4 +158,173 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sortByDueDate => 'Due date';
+
+  @override
+  String get jiraSectionTitle => 'Jira';
+
+  @override
+  String get jiraSectionDescription =>
+      'Link tasks to issues on a Jira Cloud or Server/Data Center site. Your token is kept in the device\'s secure storage and never leaves it.';
+
+  @override
+  String get jiraFieldSiteUrl => 'Site URL';
+
+  @override
+  String get jiraFieldSiteUrlHint => 'https://your-team.atlassian.net';
+
+  @override
+  String get jiraFieldEmail => 'Account e-mail';
+
+  @override
+  String get jiraFieldApiToken => 'API token';
+
+  @override
+  String get jiraConnectAction => 'Connect';
+
+  @override
+  String get jiraDisconnectAction => 'Disconnect';
+
+  @override
+  String jiraConnectedAs(String email) {
+    return 'Connected as $email';
+  }
+
+  @override
+  String get jiraNotConnected => 'Not connected.';
+
+  @override
+  String get jiraCredentialsIncomplete =>
+      'Fill in the site, the e-mail and the token.';
+
+  @override
+  String get jiraLinkAction => 'Link to Jira';
+
+  @override
+  String get jiraLinkTitle => 'Link a Jira issue';
+
+  @override
+  String get jiraFieldIssueKey => 'Issue key';
+
+  @override
+  String get jiraFieldIssueKeyHint => 'PROJ-123';
+
+  @override
+  String get jiraUnlinkAction => 'Remove Jira link';
+
+  @override
+  String get jiraRefreshAction => 'Refresh from Jira';
+
+  @override
+  String get jiraCommentAction => 'Comment on Jira';
+
+  @override
+  String get jiraCommentTitle => 'Add a comment';
+
+  @override
+  String get jiraFieldComment => 'Comment';
+
+  @override
+  String get jiraPushStatusAction => 'Send status to Jira';
+
+  @override
+  String get jiraCreateIssueAction => 'Create Jira issue';
+
+  @override
+  String get jiraCreateIssueTitle => 'Create an issue from this task';
+
+  @override
+  String get jiraFieldProjectKey => 'Project key';
+
+  @override
+  String get jiraFieldProjectKeyHint => 'PROJ';
+
+  @override
+  String get jiraQueuedMessage =>
+      'Queued — it will reach Jira as soon as there is a connection.';
+
+  @override
+  String jiraErrorIssueNotFound(String issueKey) {
+    return 'This site has no issue $issueKey.';
+  }
+
+  @override
+  String get jiraErrorOffline => 'Linking an issue requires a connection.';
+
+  @override
+  String get jiraErrorAuth =>
+      'Jira rejected the credentials. Check them in Settings.';
+
+  @override
+  String get jiraErrorRateLimited =>
+      'Jira is throttling requests. Try again shortly.';
+
+  @override
+  String get jiraErrorGeneric => 'Jira could not be reached.';
+
+  @override
+  String get jiraNotConfiguredMessage =>
+      'Connect a Jira site in Settings first.';
+
+  @override
+  String jiraSyncPending(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count changes waiting to sync',
+      one: '1 change waiting to sync',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String jiraSyncFailed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count changes could not be sent',
+      one: '1 change could not be sent',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get jiraSyncRetryAction => 'Retry';
+
+  @override
+  String jiraLastSyncedLabel(String date) {
+    return 'Synced $date';
+  }
+
+  @override
+  String get jiraNeverSyncedLabel => 'Never synced';
+
+  @override
+  String get jiraDivergenceTitle => 'Jira disagrees with the local status';
+
+  @override
+  String jiraDivergenceMessage(String local, String issueKey, String remote) {
+    return 'Here this task is “$local”; on $issueKey it is “$remote”. Nothing changes until you choose.';
+  }
+
+  @override
+  String get jiraDivergenceKeepLocal => 'Keep local';
+
+  @override
+  String get jiraDivergenceAdoptRemote => 'Adopt from Jira';
+
+  @override
+  String get jiraFieldDeployment => 'Jira type';
+
+  @override
+  String get jiraDeploymentCloud => 'Cloud';
+
+  @override
+  String get jiraDeploymentDataCenter => 'Server / Data Center';
+
+  @override
+  String get jiraFieldApiTokenDataCenter => 'Personal access token';
+
+  @override
+  String get jiraErrorNotRestApi =>
+      'That URL answered, but not as the Jira REST API — check the site address, and whether the site is behind single sign-on.';
 }

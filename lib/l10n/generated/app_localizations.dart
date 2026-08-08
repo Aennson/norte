@@ -393,6 +393,282 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Due date'**
   String get sortByDueDate;
+
+  /// Title of the Jira configuration section in Settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Jira'**
+  String get jiraSectionTitle;
+
+  /// Explanatory text under the Jira settings title.
+  ///
+  /// In en, this message translates to:
+  /// **'Link tasks to issues on a Jira Cloud or Server/Data Center site. Your token is kept in the device\'s secure storage and never leaves it.'**
+  String get jiraSectionDescription;
+
+  /// Label of the Jira site URL field.
+  ///
+  /// In en, this message translates to:
+  /// **'Site URL'**
+  String get jiraFieldSiteUrl;
+
+  /// Placeholder of the Jira site URL field.
+  ///
+  /// In en, this message translates to:
+  /// **'https://your-team.atlassian.net'**
+  String get jiraFieldSiteUrlHint;
+
+  /// Label of the Atlassian account e-mail field.
+  ///
+  /// In en, this message translates to:
+  /// **'Account e-mail'**
+  String get jiraFieldEmail;
+
+  /// Label of the Jira API token field.
+  ///
+  /// In en, this message translates to:
+  /// **'API token'**
+  String get jiraFieldApiToken;
+
+  /// Button that stores the Jira credentials.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get jiraConnectAction;
+
+  /// Button that clears the stored Jira credentials.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect'**
+  String get jiraDisconnectAction;
+
+  /// Shown when Jira credentials are stored.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected as {email}'**
+  String jiraConnectedAs(String email);
+
+  /// Shown when no Jira credentials are stored.
+  ///
+  /// In en, this message translates to:
+  /// **'Not connected.'**
+  String get jiraNotConnected;
+
+  /// Validation message when a credential field is empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill in the site, the e-mail and the token.'**
+  String get jiraCredentialsIncomplete;
+
+  /// Task action that attaches a Jira issue.
+  ///
+  /// In en, this message translates to:
+  /// **'Link to Jira'**
+  String get jiraLinkAction;
+
+  /// Title of the link dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Link a Jira issue'**
+  String get jiraLinkTitle;
+
+  /// Label of the Jira issue key field.
+  ///
+  /// In en, this message translates to:
+  /// **'Issue key'**
+  String get jiraFieldIssueKey;
+
+  /// Placeholder of the Jira issue key field.
+  ///
+  /// In en, this message translates to:
+  /// **'PROJ-123'**
+  String get jiraFieldIssueKeyHint;
+
+  /// Task action that detaches the Jira issue.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Jira link'**
+  String get jiraUnlinkAction;
+
+  /// Task action that re-reads the issue status.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh from Jira'**
+  String get jiraRefreshAction;
+
+  /// Task action that posts a comment on the linked issue.
+  ///
+  /// In en, this message translates to:
+  /// **'Comment on Jira'**
+  String get jiraCommentAction;
+
+  /// Title of the comment dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a comment'**
+  String get jiraCommentTitle;
+
+  /// Label of the Jira comment field.
+  ///
+  /// In en, this message translates to:
+  /// **'Comment'**
+  String get jiraFieldComment;
+
+  /// Task action that queues a transition to the local status.
+  ///
+  /// In en, this message translates to:
+  /// **'Send status to Jira'**
+  String get jiraPushStatusAction;
+
+  /// Task action that creates an issue from the task.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Jira issue'**
+  String get jiraCreateIssueAction;
+
+  /// Title of the issue creation dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Create an issue from this task'**
+  String get jiraCreateIssueTitle;
+
+  /// Label of the Jira project key field.
+  ///
+  /// In en, this message translates to:
+  /// **'Project key'**
+  String get jiraFieldProjectKey;
+
+  /// Placeholder of the Jira project key field.
+  ///
+  /// In en, this message translates to:
+  /// **'PROJ'**
+  String get jiraFieldProjectKeyHint;
+
+  /// Confirmation shown after a Jira write is enqueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Queued — it will reach Jira as soon as there is a connection.'**
+  String get jiraQueuedMessage;
+
+  /// Error when the typed Jira key does not exist.
+  ///
+  /// In en, this message translates to:
+  /// **'This site has no issue {issueKey}.'**
+  String jiraErrorIssueNotFound(String issueKey);
+
+  /// Error when linking is attempted with no network.
+  ///
+  /// In en, this message translates to:
+  /// **'Linking an issue requires a connection.'**
+  String get jiraErrorOffline;
+
+  /// Error on HTTP 401/403 from Jira.
+  ///
+  /// In en, this message translates to:
+  /// **'Jira rejected the credentials. Check them in Settings.'**
+  String get jiraErrorAuth;
+
+  /// Error on HTTP 429 from Jira.
+  ///
+  /// In en, this message translates to:
+  /// **'Jira is throttling requests. Try again shortly.'**
+  String get jiraErrorRateLimited;
+
+  /// Fallback error for any other Jira failure.
+  ///
+  /// In en, this message translates to:
+  /// **'Jira could not be reached.'**
+  String get jiraErrorGeneric;
+
+  /// Shown when a Jira action is attempted with no credentials.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect a Jira site in Settings first.'**
+  String get jiraNotConfiguredMessage;
+
+  /// Indicator for operations still queued in the outbox.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 change waiting to sync} other{{count} changes waiting to sync}}'**
+  String jiraSyncPending(int count);
+
+  /// Indicator for operations that exhausted their attempts.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 change could not be sent} other{{count} changes could not be sent}}'**
+  String jiraSyncFailed(int count);
+
+  /// Manual retry of the failed outbox operations.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get jiraSyncRetryAction;
+
+  /// When the linked issue status was last read.
+  ///
+  /// In en, this message translates to:
+  /// **'Synced {date}'**
+  String jiraLastSyncedLabel(String date);
+
+  /// Shown when a link has never been refreshed.
+  ///
+  /// In en, this message translates to:
+  /// **'Never synced'**
+  String get jiraNeverSyncedLabel;
+
+  /// Title of the divergence banner (BR-02).
+  ///
+  /// In en, this message translates to:
+  /// **'Jira disagrees with the local status'**
+  String get jiraDivergenceTitle;
+
+  /// Body of the divergence banner.
+  ///
+  /// In en, this message translates to:
+  /// **'Here this task is “{local}”; on {issueKey} it is “{remote}”. Nothing changes until you choose.'**
+  String jiraDivergenceMessage(String local, String issueKey, String remote);
+
+  /// Divergence decision: keep the local status and tell Jira.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep local'**
+  String get jiraDivergenceKeepLocal;
+
+  /// Divergence decision: take Jira's status locally.
+  ///
+  /// In en, this message translates to:
+  /// **'Adopt from Jira'**
+  String get jiraDivergenceAdoptRemote;
+
+  /// Label of the Cloud / Data Center selector.
+  ///
+  /// In en, this message translates to:
+  /// **'Jira type'**
+  String get jiraFieldDeployment;
+
+  /// Atlassian-hosted Jira (*.atlassian.net).
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud'**
+  String get jiraDeploymentCloud;
+
+  /// Self-hosted Jira.
+  ///
+  /// In en, this message translates to:
+  /// **'Server / Data Center'**
+  String get jiraDeploymentDataCenter;
+
+  /// Label of the token field on a self-hosted site.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal access token'**
+  String get jiraFieldApiTokenDataCenter;
+
+  /// Error when a 2xx response is not the API's JSON, typically an SSO login page.
+  ///
+  /// In en, this message translates to:
+  /// **'That URL answered, but not as the Jira REST API — check the site address, and whether the site is behind single sign-on.'**
+  String get jiraErrorNotRestApi;
 }
 
 class _AppLocalizationsDelegate

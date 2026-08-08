@@ -7,7 +7,7 @@
 
 ## 1. Sprint execution flow
 
-1. Sprints are executed **in order** (`sprint-00` → `sprint-08`). No sprint starts until the previous one has its **Definition of Done (DoD) 100% fulfilled**.
+1. Sprints are executed **in order** (`sprint-00` → `sprint-09`). No sprint starts until the previous one has its **Definition of Done (DoD) 100% fulfilled**. Sprints 00–08 are v1.0; `sprint-09` is the first of v1.1 and starts only once v1.0 is closed.
 2. Each sprint has **Entry Criteria** (verifiable preconditions) and **Exit Criteria** (DoD). Both are objective checklists — there is no subjective interpretation.
 3. At the end of each sprint, produce a report in `docs/reports/sprint-XX-report.md` containing:
    - DoD checklist with evidence (command executed + result).

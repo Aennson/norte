@@ -19,6 +19,7 @@ class NorteTextField extends StatelessWidget {
     this.maxLines = 1,
     this.autofocus = false,
     this.onSubmitted,
+    this.isSecret = false,
   });
 
   /// Localized field label.
@@ -35,6 +36,11 @@ class NorteTextField extends StatelessWidget {
   final int maxLines;
   final bool autofocus;
   final ValueChanged<String>? onSubmitted;
+
+  /// Masks the value and keeps it out of autofill and suggestion caches —
+  /// used for the Jira API token, which must not be readable over the user's
+  /// shoulder or recoverable from the keyboard's history (BR-08).
+  final bool isSecret;
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +64,9 @@ class NorteTextField extends StatelessWidget {
           autofocus: autofocus,
           maxLines: maxLines,
           onSubmitted: onSubmitted,
+          obscureText: isSecret,
+          enableSuggestions: !isSecret,
+          autocorrect: !isSecret,
           cursorColor: colors.accent,
           style: NorteTypography.body.copyWith(color: colors.textPrimary),
           decoration: InputDecoration(

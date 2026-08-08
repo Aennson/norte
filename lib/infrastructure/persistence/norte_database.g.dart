@@ -806,15 +806,703 @@ class TaskRowsCompanion extends UpdateCompanion<TaskRow> {
   }
 }
 
+class $OutboxRowsTable extends OutboxRows
+    with TableInfo<$OutboxRowsTable, OutboxRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $OutboxRowsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _sequenceMeta = const VerificationMeta(
+    'sequence',
+  );
+  @override
+  late final GeneratedColumn<int> sequence = GeneratedColumn<int>(
+    'sequence',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _operationIdMeta = const VerificationMeta(
+    'operationId',
+  );
+  @override
+  late final GeneratedColumn<String> operationId = GeneratedColumn<String>(
+    'operation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _issueKeyMeta = const VerificationMeta(
+    'issueKey',
+  );
+  @override
+  late final GeneratedColumn<String> issueKey = GeneratedColumn<String>(
+    'issue_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadMeta = const VerificationMeta(
+    'payload',
+  );
+  @override
+  late final GeneratedColumn<String> payload = GeneratedColumn<String>(
+    'payload',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _taskIdMeta = const VerificationMeta('taskId');
+  @override
+  late final GeneratedColumn<String> taskId = GeneratedColumn<String>(
+    'task_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _stateMeta = const VerificationMeta('state');
+  @override
+  late final GeneratedColumn<String> state = GeneratedColumn<String>(
+    'state',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _attemptsMeta = const VerificationMeta(
+    'attempts',
+  );
+  @override
+  late final GeneratedColumn<int> attempts = GeneratedColumn<int>(
+    'attempts',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _createdAtMsMeta = const VerificationMeta(
+    'createdAtMs',
+  );
+  @override
+  late final GeneratedColumn<int> createdAtMs = GeneratedColumn<int>(
+    'created_at_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nextAttemptAtMsMeta = const VerificationMeta(
+    'nextAttemptAtMs',
+  );
+  @override
+  late final GeneratedColumn<int> nextAttemptAtMs = GeneratedColumn<int>(
+    'next_attempt_at_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastErrorMeta = const VerificationMeta(
+    'lastError',
+  );
+  @override
+  late final GeneratedColumn<String> lastError = GeneratedColumn<String>(
+    'last_error',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    sequence,
+    operationId,
+    kind,
+    issueKey,
+    payload,
+    taskId,
+    state,
+    attempts,
+    createdAtMs,
+    nextAttemptAtMs,
+    lastError,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'outbox';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<OutboxRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('sequence')) {
+      context.handle(
+        _sequenceMeta,
+        sequence.isAcceptableOrUnknown(data['sequence']!, _sequenceMeta),
+      );
+    }
+    if (data.containsKey('operation_id')) {
+      context.handle(
+        _operationIdMeta,
+        operationId.isAcceptableOrUnknown(
+          data['operation_id']!,
+          _operationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_operationIdMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('issue_key')) {
+      context.handle(
+        _issueKeyMeta,
+        issueKey.isAcceptableOrUnknown(data['issue_key']!, _issueKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_issueKeyMeta);
+    }
+    if (data.containsKey('payload')) {
+      context.handle(
+        _payloadMeta,
+        payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadMeta);
+    }
+    if (data.containsKey('task_id')) {
+      context.handle(
+        _taskIdMeta,
+        taskId.isAcceptableOrUnknown(data['task_id']!, _taskIdMeta),
+      );
+    }
+    if (data.containsKey('state')) {
+      context.handle(
+        _stateMeta,
+        state.isAcceptableOrUnknown(data['state']!, _stateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_stateMeta);
+    }
+    if (data.containsKey('attempts')) {
+      context.handle(
+        _attemptsMeta,
+        attempts.isAcceptableOrUnknown(data['attempts']!, _attemptsMeta),
+      );
+    }
+    if (data.containsKey('created_at_ms')) {
+      context.handle(
+        _createdAtMsMeta,
+        createdAtMs.isAcceptableOrUnknown(
+          data['created_at_ms']!,
+          _createdAtMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMsMeta);
+    }
+    if (data.containsKey('next_attempt_at_ms')) {
+      context.handle(
+        _nextAttemptAtMsMeta,
+        nextAttemptAtMs.isAcceptableOrUnknown(
+          data['next_attempt_at_ms']!,
+          _nextAttemptAtMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_error')) {
+      context.handle(
+        _lastErrorMeta,
+        lastError.isAcceptableOrUnknown(data['last_error']!, _lastErrorMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {sequence};
+  @override
+  OutboxRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return OutboxRow(
+      sequence: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sequence'],
+      )!,
+      operationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}operation_id'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      issueKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}issue_key'],
+      )!,
+      payload: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload'],
+      )!,
+      taskId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}task_id'],
+      ),
+      state: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}state'],
+      )!,
+      attempts: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}attempts'],
+      )!,
+      createdAtMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at_ms'],
+      )!,
+      nextAttemptAtMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}next_attempt_at_ms'],
+      ),
+      lastError: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_error'],
+      ),
+    );
+  }
+
+  @override
+  $OutboxRowsTable createAlias(String alias) {
+    return $OutboxRowsTable(attachedDatabase, alias);
+  }
+}
+
+class OutboxRow extends DataClass implements Insertable<OutboxRow> {
+  /// Insertion order, and the primary key. Auto-incrementing rather than
+  /// derived from a timestamp: two operations created in the same millisecond
+  /// must still have a defined order (S02-IT-03).
+  final int sequence;
+
+  /// Idempotency key (BR-05), a UUID v4 from the use case. Unique, so the
+  /// same operation cannot occupy two rows however often a dispatch is
+  /// retried.
+  final String operationId;
+
+  /// `OutboxOperationKind.name`.
+  final String kind;
+
+  /// Target issue key, or the project key for a `createIssue`.
+  final String issueKey;
+
+  /// Target status, comment body, or new-issue summary.
+  final String payload;
+
+  /// Local task the operation belongs to, when there is one.
+  final String? taskId;
+
+  /// `OutboxOperationState.name`.
+  final String state;
+  final int attempts;
+
+  /// Milliseconds since epoch, UTC.
+  final int createdAtMs;
+
+  /// Opening of the backoff window; `null` means "ready now".
+  final int? nextAttemptAtMs;
+
+  /// Message of the last failure. Never a payload or a credential (BR-08).
+  final String? lastError;
+  const OutboxRow({
+    required this.sequence,
+    required this.operationId,
+    required this.kind,
+    required this.issueKey,
+    required this.payload,
+    this.taskId,
+    required this.state,
+    required this.attempts,
+    required this.createdAtMs,
+    this.nextAttemptAtMs,
+    this.lastError,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['sequence'] = Variable<int>(sequence);
+    map['operation_id'] = Variable<String>(operationId);
+    map['kind'] = Variable<String>(kind);
+    map['issue_key'] = Variable<String>(issueKey);
+    map['payload'] = Variable<String>(payload);
+    if (!nullToAbsent || taskId != null) {
+      map['task_id'] = Variable<String>(taskId);
+    }
+    map['state'] = Variable<String>(state);
+    map['attempts'] = Variable<int>(attempts);
+    map['created_at_ms'] = Variable<int>(createdAtMs);
+    if (!nullToAbsent || nextAttemptAtMs != null) {
+      map['next_attempt_at_ms'] = Variable<int>(nextAttemptAtMs);
+    }
+    if (!nullToAbsent || lastError != null) {
+      map['last_error'] = Variable<String>(lastError);
+    }
+    return map;
+  }
+
+  OutboxRowsCompanion toCompanion(bool nullToAbsent) {
+    return OutboxRowsCompanion(
+      sequence: Value(sequence),
+      operationId: Value(operationId),
+      kind: Value(kind),
+      issueKey: Value(issueKey),
+      payload: Value(payload),
+      taskId: taskId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(taskId),
+      state: Value(state),
+      attempts: Value(attempts),
+      createdAtMs: Value(createdAtMs),
+      nextAttemptAtMs: nextAttemptAtMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(nextAttemptAtMs),
+      lastError: lastError == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastError),
+    );
+  }
+
+  factory OutboxRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return OutboxRow(
+      sequence: serializer.fromJson<int>(json['sequence']),
+      operationId: serializer.fromJson<String>(json['operationId']),
+      kind: serializer.fromJson<String>(json['kind']),
+      issueKey: serializer.fromJson<String>(json['issueKey']),
+      payload: serializer.fromJson<String>(json['payload']),
+      taskId: serializer.fromJson<String?>(json['taskId']),
+      state: serializer.fromJson<String>(json['state']),
+      attempts: serializer.fromJson<int>(json['attempts']),
+      createdAtMs: serializer.fromJson<int>(json['createdAtMs']),
+      nextAttemptAtMs: serializer.fromJson<int?>(json['nextAttemptAtMs']),
+      lastError: serializer.fromJson<String?>(json['lastError']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'sequence': serializer.toJson<int>(sequence),
+      'operationId': serializer.toJson<String>(operationId),
+      'kind': serializer.toJson<String>(kind),
+      'issueKey': serializer.toJson<String>(issueKey),
+      'payload': serializer.toJson<String>(payload),
+      'taskId': serializer.toJson<String?>(taskId),
+      'state': serializer.toJson<String>(state),
+      'attempts': serializer.toJson<int>(attempts),
+      'createdAtMs': serializer.toJson<int>(createdAtMs),
+      'nextAttemptAtMs': serializer.toJson<int?>(nextAttemptAtMs),
+      'lastError': serializer.toJson<String?>(lastError),
+    };
+  }
+
+  OutboxRow copyWith({
+    int? sequence,
+    String? operationId,
+    String? kind,
+    String? issueKey,
+    String? payload,
+    Value<String?> taskId = const Value.absent(),
+    String? state,
+    int? attempts,
+    int? createdAtMs,
+    Value<int?> nextAttemptAtMs = const Value.absent(),
+    Value<String?> lastError = const Value.absent(),
+  }) => OutboxRow(
+    sequence: sequence ?? this.sequence,
+    operationId: operationId ?? this.operationId,
+    kind: kind ?? this.kind,
+    issueKey: issueKey ?? this.issueKey,
+    payload: payload ?? this.payload,
+    taskId: taskId.present ? taskId.value : this.taskId,
+    state: state ?? this.state,
+    attempts: attempts ?? this.attempts,
+    createdAtMs: createdAtMs ?? this.createdAtMs,
+    nextAttemptAtMs: nextAttemptAtMs.present
+        ? nextAttemptAtMs.value
+        : this.nextAttemptAtMs,
+    lastError: lastError.present ? lastError.value : this.lastError,
+  );
+  OutboxRow copyWithCompanion(OutboxRowsCompanion data) {
+    return OutboxRow(
+      sequence: data.sequence.present ? data.sequence.value : this.sequence,
+      operationId: data.operationId.present
+          ? data.operationId.value
+          : this.operationId,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      issueKey: data.issueKey.present ? data.issueKey.value : this.issueKey,
+      payload: data.payload.present ? data.payload.value : this.payload,
+      taskId: data.taskId.present ? data.taskId.value : this.taskId,
+      state: data.state.present ? data.state.value : this.state,
+      attempts: data.attempts.present ? data.attempts.value : this.attempts,
+      createdAtMs: data.createdAtMs.present
+          ? data.createdAtMs.value
+          : this.createdAtMs,
+      nextAttemptAtMs: data.nextAttemptAtMs.present
+          ? data.nextAttemptAtMs.value
+          : this.nextAttemptAtMs,
+      lastError: data.lastError.present ? data.lastError.value : this.lastError,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OutboxRow(')
+          ..write('sequence: $sequence, ')
+          ..write('operationId: $operationId, ')
+          ..write('kind: $kind, ')
+          ..write('issueKey: $issueKey, ')
+          ..write('payload: $payload, ')
+          ..write('taskId: $taskId, ')
+          ..write('state: $state, ')
+          ..write('attempts: $attempts, ')
+          ..write('createdAtMs: $createdAtMs, ')
+          ..write('nextAttemptAtMs: $nextAttemptAtMs, ')
+          ..write('lastError: $lastError')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    sequence,
+    operationId,
+    kind,
+    issueKey,
+    payload,
+    taskId,
+    state,
+    attempts,
+    createdAtMs,
+    nextAttemptAtMs,
+    lastError,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is OutboxRow &&
+          other.sequence == this.sequence &&
+          other.operationId == this.operationId &&
+          other.kind == this.kind &&
+          other.issueKey == this.issueKey &&
+          other.payload == this.payload &&
+          other.taskId == this.taskId &&
+          other.state == this.state &&
+          other.attempts == this.attempts &&
+          other.createdAtMs == this.createdAtMs &&
+          other.nextAttemptAtMs == this.nextAttemptAtMs &&
+          other.lastError == this.lastError);
+}
+
+class OutboxRowsCompanion extends UpdateCompanion<OutboxRow> {
+  final Value<int> sequence;
+  final Value<String> operationId;
+  final Value<String> kind;
+  final Value<String> issueKey;
+  final Value<String> payload;
+  final Value<String?> taskId;
+  final Value<String> state;
+  final Value<int> attempts;
+  final Value<int> createdAtMs;
+  final Value<int?> nextAttemptAtMs;
+  final Value<String?> lastError;
+  const OutboxRowsCompanion({
+    this.sequence = const Value.absent(),
+    this.operationId = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.issueKey = const Value.absent(),
+    this.payload = const Value.absent(),
+    this.taskId = const Value.absent(),
+    this.state = const Value.absent(),
+    this.attempts = const Value.absent(),
+    this.createdAtMs = const Value.absent(),
+    this.nextAttemptAtMs = const Value.absent(),
+    this.lastError = const Value.absent(),
+  });
+  OutboxRowsCompanion.insert({
+    this.sequence = const Value.absent(),
+    required String operationId,
+    required String kind,
+    required String issueKey,
+    required String payload,
+    this.taskId = const Value.absent(),
+    required String state,
+    this.attempts = const Value.absent(),
+    required int createdAtMs,
+    this.nextAttemptAtMs = const Value.absent(),
+    this.lastError = const Value.absent(),
+  }) : operationId = Value(operationId),
+       kind = Value(kind),
+       issueKey = Value(issueKey),
+       payload = Value(payload),
+       state = Value(state),
+       createdAtMs = Value(createdAtMs);
+  static Insertable<OutboxRow> custom({
+    Expression<int>? sequence,
+    Expression<String>? operationId,
+    Expression<String>? kind,
+    Expression<String>? issueKey,
+    Expression<String>? payload,
+    Expression<String>? taskId,
+    Expression<String>? state,
+    Expression<int>? attempts,
+    Expression<int>? createdAtMs,
+    Expression<int>? nextAttemptAtMs,
+    Expression<String>? lastError,
+  }) {
+    return RawValuesInsertable({
+      if (sequence != null) 'sequence': sequence,
+      if (operationId != null) 'operation_id': operationId,
+      if (kind != null) 'kind': kind,
+      if (issueKey != null) 'issue_key': issueKey,
+      if (payload != null) 'payload': payload,
+      if (taskId != null) 'task_id': taskId,
+      if (state != null) 'state': state,
+      if (attempts != null) 'attempts': attempts,
+      if (createdAtMs != null) 'created_at_ms': createdAtMs,
+      if (nextAttemptAtMs != null) 'next_attempt_at_ms': nextAttemptAtMs,
+      if (lastError != null) 'last_error': lastError,
+    });
+  }
+
+  OutboxRowsCompanion copyWith({
+    Value<int>? sequence,
+    Value<String>? operationId,
+    Value<String>? kind,
+    Value<String>? issueKey,
+    Value<String>? payload,
+    Value<String?>? taskId,
+    Value<String>? state,
+    Value<int>? attempts,
+    Value<int>? createdAtMs,
+    Value<int?>? nextAttemptAtMs,
+    Value<String?>? lastError,
+  }) {
+    return OutboxRowsCompanion(
+      sequence: sequence ?? this.sequence,
+      operationId: operationId ?? this.operationId,
+      kind: kind ?? this.kind,
+      issueKey: issueKey ?? this.issueKey,
+      payload: payload ?? this.payload,
+      taskId: taskId ?? this.taskId,
+      state: state ?? this.state,
+      attempts: attempts ?? this.attempts,
+      createdAtMs: createdAtMs ?? this.createdAtMs,
+      nextAttemptAtMs: nextAttemptAtMs ?? this.nextAttemptAtMs,
+      lastError: lastError ?? this.lastError,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (sequence.present) {
+      map['sequence'] = Variable<int>(sequence.value);
+    }
+    if (operationId.present) {
+      map['operation_id'] = Variable<String>(operationId.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (issueKey.present) {
+      map['issue_key'] = Variable<String>(issueKey.value);
+    }
+    if (payload.present) {
+      map['payload'] = Variable<String>(payload.value);
+    }
+    if (taskId.present) {
+      map['task_id'] = Variable<String>(taskId.value);
+    }
+    if (state.present) {
+      map['state'] = Variable<String>(state.value);
+    }
+    if (attempts.present) {
+      map['attempts'] = Variable<int>(attempts.value);
+    }
+    if (createdAtMs.present) {
+      map['created_at_ms'] = Variable<int>(createdAtMs.value);
+    }
+    if (nextAttemptAtMs.present) {
+      map['next_attempt_at_ms'] = Variable<int>(nextAttemptAtMs.value);
+    }
+    if (lastError.present) {
+      map['last_error'] = Variable<String>(lastError.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OutboxRowsCompanion(')
+          ..write('sequence: $sequence, ')
+          ..write('operationId: $operationId, ')
+          ..write('kind: $kind, ')
+          ..write('issueKey: $issueKey, ')
+          ..write('payload: $payload, ')
+          ..write('taskId: $taskId, ')
+          ..write('state: $state, ')
+          ..write('attempts: $attempts, ')
+          ..write('createdAtMs: $createdAtMs, ')
+          ..write('nextAttemptAtMs: $nextAttemptAtMs, ')
+          ..write('lastError: $lastError')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$NorteDatabase extends GeneratedDatabase {
   _$NorteDatabase(QueryExecutor e) : super(e);
   $NorteDatabaseManager get managers => $NorteDatabaseManager(this);
   late final $TaskRowsTable taskRows = $TaskRowsTable(this);
+  late final $OutboxRowsTable outboxRows = $OutboxRowsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [taskRows];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [taskRows, outboxRows];
 }
 
 typedef $$TaskRowsTableCreateCompanionBuilder =
@@ -1177,10 +1865,323 @@ typedef $$TaskRowsTableProcessedTableManager =
       TaskRow,
       PrefetchHooks Function()
     >;
+typedef $$OutboxRowsTableCreateCompanionBuilder =
+    OutboxRowsCompanion Function({
+      Value<int> sequence,
+      required String operationId,
+      required String kind,
+      required String issueKey,
+      required String payload,
+      Value<String?> taskId,
+      required String state,
+      Value<int> attempts,
+      required int createdAtMs,
+      Value<int?> nextAttemptAtMs,
+      Value<String?> lastError,
+    });
+typedef $$OutboxRowsTableUpdateCompanionBuilder =
+    OutboxRowsCompanion Function({
+      Value<int> sequence,
+      Value<String> operationId,
+      Value<String> kind,
+      Value<String> issueKey,
+      Value<String> payload,
+      Value<String?> taskId,
+      Value<String> state,
+      Value<int> attempts,
+      Value<int> createdAtMs,
+      Value<int?> nextAttemptAtMs,
+      Value<String?> lastError,
+    });
+
+class $$OutboxRowsTableFilterComposer
+    extends Composer<_$NorteDatabase, $OutboxRowsTable> {
+  $$OutboxRowsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get sequence => $composableBuilder(
+    column: $table.sequence,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get issueKey => $composableBuilder(
+    column: $table.issueKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get taskId => $composableBuilder(
+    column: $table.taskId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get state => $composableBuilder(
+    column: $table.state,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get attempts => $composableBuilder(
+    column: $table.attempts,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get nextAttemptAtMs => $composableBuilder(
+    column: $table.nextAttemptAtMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastError => $composableBuilder(
+    column: $table.lastError,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$OutboxRowsTableOrderingComposer
+    extends Composer<_$NorteDatabase, $OutboxRowsTable> {
+  $$OutboxRowsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get sequence => $composableBuilder(
+    column: $table.sequence,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get issueKey => $composableBuilder(
+    column: $table.issueKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get taskId => $composableBuilder(
+    column: $table.taskId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get state => $composableBuilder(
+    column: $table.state,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get attempts => $composableBuilder(
+    column: $table.attempts,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get nextAttemptAtMs => $composableBuilder(
+    column: $table.nextAttemptAtMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastError => $composableBuilder(
+    column: $table.lastError,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$OutboxRowsTableAnnotationComposer
+    extends Composer<_$NorteDatabase, $OutboxRowsTable> {
+  $$OutboxRowsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get sequence =>
+      $composableBuilder(column: $table.sequence, builder: (column) => column);
+
+  GeneratedColumn<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get issueKey =>
+      $composableBuilder(column: $table.issueKey, builder: (column) => column);
+
+  GeneratedColumn<String> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => column);
+
+  GeneratedColumn<String> get taskId =>
+      $composableBuilder(column: $table.taskId, builder: (column) => column);
+
+  GeneratedColumn<String> get state =>
+      $composableBuilder(column: $table.state, builder: (column) => column);
+
+  GeneratedColumn<int> get attempts =>
+      $composableBuilder(column: $table.attempts, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get nextAttemptAtMs => $composableBuilder(
+    column: $table.nextAttemptAtMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get lastError =>
+      $composableBuilder(column: $table.lastError, builder: (column) => column);
+}
+
+class $$OutboxRowsTableTableManager
+    extends
+        RootTableManager<
+          _$NorteDatabase,
+          $OutboxRowsTable,
+          OutboxRow,
+          $$OutboxRowsTableFilterComposer,
+          $$OutboxRowsTableOrderingComposer,
+          $$OutboxRowsTableAnnotationComposer,
+          $$OutboxRowsTableCreateCompanionBuilder,
+          $$OutboxRowsTableUpdateCompanionBuilder,
+          (
+            OutboxRow,
+            BaseReferences<_$NorteDatabase, $OutboxRowsTable, OutboxRow>,
+          ),
+          OutboxRow,
+          PrefetchHooks Function()
+        > {
+  $$OutboxRowsTableTableManager(_$NorteDatabase db, $OutboxRowsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$OutboxRowsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$OutboxRowsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$OutboxRowsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> sequence = const Value.absent(),
+                Value<String> operationId = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> issueKey = const Value.absent(),
+                Value<String> payload = const Value.absent(),
+                Value<String?> taskId = const Value.absent(),
+                Value<String> state = const Value.absent(),
+                Value<int> attempts = const Value.absent(),
+                Value<int> createdAtMs = const Value.absent(),
+                Value<int?> nextAttemptAtMs = const Value.absent(),
+                Value<String?> lastError = const Value.absent(),
+              }) => OutboxRowsCompanion(
+                sequence: sequence,
+                operationId: operationId,
+                kind: kind,
+                issueKey: issueKey,
+                payload: payload,
+                taskId: taskId,
+                state: state,
+                attempts: attempts,
+                createdAtMs: createdAtMs,
+                nextAttemptAtMs: nextAttemptAtMs,
+                lastError: lastError,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> sequence = const Value.absent(),
+                required String operationId,
+                required String kind,
+                required String issueKey,
+                required String payload,
+                Value<String?> taskId = const Value.absent(),
+                required String state,
+                Value<int> attempts = const Value.absent(),
+                required int createdAtMs,
+                Value<int?> nextAttemptAtMs = const Value.absent(),
+                Value<String?> lastError = const Value.absent(),
+              }) => OutboxRowsCompanion.insert(
+                sequence: sequence,
+                operationId: operationId,
+                kind: kind,
+                issueKey: issueKey,
+                payload: payload,
+                taskId: taskId,
+                state: state,
+                attempts: attempts,
+                createdAtMs: createdAtMs,
+                nextAttemptAtMs: nextAttemptAtMs,
+                lastError: lastError,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$OutboxRowsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$NorteDatabase,
+      $OutboxRowsTable,
+      OutboxRow,
+      $$OutboxRowsTableFilterComposer,
+      $$OutboxRowsTableOrderingComposer,
+      $$OutboxRowsTableAnnotationComposer,
+      $$OutboxRowsTableCreateCompanionBuilder,
+      $$OutboxRowsTableUpdateCompanionBuilder,
+      (OutboxRow, BaseReferences<_$NorteDatabase, $OutboxRowsTable, OutboxRow>),
+      OutboxRow,
+      PrefetchHooks Function()
+    >;
 
 class $NorteDatabaseManager {
   final _$NorteDatabase _db;
   $NorteDatabaseManager(this._db);
   $$TaskRowsTableTableManager get taskRows =>
       $$TaskRowsTableTableManager(_db, _db.taskRows);
+  $$OutboxRowsTableTableManager get outboxRows =>
+      $$OutboxRowsTableTableManager(_db, _db.outboxRows);
 }

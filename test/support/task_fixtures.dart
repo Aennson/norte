@@ -80,6 +80,9 @@ class FakeTaskRepository implements TaskRepository {
   void _emit() {
     if (!_controller.isClosed) _controller.add(List<Task>.unmodifiable(_tasks));
   }
+
+  /// Closes the stream. Call from a `tearDown` in tests that subscribe.
+  Future<void> dispose() => _controller.close();
 }
 
 enum _Mode { data, failing, pending }

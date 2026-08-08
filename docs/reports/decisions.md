@@ -315,3 +315,62 @@ Linux machine the project has.
 
 **Impact.** `.github/workflows/goldens.yml` added; `docs/testing-strategy.md` §1
 records the procedure.
+
+---
+
+## DEC-012 — Jira Server/Data Center alongside Cloud (Sprint 02)
+
+**Status:** accepted.
+
+**Context.** `docs/architecture.md` §4 and the Sprint 02 scope both name **Jira
+Cloud REST v3** with Basic auth. During the sprint the Developer identified the
+target site as a self-hosted **Jira Server/Data Center** instance. (The
+hostname is deliberately not recorded here: it is internal infrastructure, and
+a decision record is a public document.) The two products are not
+interchangeable in the three places an HTTP client cannot paper over:
+
+| | Cloud | Data Center |
+|---|---|---|
+| path | `/rest/api/3/…` | `/rest/api/2/…` |
+| auth | `Basic base64(email:token)` | `Bearer <personal access token>` |
+| rich text | Atlassian Document Format | plain string |
+
+The adapter as specified would have failed against the Developer's own site, so
+the manual Definition-of-Done test could not have been performed at all.
+
+**Decision.** `JiraRestAdapter` supports both, selected by a `JiraDeployment`
+field on `JiraCredentials` that the user picks in Settings. Detection is
+deliberately *not* inferred from the URL: a Data Center instance can live at any
+hostname, and guessing wrong produces a 404 the user cannot diagnose.
+
+Everything else is shared — request shape, response reading, status
+classification, failure mapping — and the S02-CT-01 contract suite runs its nine
+cases against **three** subjects (`FakeJiraGateway`, REST-as-Cloud,
+REST-as-Data-Center), plus three cases that assert each product gets the wire
+format it expects. Neither configuration can drift from the other.
+
+This is a scope extension, authorised by the Developer during the sprint. No
+documented criterion is weakened: every S02 test still runs, and Cloud remains
+the default so the specified behaviour is what an unconfigured install gets.
+
+**Impact.** `docs/architecture.md` §4.2 records the second deployment;
+`JiraCredentials`, `JiraRestAdapter`, `SecureJiraCredentialStore`,
+`JiraSettingsSection`, the three ARB files, `FakeJiraServer` and the contract
+suite. OAuth 2.0 (3LO) remains the Cloud evolution path; Data Center's is
+unchanged, since a PAT is already its long-lived credential.
+
+---
+
+## DEC-013 — Development branch for Sprint 02 (Sprint 02)
+
+**Status:** accepted.
+
+**Context.** `docs/project-rules.md` §7.1 names sprint branches
+`sprint-XX/<slug>`. As in Sprint 00 (DEC-003) and Sprint 01 (DEC-009), the
+execution environment pins the branch to `claude/proxima-fase-e56000` and
+forbids pushing anywhere else.
+
+**Decision.** Sprint 02 is developed and pushed on `claude/proxima-fase-e56000`,
+in a worktree, with every other §7 rule honoured: `master` untouched, commits
+authored by the Developer with the AI as `Co-Authored-By`, and a single PR to
+`master` that merges only on 100% green Actions.
