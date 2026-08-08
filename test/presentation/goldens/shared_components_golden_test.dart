@@ -12,11 +12,15 @@ import 'package:norte/presentation/shared/widgets/norte_card.dart';
 import 'package:norte/presentation/shared/widgets/status_badge.dart';
 
 import '../../support/golden_harness.dart';
+import '../../support/platform_goldens.dart';
 import '../../support/test_fonts.dart';
 
 /// S00-GT-01 — appearance of the shared components in dark and light.
 void main() {
-  setUpAll(loadNorteFonts);
+  setUpAll(() async {
+    usePlatformGoldens();
+    await loadNorteFonts();
+  });
 
   final List<(String, ThemeData)> themes = <(String, ThemeData)>[
     ('dark', NorteTheme.dark),
@@ -88,7 +92,7 @@ void main() {
         find.byType(Column),
         matchesGoldenFile('images/norte_button_states_$name.png'),
       );
-    }, tags: 'golden');
+    });
 
     testWidgets('S00-GT-01: NorteButton — variants ($name)', (
       WidgetTester tester,
@@ -124,7 +128,7 @@ void main() {
         find.byType(Column),
         matchesGoldenFile('images/norte_button_variants_$name.png'),
       );
-    }, tags: 'golden');
+    });
 
     testWidgets('S00-GT-01: NorteCard ($name)', (WidgetTester tester) async {
       await pump(
@@ -159,7 +163,7 @@ void main() {
         find.byType(NorteCard),
         matchesGoldenFile('images/norte_card_$name.png'),
       );
-    }, tags: 'golden');
+    });
 
     testWidgets('S00-GT-01: StatusBadge — 4 statuses ($name)', (
       WidgetTester tester,
@@ -196,7 +200,7 @@ void main() {
         find.byType(Column),
         matchesGoldenFile('images/status_badge_$name.png'),
       );
-    }, tags: 'golden');
+    });
 
     testWidgets('S00-GT-01: EmptyState ($name)', (WidgetTester tester) async {
       await pump(
@@ -223,6 +227,6 @@ void main() {
         find.byType(EmptyState),
         matchesGoldenFile('images/empty_state_$name.png'),
       );
-    }, tags: 'golden');
+    });
   }
 }

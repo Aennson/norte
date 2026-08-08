@@ -101,7 +101,7 @@ Developer can close them locally.
 
 **Decisions taken:** DEC-001 (`onAccent` token + darkened light accent),
 DEC-002 (`lucide_icons_flutter`), DEC-003 (branch name), DEC-004 (Linux desktop
-as E2E host), DEC-005 (plugin versions), DEC-006 (goldens canonical on Linux),
+as E2E host), DEC-005 (plugin versions), DEC-006 (per-platform golden sets),
 DEC-007 (ATL requirement) — all in `docs/reports/decisions.md`.
 
 ## 6. Tests
@@ -120,10 +120,11 @@ DEC-007 (ATL requirement) — all in `docs/reports/decisions.md`.
 | S00-E2E-01 | Navigation smoke test | 2 | ✅ (CI, Linux desktop host) |
 | — | Fakes sanity suite (added under §5.4) | 24 | ✅ |
 
-67 tests green under `flutter test` on Linux (54 with
-`--exclude-tags golden`, the 13 golden assertions being Linux-canonical —
-DEC-006); 13 golden files committed under
-`test/presentation/goldens/images/`.
+67 tests green under `flutter test`; 2 under `flutter test integration_test/`.
+The 13 golden files are committed under
+`test/presentation/goldens/images/linux/` — golden sets are per operating
+system (DEC-006), and every golden test runs on every platform against its own
+files, with no tolerance and nothing skipped.
 
 ## 7. Definition of Done
 

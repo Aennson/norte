@@ -24,13 +24,23 @@
 | E2E | `E2E` | `integration_test/` + Riverpod overrides with fakes | `integration_test/` |
 | Eval | `EV` | versioned PT-BR dataset in `test/fixtures/intents/` | `test/evals/` |
 
-**Golden tests have a canonical platform: Linux, the one CI runs.** Flutter
-rasterises text per operating system, so a committed `.png` only matches where it
-was generated — on Windows or macOS the same widget produces a ~1% pixel
-difference that is not a defect. Every golden test therefore carries the
-`golden` tag; off Linux, run `flutter test --exclude-tags golden`. Goldens are
-never regenerated on another platform (it would break CI), and CI runs them with
-no exclusion, so the gate is never skipped where it counts. See DEC-006.
+**Golden files are stored per operating system.** Flutter rasterises text through
+the host OS font stack, so one committed `.png` can only match on the platform
+that produced it — elsewhere the same widget differs by ~1% of the pixels with
+the layout unchanged. Each platform therefore keeps its own set under
+`test/presentation/goldens/images/<platform>/`, compared with **no tolerance**:
+
+- Every golden test runs on **every** platform — nothing is tagged, excluded or
+  skipped. CI compares against `images/linux/`.
+- On a platform with no set yet, the failure message names the fix:
+  `flutter test --update-goldens`, then commit
+  `test/presentation/goldens/images/<platform>/`.
+- `--update-goldens` only writes the running platform's directory, so one
+  machine never invalidates another's files.
+- A deliberate UI change must be regenerated on each platform in use before CI
+  goes green.
+
+Wiring lives in `test/support/platform_goldens.dart`; see DEC-006.
 
 ## 2. Mandatory test case specification format
 

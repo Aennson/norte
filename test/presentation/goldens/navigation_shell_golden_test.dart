@@ -3,12 +3,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:norte/presentation/app/norte_app.dart';
 import 'package:norte/presentation/voice/voice_button.dart';
 
+import '../../support/platform_goldens.dart';
 import '../../support/test_fonts.dart';
 
 /// S00-GT-02 — responsive layout of the navigation shell
 /// (`docs/design-system.md` §5).
 void main() {
-  setUpAll(loadNorteFonts);
+  setUpAll(() async {
+    usePlatformGoldens();
+    await loadNorteFonts();
+  });
 
   const Size mobile = Size(390, 844);
   const Size desktop = Size(1280, 800);
@@ -64,7 +68,6 @@ void main() {
         matchesGoldenFile('images/navigation_shell_mobile.png'),
       );
     },
-    tags: 'golden',
   );
 
   testWidgets(
@@ -86,7 +89,6 @@ void main() {
         matchesGoldenFile('images/navigation_shell_desktop.png'),
       );
     },
-    tags: 'golden',
   );
 
   testWidgets('S00-GT-02: mobile in the light theme', (
@@ -98,7 +100,7 @@ void main() {
       find.byType(MaterialApp),
       matchesGoldenFile('images/navigation_shell_mobile_light.png'),
     );
-  }, tags: 'golden');
+  });
 
   testWidgets('S00-GT-02: the layout switches at the 900px breakpoint', (
     WidgetTester tester,

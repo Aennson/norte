@@ -120,40 +120,53 @@ Sprint 01, where it can actually be exercised.
 
 ---
 
-## DEC-006 — Golden tests are canonical on Linux only (Sprint 00)
+## DEC-006 — Golden files are stored per operating system (Sprint 00)
 
-**Status:** accepted.
+**Status:** accepted · chosen by the Developer.
 
 **Context.** Running `flutter test` on Windows failed all 13 golden assertions
 with differences of 0.65%–1.25% of the pixels, while every other test passed.
 The layout was identical; only the glyph rasterisation differed. Flutter renders
-text through the host operating system's font stack, so a committed `.png`
-reproduces exactly only on the platform that produced it. The same suite is green
-on Linux, both locally and in CI.
+text through the host operating system's font stack, so a single committed `.png`
+can only ever match on one platform. The same suite is green on Linux.
 
-Regenerating the files on Windows is not an option — it would immediately break
-the Linux CI job, which is the gate that guards merges (`docs/project-rules.md`
-§7.3).
+Three alternatives were rejected:
 
-**Decision.** Linux is the canonical platform for goldens.
+| Rejected | Why |
+|---|---|
+| Tag the goldens and exclude them off Linux | Keeps the CI gate intact, but leaves a developer on Windows with no visual verification at all — the assurance becomes CI-only. |
+| Compare with a pixel tolerance | Contradicts S00-GT-01's exit criterion, which requires runs to "pass with **no diff**", and would mask a genuine 1px regression. |
+| Regenerate the files on Windows | Would immediately break the Linux CI job that guards the merge (`docs/project-rules.md` §7.3). |
 
-1. Every test that asserts `matchesGoldenFile` carries the `golden` tag,
-   declared in `dart_test.yaml`.
-2. CI runs on Linux with **no exclusion** — the goldens are enforced there, every
-   run, exactly as the sprint requires.
-3. Off Linux, developers run `flutter test --exclude-tags golden`; the local
-   verification script does this automatically.
-4. Goldens are regenerated only on Linux.
+**Decision.** Every platform keeps its own golden set, compared with **no
+tolerance**:
 
-**This does not weaken S00-GT-01/GT-02.** The tests are neither removed nor
-marked `skip` (`docs/project-rules.md` §5.4, §8): they run on every CI run and a
-real visual regression still fails the build. What changed is that they stopped
-being evaluated on a platform where their result carries no information.
+```
+test/presentation/goldens/images/
+  linux/     <- what CI compares against
+  windows/
+  macos/
+```
 
-**Impact.** `dart_test.yaml` added; the two golden test files tagged;
+`test/support/platform_goldens.dart` installs a `LocalFileComparator` that
+rewrites `images/foo.png` into `images/<platform>/foo.png`; the golden suites
+call `usePlatformGoldens()` in `setUpAll`. Nothing is tagged, excluded or
+skipped — **every golden test runs on every platform**, against files produced
+there.
+
+A platform whose set does not exist yet fails with an explicit message naming
+`flutter test --update-goldens` and the directory to commit. `--update-goldens`
+only ever writes the running platform's directory, so one machine can never
+invalidate another's files.
+
+**Cost, stated plainly.** The artifacts multiply by the number of platforms in
+use, and a deliberate UI change has to be regenerated on each of them before CI
+goes green. That is the price of real visual verification everywhere, and it was
+accepted knowingly.
+
+**Impact.** `test/support/platform_goldens.dart` added; the 13 existing files
+moved to `images/linux/`; both golden suites wired to the comparator;
 `docs/testing-strategy.md` §1 records the rule.
-
----
 
 ## DEC-007 — `flutter_secure_storage` kept at `^9.2.4` (Sprint 00)
 
