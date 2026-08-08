@@ -1395,6 +1395,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Ask before every spoken transition or comment, however sure the app is. Low-confidence commands always ask, whatever this is set to.'**
   String get settingsAlwaysConfirmJiraDescription;
+
+  /// Label of the Scribe key field.
+  ///
+  /// In en, this message translates to:
+  /// **'Realtime voice API key'**
+  String get settingsScribeKeyField;
+
+  /// Explains that realtime and batch transcription are different providers with different keys.
+  ///
+  /// In en, this message translates to:
+  /// **'Your ElevenLabs Scribe key, used only for voice commands. It is a different service from the transcription key above — meetings go to Whisper, spoken commands go to Scribe, and each keeps its own key.'**
+  String get settingsScribeDescription;
+
+  /// Shown when a Scribe key is stored.
+  ///
+  /// In en, this message translates to:
+  /// **'Realtime key configured'**
+  String get settingsScribeConfigured;
+
+  /// Shown when no Scribe key is stored.
+  ///
+  /// In en, this message translates to:
+  /// **'No realtime key — voice commands will not run'**
+  String get settingsScribeNotConfigured;
 }
 
 class _AppLocalizationsDelegate

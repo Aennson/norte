@@ -41,8 +41,8 @@ machine, and again on `ubuntu-latest` in CI.
 |---|---|---|
 | G1 — static analysis | `flutter analyze` | `No issues found! (ran in 4.5s)` — 0 errors, 0 warnings, 0 infos ✅ |
 | G2 — formatting | `dart format --output=none --set-exit-if-changed .` | exit 0 ✅ |
-| G3 — tests | `flutter test` | `00:55 +608: All tests passed!` ✅ |
-| G4 — coverage | `flutter test --coverage` + `dart run tool/check_coverage.dart` | domain+application **93.0%** (516/555) · project **84.1%** (3782/4499) — `gate G4: OK` ✅ |
+| G3 — tests | `flutter test` | `00:33 +613: All tests passed!` ✅ |
+| G4 — coverage | `flutter test --coverage` + `dart run tool/check_coverage.dart` | domain+application **93.0%** (516/555) · project **83.6%** (3817/4568) — `gate G4: OK` ✅ |
 | G5 — dependency rule | `dart run tool/check_imports.dart` | `check_imports: OK — no layer or color violations in lib` ✅ |
 | G6 — secrets | `grep -rEn "(api[_-]?key\|token)[[:space:]]*=[[:space:]]*['\"]" lib/` | no match ✅ |
 | E2E | `flutter test integration_test/<suite>`, one per file (DEC-010) | 9 suites, 33 scenarios, all passing on the Linux runner ✅ |
@@ -65,7 +65,7 @@ invocation that contributes nothing to `lcov.info`.
 The fix was `test/presentation/voice_session_test.dart`, which drives the same
 pipeline through a widget tree and covers the branches an E2E scenario reaches
 only one at a time: every slot question, every intent description, every
-failure mapping. 79.2% → **84.1%**.
+failure mapping. 79.2% → **83.6%**.
 
 ## 3. Tests
 
@@ -143,31 +143,83 @@ The sprint's Definition of Done asks for a p95 latency measurement "with the
 real engine in a manual test". It has **not been run**, and this sprint is
 therefore closed with one box open rather than with a box ticked on a promise.
 
-What the script requires, and what it would settle:
+### 7.1 A defect found while writing these instructions
 
-1. **A real Scribe key and a real Claude key**, both entered in Settings on the
-   Developer's own machine. Neither exists in this repository and neither may.
-2. **The p95 measurement.** `VoiceLatencyLog` records every
-   committed-speech-to-intent-ready interval and prints the running p95 to the
-   console. Speak twenty commands, read the last line, record it here against
-   the < 3s target (`docs/architecture.md` §15).
-3. **The wire format (DEC-026).** Every automated test drives
-   `ScribeRealtimeEngine` through `FakeRealtimeSocket`, so its assumptions about
-   the service's frame names are *unverified against the service*. The reader is
-   deliberately tolerant — `partial`/`final`/`committed`, `is_final`,
-   `text`/`transcript` — so a protocol revision degrades into a spelling
-   difference rather than the silent loss of every command. Only a real session
-   can confirm which spelling is the real one.
+The script was unrunnable as first shipped. `ScribeRealtimeEngine` was wired to
+the **Whisper** credential store, so there was nowhere to put an ElevenLabs key
+that did not already hold the OpenAI one: configuring voice commands would have
+silently broken Sprint 04's meeting transcription. Fixed under DEC-028 — three
+providers now occupy three slots, and the store has no default constructor, so
+the composition root cannot pick the wrong one by omission.
 
-Until it runs, what is proven is that the pipeline is correct **against the
-contract this repository states**, and what is not proven is that the contract
-matches the service.
+Worth recording *how* it was found: not by a test, but by writing down the steps
+a person would follow and discovering that step 2 had no answer. `main()` is the
+one layer no suite exercises, and this is what that costs.
+
+### 7.2 The steps
+
+1. **Platform.** On the Developer's Windows machine a WDAC policy blocks the
+   built runner (`An Application Control policy has blocked this file`), which
+   is also why the E2E suites could only be run locally through the host test
+   VM. If it blocks `flutter run` too, use Android with a device attached. The
+   diagnostics reach the console either way.
+
+2. **Run in debug**, not release — `debugPrint` is compiled out of release
+   builds, and it is the only channel the measurement comes back on:
+
+   ```
+   flutter run -d windows        (or: flutter run -d <android-device>)
+   ```
+
+3. **Enter three keys** in Settings, each in its own section (DEC-028):
+   Claude under *AI*, Whisper under *Transcription*, and the ElevenLabs Scribe
+   key under *Voice*. Only the third is new; the first two should already be
+   configured from Sprints 03 and 04, and this is the run that proves entering
+   the third did not disturb them.
+
+4. **Prepare the state.** `updateJira`, `addComment` and `queryStatus` need a
+   local task **already linked** to a real issue — the router answers
+   `NotLinkedFailure` when no local task references the spoken key, by design.
+   `createTask` and `createReminder` need nothing.
+
+5. **Speak twenty commands**, spread across the five intents, including three
+   deliberately ambiguous ones ("faz aquilo lá que combinamos"). Twenty is the
+   floor: with fewer, the nearest-rank p95 is simply the slowest sample wearing
+   a percentile's name, which `voice_latency_log_test.dart` pins.
+
+6. **Read the console.** Every command prints one line:
+
+   ```
+   voice: intent ready in 1840ms (p95 2310ms over 20)
+   ```
+
+   Record the p95 from the **last** line against the < 3s target
+   (`docs/architecture.md` §15).
+
+7. **Settle the wire format (DEC-026).** Three outcomes, and each is now
+   distinguishable:
+
+   | What happens | What it means |
+   |---|---|
+   | Transcripts appear in the overlay | The assumed protocol is the real one |
+   | Connects, nothing appears, and `[voice] unrecognised frame: type=…, keys=…` in the console | The frame names differ — the log names the shape so the reader can be corrected |
+   | `AuthFailure` / `NetworkFailure` on screen | Key or host wrong; the two are deliberately distinct |
+
+   The middle row is new. It was silent before: `_onMessage` discarded what it
+   could not read, so a protocol mismatch and a dead microphone looked
+   identical. The log reports a frame's `type` and its **keys** — never its
+   text, because speech does not go in a log (BR-06).
+
+Until the script runs, what is proven is that the pipeline is correct **against
+the contract this repository states**, and what is not proven is that the
+contract matches the service.
 
 ## 8. Deviations and open items
 
 | Item | Status |
 |---|---|
 | Manual script and p95 latency | **Open** — §7. Carried explicitly, not discharged |
+| Scribe key shared the Whisper slot | **Fixed before merge** — DEC-028, §7.1. Found by writing §7.2, not by a test |
 | Scribe wire format unverified | **Open** — DEC-026, settled by the same manual pass |
 | Wall-clock reminder times (`tomorrow 09:00`) | **Deliberately deferred** — DEC-025 hands them to Sprint 06 with a failing case attached, rather than implementing S06-IT-02's timezone work without its tests |
 | iOS never built or tested; no `macos/` golden set | **Still open** — inherited from DEC-020, unchanged by this sprint. Sprint 08 is where a three-platform or two-platform v1.0 has to be decided |
@@ -188,7 +240,7 @@ To be filled from the final run on the pull request.
 ---
 
 **One box is unticked, and it is the manual one.** Everything a machine can
-verify about this sprint has been verified — 608 unit, golden and contract
+verify about this sprint has been verified — 613 unit, golden and contract
 tests, 33 E2E scenarios on a Linux desktop host, an eval whose thresholds sit
 close enough to the results to bite. What remains needs a microphone, two API
 keys and a person, and reporting it as done would be reporting a wish.

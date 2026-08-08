@@ -14,6 +14,7 @@ import '../../domain/failures/failure.dart';
 import '../../domain/failures/result.dart';
 import '../../domain/ports/microphone.dart';
 import '../../domain/ports/reminder_repository.dart';
+import '../../domain/ports/transcription_credential_store.dart';
 import '../../domain/ports/transcription_engine.dart';
 import '../../domain/ports/voice_settings_store.dart';
 import '../jira/jira_providers.dart';
@@ -32,6 +33,24 @@ final Provider<RealtimeTranscription> realtimeTranscriptionProvider =
     Provider<RealtimeTranscription>(
       (Ref ref) => throw UnimplementedError('wired in main.dart'),
     );
+
+/// The **Scribe** key — a different service from Whisper's, under a different
+/// slot in the secure store. Overridden in the composition root.
+final Provider<TranscriptionCredentialStore> realtimeCredentialStoreProvider =
+    Provider<TranscriptionCredentialStore>(
+      (Ref ref) => throw UnimplementedError('wired in main.dart'),
+    );
+
+/// `true` when a realtime transcription key is configured.
+///
+/// Invalidated by the settings section after a write, as
+/// `transcriptionConfiguredProvider` is.
+final FutureProvider<bool> realtimeConfiguredProvider = FutureProvider<bool>((
+  Ref ref,
+) async {
+  final String? key = await ref.watch(realtimeCredentialStoreProvider).read();
+  return key != null && key.trim().isNotEmpty;
+});
 
 /// Storage for the voice preferences. Overridden in the composition root.
 final Provider<VoiceSettingsStore> voiceSettingsStoreProvider =

@@ -320,6 +320,72 @@ void main() {
     });
   });
 
+  group('S05-UT-06: the wire format is diagnosable (DEC-026)', () {
+    test('S05-UT-06: an unreadable frame is reported, not swallowed', () async {
+      // The one thing no automated test can verify is the service's actual
+      // frame names, so the ambiguous manual outcome — "it connects but
+      // nothing appears" — has to leave evidence. Silence here would make a
+      // protocol mismatch indistinguishable from a dead microphone.
+      final List<String> lines = <String>[];
+      final FakeSocketConnector spy = FakeSocketConnector();
+      final ScribeRealtimeEngine logged = ScribeRealtimeEngine(
+        credentialStore: FakeTranscriptionCredentialStore('synthetic-key'),
+        connect: spy.call,
+        log: lines.add,
+        sleep: (Duration _) async {},
+      );
+      addTearDown(logged.stop);
+
+      final List<TranscriptEvent> events = <TranscriptEvent>[];
+      logged
+          .start(const Stream<Uint8List>.empty())
+          .listen(events.add, onError: (Object _) {});
+      await pumpEventQueue();
+
+      spy.current.emitRaw(<String, Object?>{
+        'type': 'speech_segment',
+        'utterance': 'muda o PROJ-123 pra concluído',
+      });
+      await pumpEventQueue();
+
+      expect(events, isEmpty);
+      expect(lines.single, contains('speech_segment'));
+      expect(lines.single, contains('utterance'));
+      // Shape, never content: the transcript does not go in a log (BR-06).
+      expect(lines.single, isNot(contains('PROJ-123')));
+    });
+
+    test('S05-UT-06: a frame it can read is not reported', () async {
+      final List<String> lines = <String>[];
+      final FakeSocketConnector spy = FakeSocketConnector();
+      final ScribeRealtimeEngine logged = ScribeRealtimeEngine(
+        credentialStore: FakeTranscriptionCredentialStore('synthetic-key'),
+        connect: spy.call,
+        log: lines.add,
+        sleep: (Duration _) async {},
+      );
+      addTearDown(logged.stop);
+
+      logged
+          .start(const Stream<Uint8List>.empty())
+          .listen((_) {}, onError: (Object _) {});
+      await pumpEventQueue();
+
+      // Every spelling the tolerant reader accepts.
+      spy.current
+        ..emitPartial('muda o')
+        ..emitCommitted('muda o PROJ-123 pra concluído')
+        ..emitRaw(<String, Object?>{
+          'type': 'transcript',
+          'is_final': true,
+          'transcript': 'outra coisa',
+        });
+      await pumpEventQueue();
+
+      expect(lines, isEmpty);
+    });
+  });
+
   group('S05-UT-06: service errors', () {
     test('S05-UT-06: an error frame ends the session', () async {
       final List<TranscriptEvent> events = await listen();

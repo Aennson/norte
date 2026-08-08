@@ -71,8 +71,13 @@ Future<void> main() async {
     clock: const SystemClock(),
   );
 
+  // Two stores, two slots. Batch is Whisper and realtime is Scribe: different
+  // services, different credentials, and a user may hold one and not the
+  // other.
   final SecureTranscriptionCredentialStore whisperCredentials =
-      SecureTranscriptionCredentialStore(const FlutterSecureStorage());
+      const SecureTranscriptionCredentialStore.whisper(FlutterSecureStorage());
+  final SecureTranscriptionCredentialStore scribeCredentials =
+      const SecureTranscriptionCredentialStore.scribe(FlutterSecureStorage());
   final WhisperBatchEngine whisper = WhisperBatchEngine(
     dio: Dio(),
     credentialStore: whisperCredentials,
@@ -87,7 +92,11 @@ Future<void> main() async {
   // rather than a rule someone has to remember.
   final RecordPcmMicrophone microphone = RecordPcmMicrophone();
   final ScribeRealtimeEngine scribe = ScribeRealtimeEngine(
-    credentialStore: whisperCredentials,
+    credentialStore: scribeCredentials,
+    // Diagnostics for the one part of the pipeline no test can exercise: the
+    // service's actual wire format (DEC-026). Safe by construction — it
+    // reports the *shape* of a frame it could not read, never its text.
+    log: (String line) => debugPrint('[voice] $line'),
   );
   final DriftReminderRepository reminders = DriftReminderRepository(database);
   final DriftVoiceSettingsStore voiceSettings = DriftVoiceSettingsStore(
@@ -125,6 +134,7 @@ Future<void> main() async {
       audioRecorderProvider.overrideWithValue(recorder),
       microphoneProvider.overrideWithValue(microphone),
       realtimeTranscriptionProvider.overrideWithValue(scribe),
+      realtimeCredentialStoreProvider.overrideWithValue(scribeCredentials),
       reminderRepositoryProvider.overrideWithValue(reminders),
       voiceSettingsStoreProvider.overrideWithValue(voiceSettings),
     ],

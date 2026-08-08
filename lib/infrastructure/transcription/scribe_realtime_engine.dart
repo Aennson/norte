@@ -45,6 +45,7 @@ class ScribeRealtimeEngine implements RealtimeTranscription {
     this.model = defaultModel,
     this.language,
     this.backoff = defaultBackoff,
+    this.log,
     Future<void> Function(Duration)? sleep,
   }) : _connect = connect ?? WebSocketRealtimeSocket.connect,
        _sleep = sleep ?? _wait;
@@ -61,6 +62,18 @@ class ScribeRealtimeEngine implements RealtimeTranscription {
 
   /// BCP-47 language hint, or `null` to let the service detect it.
   final String? language;
+
+  /// Diagnostics sink for frames this adapter could not read (DEC-026).
+  ///
+  /// The wire format is the one thing no automated test can verify — every
+  /// suite drives a fake socket — so a frame the reader does not recognise is
+  /// the single most useful thing the manual pass can be shown. Without it the
+  /// ambiguous outcome ("it connects but nothing appears") is silent, and the
+  /// Developer has no way to tell a protocol mismatch from a dead microphone.
+  ///
+  /// **It reports shape, never content**: the frame's `type` and its keys, not
+  /// the transcript. Speech does not go in a log (BR-06).
+  final void Function(String line)? log;
 
   /// Waits between reconnection attempts, in order. The list's length is the
   /// number of attempts: when it runs out, the session fails rather than
@@ -313,7 +326,13 @@ class ScribeRealtimeEngine implements RealtimeTranscription {
       final String value => value,
       _ => null,
     };
-    if (text == null) return;
+    if (text == null) {
+      log?.call(
+        'unrecognised frame: type="$type", keys=${decoded.keys.toList()} — '
+        'no `text` or `transcript` field (DEC-026)',
+      );
+      return;
+    }
 
     final bool committed =
         type.contains('final') ||

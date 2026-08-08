@@ -1002,5 +1002,21 @@
   "settingsAlwaysConfirmJiraDescription": "Ask before every spoken transition or comment, however sure the app is. Low-confidence commands always ask, whatever this is set to.",
   "@settingsAlwaysConfirmJiraDescription": {
     "description": "Explains that BR-04 applies regardless of this switch."
+  },
+  "settingsScribeKeyField": "Realtime voice API key",
+  "@settingsScribeKeyField": {
+    "description": "Label of the Scribe key field."
+  },
+  "settingsScribeDescription": "Your ElevenLabs Scribe key, used only for voice commands. It is a different service from the transcription key above — meetings go to Whisper, spoken commands go to Scribe, and each keeps its own key.",
+  "@settingsScribeDescription": {
+    "description": "Explains that realtime and batch transcription are different providers with different keys."
+  },
+  "settingsScribeConfigured": "Realtime key configured",
+  "@settingsScribeConfigured": {
+    "description": "Shown when a Scribe key is stored."
+  },
+  "settingsScribeNotConfigured": "No realtime key — voice commands will not run",
+  "@settingsScribeNotConfigured": {
+    "description": "Shown when no Scribe key is stored."
   }
 }

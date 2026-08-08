@@ -41,6 +41,7 @@ void main() {
   late FakeMicrophone microphone;
   late FakeVoiceSettingsStore settings;
   late FakeReminderRepository reminders;
+  late FakeTranscriptionCredentialStore scribeKey;
 
   final Task linked = Task(
     id: 'task-1',
@@ -61,6 +62,7 @@ void main() {
     microphone = FakeMicrophone();
     settings = FakeVoiceSettingsStore();
     reminders = FakeReminderRepository();
+    scribeKey = FakeTranscriptionCredentialStore();
   });
 
   tearDown(() async {
@@ -93,6 +95,7 @@ void main() {
       realtimeTranscriptionProvider.overrideWithValue(realtime),
       reminderRepositoryProvider.overrideWithValue(reminders),
       voiceSettingsStoreProvider.overrideWithValue(settings),
+      realtimeCredentialStoreProvider.overrideWithValue(scribeKey),
       clockProvider.overrideWithValue(FakeClock(t0)),
     ],
     child: MaterialApp(

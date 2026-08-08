@@ -240,5 +240,9 @@
   "settingsVoiceSection": "Voz",
   "settingsVoiceDescription": "Como os comandos falados se comportam antes de mudar qualquer coisa.",
   "settingsAlwaysConfirmJira": "Sempre confirmar escritas no Jira",
-  "settingsAlwaysConfirmJiraDescription": "Pergunta antes de cada transição ou comentário falado, por mais certeza que o app tenha. Comandos com pouca confiança sempre perguntam, esteja isto ligado ou não."
+  "settingsAlwaysConfirmJiraDescription": "Pergunta antes de cada transição ou comentário falado, por mais certeza que o app tenha. Comandos com pouca confiança sempre perguntam, esteja isto ligado ou não.",
+  "settingsScribeKeyField": "Chave da API de voz em tempo real",
+  "settingsScribeDescription": "Sua chave do ElevenLabs Scribe, usada só para comandos de voz. É um serviço diferente da chave de transcrição acima — reuniões vão para o Whisper, comandos falados vão para o Scribe, e cada um guarda a sua própria chave.",
+  "settingsScribeConfigured": "Chave de tempo real configurada",
+  "settingsScribeNotConfigured": "Sem chave de tempo real — os comandos de voz não vão funcionar"
 }

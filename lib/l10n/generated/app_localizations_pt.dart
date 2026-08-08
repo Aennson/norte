@@ -742,4 +742,18 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get settingsAlwaysConfirmJiraDescription =>
       'Pergunta antes de cada transição ou comentário falado, por mais certeza que o app tenha. Comandos com pouca confiança sempre perguntam, esteja isto ligado ou não.';
+
+  @override
+  String get settingsScribeKeyField => 'Chave da API de voz em tempo real';
+
+  @override
+  String get settingsScribeDescription =>
+      'Sua chave do ElevenLabs Scribe, usada só para comandos de voz. É um serviço diferente da chave de transcrição acima — reuniões vão para o Whisper, comandos falados vão para o Scribe, e cada um guarda a sua própria chave.';
+
+  @override
+  String get settingsScribeConfigured => 'Chave de tempo real configurada';
+
+  @override
+  String get settingsScribeNotConfigured =>
+      'Sem chave de tempo real — os comandos de voz não vão funcionar';
 }

@@ -61,6 +61,10 @@ class FakeRealtimeSocket implements RealtimeSocket {
   void emitCommitted(String text) =>
       _emit(<String, Object?>{'type': 'final_transcript', 'text': text});
 
+  /// Pushes an arbitrary frame — for the shapes the reader is *not* expected
+  /// to understand.
+  void emitRaw(Map<String, Object?> frame) => _emit(frame);
+
   /// Pushes a service-side error frame.
   void emitError(String type) => _emit(<String, Object?>{
     'type': 'error',

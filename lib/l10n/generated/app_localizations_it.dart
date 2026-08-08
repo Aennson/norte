@@ -747,4 +747,18 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get settingsAlwaysConfirmJiraDescription =>
       'Chiede prima di ogni transizione o commento dettato, per quanto sicura sia l\'app. I comandi poco affidabili chiedono sempre, comunque sia impostato questo.';
+
+  @override
+  String get settingsScribeKeyField => 'Chiave API della voce in tempo reale';
+
+  @override
+  String get settingsScribeDescription =>
+      'La tua chiave ElevenLabs Scribe, usata solo per i comandi vocali. È un servizio diverso dalla chiave di trascrizione qui sopra — le riunioni vanno a Whisper, i comandi dettati vanno a Scribe, e ognuno conserva la propria chiave.';
+
+  @override
+  String get settingsScribeConfigured => 'Chiave in tempo reale configurata';
+
+  @override
+  String get settingsScribeNotConfigured =>
+      'Nessuna chiave in tempo reale — i comandi vocali non funzioneranno';
 }

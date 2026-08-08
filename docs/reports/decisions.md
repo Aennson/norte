@@ -778,3 +778,42 @@ scheduling assumption written more elaborately.
 `lib/infrastructure/persistence/drift_voice_settings_store.dart`;
 `lib/application/voice/intent_router.dart`;
 `lib/presentation/voice/voice_providers.dart`.
+
+---
+
+## DEC-028 — Three BYOK credentials, three slots (Sprint 05)
+
+**Status:** accepted.
+
+**Context.** Sprint 05's first draft handed `whisperCredentials` to
+`ScribeRealtimeEngine` in the composition root. Whisper is OpenAI and Scribe is
+ElevenLabs — different services, different keys — so the app had one field and
+one storage slot for two credentials. Configuring voice commands would have
+silently broken meeting transcription, and the reverse.
+
+Nothing caught it. Every unit, contract and E2E test injects a credential store
+directly, so `main()`'s wiring is the one layer no suite exercises. It was found
+by writing the manual script's instructions and discovering they could not be
+followed: there was no field to put the Scribe key in that did not already hold
+something else.
+
+**Decision.** `SecureTranscriptionCredentialStore` gains two named
+constructors, `.whisper` and `.scribe`, filing under
+`transcription.whisper.apiKey` and `transcription.scribe.apiKey`. **There is no
+default constructor**, so the composition root cannot pick the wrong store by
+omission — the mistake is made impossible to express rather than merely
+asserted against, which is the only durable fix for a layer without tests.
+
+The voice settings section grows a masked key field beside its switch, with the
+same BR-08 shape as the other three key forms: the stored key is never read
+back into the field, and a configured install shows *that* a key exists, never
+the key.
+
+**Rejected alternative.** *One "transcription key" for both* — the shape that
+caused the bug. A slot named for what a key is *for* rather than which service
+it belongs to invites exactly one slot for two providers.
+
+**Impact.** `lib/infrastructure/transcription/secure_transcription_credential_store.dart`;
+`lib/main.dart`; `lib/presentation/settings/voice_settings_section.dart`;
+`lib/presentation/voice/voice_providers.dart`; four new strings in each of the
+three ARB files; `test/infrastructure/transcription_credential_slots_test.dart`.

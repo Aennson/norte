@@ -740,4 +740,18 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsAlwaysConfirmJiraDescription =>
       'Ask before every spoken transition or comment, however sure the app is. Low-confidence commands always ask, whatever this is set to.';
+
+  @override
+  String get settingsScribeKeyField => 'Realtime voice API key';
+
+  @override
+  String get settingsScribeDescription =>
+      'Your ElevenLabs Scribe key, used only for voice commands. It is a different service from the transcription key above — meetings go to Whisper, spoken commands go to Scribe, and each keeps its own key.';
+
+  @override
+  String get settingsScribeConfigured => 'Realtime key configured';
+
+  @override
+  String get settingsScribeNotConfigured =>
+      'No realtime key — voice commands will not run';
 }
