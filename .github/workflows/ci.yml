@@ -1,0 +1,120 @@
+name: CI
+
+# The pipeline documented in docs/testing-strategy.md §6:
+#   analyze -> format -> check_imports -> test + coverage -> goldens -> desktop E2E
+#
+# docs/project-rules.md §7.3: a sprint PR merges only when every job here is
+# green. No skips, no re-runs to mask a flake.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Pinned: golden files are byte-compared, so the renderer must not move
+  # under us between runs (docs/sprints/sprint-00 S00-GT-01/02).
+  FLUTTER_VERSION: 3.44.9
+
+jobs:
+  quality:
+    name: G1 analyze · G2 format · G5 imports · G6 secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: G1 — static analysis (0 errors, 0 warnings)
+        run: flutter analyze
+
+      - name: G2 — formatting
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: G5 — layer dependency rule and literal colours
+        run: dart run tool/check_imports.dart
+
+      - name: G6 — no hardcoded secrets
+        run: |
+          if grep -rEn "(api[_-]?key|token)[[:space:]]*=[[:space:]]*['\"]" lib/; then
+            echo "::error::hardcoded secret found in lib/ — secrets belong in secure storage (BR-08)"
+            exit 1
+          fi
+          echo "no hardcoded secrets in lib/"
+
+  test:
+    name: G3 tests · G4 coverage · goldens
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # Golden sets are per operating system (DEC-006); this job runs on Linux
+      # and compares against test/presentation/goldens/images/linux/.
+      - name: G3 + goldens — unit, golden and integration tests
+        run: flutter test --coverage
+
+      - name: G4 — coverage thresholds
+        run: dart run tool/check_coverage.dart
+
+      - name: Upload golden diffs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-failures
+          path: test/**/failures/**
+          if-no-files-found: ignore
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/lcov.info
+          if-no-files-found: ignore
+
+  e2e:
+    name: E2E (Linux desktop host)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install Linux desktop toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang cmake ninja-build pkg-config \
+            libgtk-3-dev liblzma-dev libsecret-1-dev libstdc++-12-dev \
+            xvfb
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: S00-E2E-01 — navigation smoke test
+        run: xvfb-run -a --server-args="-screen 0 1280x800x24" flutter test integration_test/

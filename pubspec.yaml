@@ -1,0 +1,66 @@
+name: norte
+description: "Norte — personal productivity assistant for developers"
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # docs/architecture.md §2.1 — technical stack.
+  flutter_riverpod: ^2.6.1 # state management + DI
+  go_router: ^14.8.1 # navigation and deep links
+  drift: ^2.28.2 # local persistence (SQLite)
+  sqlite3_flutter_libs: ^0.5.42 # bundled SQLite for mobile/desktop
+  path_provider: ^2.1.5 # database location
+  path: ^1.9.1
+  flutter_secure_storage: ^9.2.4 # secrets (Keychain/Keystore/DPAPI)
+  dio: ^5.9.0 # HTTP + interceptors
+  record: ^7.1.1 # audio capture
+  web_socket_channel: ^3.0.3 # realtime transcription transport
+  workmanager: ^0.10.7 # background sync (mobile)
+  freezed_annotation: ^3.1.0 # immutable domain entities
+  json_annotation: ^4.9.0
+  intl: ^0.20.2 # localization (BR-11)
+  lucide_icons_flutter: ^3.0.10 # icon set (docs/design-system.md §5)
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  mocktail: ^1.0.4
+  build_runner: ^2.10.1
+  freezed: ^3.2.3
+  json_serializable: ^6.11.1
+  drift_dev: ^2.28.2
+
+flutter:
+  uses-material-design: true
+  generate: true # ARB code generation (l10n.yaml)
+
+  fonts:
+    # docs/design-system.md §3 — sans for prose, mono for technical data.
+    # Both are bundled so golden tests render identically everywhere.
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+    - family: JetBrainsMono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/JetBrainsMono-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/JetBrainsMono-SemiBold.ttf
+          weight: 600

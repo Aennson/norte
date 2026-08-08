@@ -1,0 +1,25 @@
+{
+  "_comment": "Synthetic Jira issues for FakeJiraGateway. No real project, site or personal data (docs/testing-strategy.md §3).",
+  "issues": [
+    {
+      "issueKey": "NORTE-1",
+      "siteUrl": "https://example.atlassian.net",
+      "status": "To Do"
+    },
+    {
+      "issueKey": "NORTE-2",
+      "siteUrl": "https://example.atlassian.net",
+      "status": "In Progress"
+    },
+    {
+      "issueKey": "NORTE-3",
+      "siteUrl": "https://example.atlassian.net",
+      "status": "Done"
+    },
+    {
+      "issueKey": "PROJ-123",
+      "siteUrl": "https://example.atlassian.net",
+      "status": "In Progress"
+    }
+  ]
+}

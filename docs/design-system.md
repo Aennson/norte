@@ -29,6 +29,7 @@
 | `textSecondary` | `#A8A79E` | Supporting text, metadata |
 | `textMuted` | `#6E6D66` | Placeholders, disabled |
 | `accent` | `#D97757` | Primary buttons, links, focus, active icon |
+| `onAccent` | `#1F1E1D` | Text/icon drawn on top of `accent` (5.33:1 — DEC-001) |
 | `accentHover` | `#E08B6D` | Accent hover/pressed |
 | `accentSubtle` | `#3A2A22` | Background of accent chips/highlights |
 | `success` | `#7BAE7F` | Completed task, sync ok |
@@ -47,7 +48,8 @@
 | `textPrimary` | `#191919` | Primary text |
 | `textSecondary` | `#5E5D59` | Supporting text |
 | `textMuted` | `#9B9A94` | Placeholders |
-| `accent` | `#C2603F` | Accent (darkened coral for AA contrast) |
+| `accent` | `#BA5B3B` | Accent (darkened coral for AA contrast — DEC-001) |
+| `onAccent` | `#FFFFFF` | Text/icon drawn on top of `accent` (4.52:1 — DEC-001) |
 | `accentHover` | `#D97757` | Hover |
 | `accentSubtle` | `#F6E3DB` | Chips/highlights |
 | `success` | `#4E7D52` | — |
@@ -56,6 +58,8 @@
 | `info` | `#3E6C99` | — |
 
 **Rule:** every text/background pair must reach **WCAG AA contrast (≥4.5:1)** for normal text. This is verified by a test (S00-UT-04).
+
+**Text on the accent** uses the `onAccent` token, never a literal white — no single ink reaches AA on both accents. See `docs/reports/decisions.md` — **DEC-001**.
 
 ## 3. Typography
 
@@ -74,7 +78,7 @@ Implemented in `presentation/shared/` in Sprint 00 and reused across the app:
 
 | Component | Specification |
 |---|---|
-| `NorteButton` | Primary: `accent` background, `#FFFFFF` text, radius 8, height 40. Secondary: 1px `border` outline, `textPrimary` text. Destructive: `error` background. States: hover (`accentHover`), disabled (50% opacity), loading (16px spinner replaces label) |
+| `NorteButton` | Primary: `accent` background, `onAccent` text, radius 8, height 40. Secondary: 1px `border` outline, `textPrimary` text. Destructive: `error` background. States: hover (`accentHover`), disabled (50% opacity), loading (16px spinner replaces label) |
 | `NorteCard` | `surface` background, 1px `border`, radius 8, padding 16 |
 | `StatusBadge` | `monoSmall` + 6px dot on the left. Colors: todo=`textMuted`, inProgress=`info`, done=`success`, blocked=`error` |
 | `JiraChip` | `mono` font, `accentSubtle` background, `accent` text, issueKey prefix (e.g.: `PROJ-123`); tap opens the link action |

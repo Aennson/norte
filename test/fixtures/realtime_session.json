@@ -1,0 +1,9 @@
+{
+  "_comment": "Scripted Scribe Realtime session for FakeRealtimeTranscription. Synthetic PT-BR utterance, no real audio and no personal data (docs/testing-strategy.md §3).",
+  "events": [
+    { "text": "muda o", "committed": false },
+    { "text": "muda o PROJ", "committed": false },
+    { "text": "muda o PROJ-123", "committed": false },
+    { "text": "muda o PROJ-123 pra concluído", "committed": true }
+  ]
+}
