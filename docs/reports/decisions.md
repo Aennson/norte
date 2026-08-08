@@ -577,3 +577,84 @@ before then.
 
 **Impact.** Every v1.0 manual script; `docs/reports/sprint-00-report.md` §5.1;
 the missing `macos/` golden set.
+
+---
+
+## DEC-021 — `BatchTranscription` takes a path, not a `dart:io` `File` (Sprint 04)
+
+**Status:** accepted.
+
+**Context.** `docs/architecture.md` §9.1 declares
+`Future<Transcript> transcribeFile(File audio, {String? language})`. Sprint 00
+wrote the provisional port with `String path` instead, at a point when it had
+no caller and no entity types; Sprint 04 promoted it and had to choose which
+of the two the real port would be.
+
+**Decision.** The port keeps **`String path`**. `File` is a `dart:io` type, and
+putting it on a domain port drags a platform dependency into the one layer the
+project keeps free of them: the layer rule permits `dart:` imports, so nothing
+would have failed the gate — it would simply have been wrong quietly. The
+practical cost is immediate and testable: `FakeAudioStore` can model a
+directory as a `Set<String>`, and `S04-UT-03` can assert "no audio file remains
+in the directory" without touching a real filesystem it would then have to
+clean up. `WhisperBatchEngine` constructs its own `File` from the path, which
+is where a platform type belongs.
+
+`docs/architecture.md` §9.1 is amended to match, and the promoted port is
+otherwise byte-for-byte the provisional one — including `progress`, which the
+architecture document never named but the recording screen needs.
+
+**Impact.** `docs/architecture.md` §9.1;
+`lib/domain/ports/transcription_engine.dart`.
+
+---
+
+## DEC-022 — `permission_handler` added to the stack (Sprint 04)
+
+**Status:** accepted.
+
+**Context.** Sprint 04 requires that a denied microphone produce "an
+explanatory screen with a link to system settings; never a crash". The `record`
+package — the stack's audio dependency (`docs/architecture.md` §2.1) — exposes
+only `hasPermission()`, a boolean. It cannot distinguish *denied* from
+*permanently denied*, and it cannot open the system settings at all.
+
+Those two gaps are the whole screen. Without the distinction, the app shows an
+"Allow microphone" button that produces no prompt on a platform that has
+stopped asking — a control that silently does nothing, which is worse than no
+control. Without the settings deep link, there is no route out at all, and the
+sprint's rule cannot be delivered.
+
+**Decision.** Add `permission_handler: ^13.0.0`, used **only** by
+`RecordAudioRecorder` and only for the microphone permission. Capture itself
+stays with `record`. `MicrophonePermission` — the domain's three-state enum —
+is what the rest of the app sees, so the package appears nowhere above
+`infrastructure/platform/`.
+
+**Rejected alternatives.**
+
+- *Ship the boolean and always show the settings link* — a user whose refusal
+  was a mis-tap is sent on a trip through system settings for a permission the
+  prompt would have granted in one tap.
+- *Write the platform channels by hand* — three platforms of native code, for a
+  problem a maintained package solves, in a sprint whose subject is audio.
+
+**Impact.** `pubspec.yaml`; `lib/infrastructure/platform/record_audio_recorder.dart`;
+`docs/architecture.md` §2.1's dependency list gains one entry.
+
+---
+
+## DEC-023 — Development branch for Sprint 04 (Sprint 04)
+
+**Status:** accepted.
+
+**Context.** `docs/project-rules.md` §7.1 names sprint branches
+`sprint-XX/<slug>`. As in Sprint 00 (DEC-003), Sprint 01 (DEC-009), Sprint 02
+(DEC-013) and Sprint 03 (DEC-015), the execution environment pins the branch
+and forbids pushing anywhere else.
+
+**Decision.** Sprint 04 is developed and pushed on
+`claude/sprint-verification-04e4a6`, in a worktree, with every other §7 rule
+honoured: `master` untouched, commits authored by the Developer with the AI as
+`Co-Authored-By`, and a single PR to `master` that merges only on 100% green
+Actions.

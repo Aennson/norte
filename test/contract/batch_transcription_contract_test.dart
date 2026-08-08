@@ -15,12 +15,7 @@ import '../support/fake_whisper_server.dart';
 
 /// What a subject needs to supply so the shared cases can run against it.
 class _Subject {
-  _Subject({
-    required this.name,
-    required this.build,
-    required this.setFailure,
-    this.dispose,
-  });
+  _Subject({required this.name, required this.build, required this.setFailure});
 
   final String name;
 
@@ -31,8 +26,6 @@ class _Subject {
 
   /// Programs the subject's next call to fail with a server error.
   final Future<void> Function() setFailure;
-
-  final Future<void> Function()? dispose;
 }
 
 /// S04-CT-01 — the [BatchTranscription] contract, run against every

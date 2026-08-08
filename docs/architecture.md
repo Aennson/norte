@@ -51,7 +51,8 @@
 | Local persistence | Drift (SQLite) | Typed, reactive, cross-platform incl. Windows |
 | Secrets | flutter_secure_storage | Keychain/Keystore/DPAPI (Windows) |
 | HTTP | dio + interceptors | Retry, redacted logging, future mTLS |
-| Audio (recording) | record / flutter_sound | Desktop + mobile support |
+| Audio (recording) | record | Desktop + mobile support |
+| Microphone permission | permission_handler | `record` reports a boolean; the denied/permanently-denied distinction and the settings deep link are what the permission screen is made of (DEC-022) |
 | Audio (streaming) | web_socket_channel + PCM 16k | Scribe v2 Realtime requirement |
 | Navigation | go_router | Deep links (open ticket via notification) |
 | Serialization | freezed + json_serializable | Immutability in the domain |
@@ -309,7 +310,8 @@ abstract interface class TranscriptionEngine {
 }
 
 abstract interface class BatchTranscription implements TranscriptionEngine {
-  Future<Transcript> transcribeFile(File audio, {String? language});
+  Future<Transcript> transcribeFile(String path, {String? language}); // DEC-021
+  Stream<double> get progress;                                        // 0.0..1.0
 }
 
 abstract interface class RealtimeTranscription implements TranscriptionEngine {
