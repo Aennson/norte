@@ -7,6 +7,7 @@ library;
 export 'fake_ai_engine.dart';
 export 'fake_batch_transcription.dart';
 export 'fake_clock.dart';
+export 'fake_id_generator.dart';
 export 'fake_jira_gateway.dart';
 export 'fake_notification_scheduler.dart';
 export 'fake_realtime_transcription.dart';
