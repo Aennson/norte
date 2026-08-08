@@ -1,5 +1,7 @@
+import '../entities/intent_context.dart';
 import '../entities/meeting.dart';
 import '../entities/meeting_template.dart';
+import '../entities/voice_intent.dart';
 
 /// What an AI engine can do (`docs/architecture.md` §7.1).
 ///
@@ -71,12 +73,22 @@ abstract interface class AiEngine {
   /// together for convenience.
   Future<MeetingSummary> summarize(String transcript, MeetingTemplate template);
 
-  /// Parses [utterance] into the intent JSON described in
-  /// `docs/architecture.md` §6.2.
+  /// Parses [utterance] into a [VoiceIntent] (`docs/architecture.md` §6.2).
   ///
-  /// Still returns raw text: it is promoted to `VoiceIntent` in Sprint 05,
-  /// which is where the entity acquires a caller and a test.
-  Future<String> parseIntent(String utterance);
+  /// [context] carries the situation the utterance was spoken in — the
+  /// locale, the user's linked issue keys, and, on the second pass of a
+  /// missing-slot exchange, the intent and slots already established.
+  ///
+  /// Promoted from `Future<String>` here in Sprint 05, which is the sprint
+  /// that first has a caller able to act on the richer type (DEC-017). The
+  /// shared `IntentCodec` does the reading, so every adapter returns an intent
+  /// validated against the same schema (S05-CT-02).
+  ///
+  /// Throws [AiResponseFailure] when the answer cannot be read as an intent.
+  /// It does **not** answer `IntentType.unknown` in that case: an unreadable
+  /// answer and a model that understood nothing are different facts, and only
+  /// `IntentParser` is entitled to collapse them.
+  Future<VoiceIntent> parseIntent(String utterance, IntentContext context);
 
   /// What this engine supports. Constant for the life of the instance.
   AiCapabilities get capabilities;

@@ -3,12 +3,15 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 
+import '../../domain/entities/intent_context.dart';
 import '../../domain/entities/meeting.dart';
 import '../../domain/entities/meeting_template.dart';
+import '../../domain/entities/voice_intent.dart';
 import '../../domain/failures/failure.dart';
 import '../../domain/ports/ai_credential_store.dart';
 import '../../domain/ports/ai_engine.dart';
 import '../../domain/ports/clock.dart';
+import 'intent_codec.dart';
 import 'meeting_summary_codec.dart';
 
 /// [AiEngine] over the Claude Messages API (`docs/architecture.md` §7.2).
@@ -41,6 +44,7 @@ class ClaudeApiEngine implements AiEngine {
     this.baseUrl = defaultBaseUrl,
     this.maxTokens = defaultMaxTokens,
     this.codec = const MeetingSummaryCodec(),
+    this.intentCodec = const IntentCodec(),
   });
 
   final Dio dio;
@@ -52,6 +56,7 @@ class ClaudeApiEngine implements AiEngine {
   final String baseUrl;
   final int maxTokens;
   final MeetingSummaryCodec codec;
+  final IntentCodec intentCodec;
 
   /// The default model.
   static const String defaultModel = 'claude-opus-5';
@@ -66,6 +71,10 @@ class ClaudeApiEngine implements AiEngine {
   /// covers thinking as well as the summary, and a truncated summary is
   /// indistinguishable from a meeting that had nothing to say.
   static const int defaultMaxTokens = 16000;
+
+  /// Ceiling on one intent answer. Three small fields; anything approaching
+  /// this is a model that has stopped answering the question.
+  static const int intentMaxTokens = 512;
 
   @override
   AiCapabilities get capabilities => const AiCapabilities(
@@ -123,11 +132,50 @@ class ClaudeApiEngine implements AiEngine {
   }
 
   @override
-  Future<String> parseIntent(String utterance) async {
-    // Sprint 05 owns the intent pipeline: its prompt, its schema, its
-    // confidence handling (BR-04). Answering here with something plausible
-    // would be implementing a future sprint (`docs/project-rules.md` §8).
-    throw const EngineFailure('intent parsing arrives in Sprint 05');
+  Future<VoiceIntent> parseIntent(
+    String utterance,
+    IntentContext context,
+  ) async {
+    final String key = await _apiKey();
+    final String raw = await _stream(key, <String, Object?>{
+      'model': model,
+      // An intent is three fields. The ceiling exists to stop a runaway
+      // answer, not to leave room for one.
+      'max_tokens': intentMaxTokens,
+      // The cached half, and this one earns the cache far better than the
+      // summarizer's: the intent prompt is byte-identical on every voice
+      // command the user ever speaks.
+      'system': <Object?>[
+        <String, Object?>{
+          'type': 'text',
+          'text': intentCodec.systemPrompt,
+          'cache_control': <String, Object?>{'type': 'ephemeral'},
+        },
+      ],
+      'messages': <Object?>[
+        <String, Object?>{
+          'role': 'user',
+          'content': intentCodec.userMessageFor(utterance, context),
+        },
+      ],
+      'output_config': <String, Object?>{
+        // The user is holding a microphone and waiting: the p95 budget for
+        // committed-speech to intent-ready is three seconds
+        // (`docs/architecture.md` §15), and deliberation is what spends it.
+        'effort': 'low',
+        'format': <String, Object?>{
+          'type': 'json_schema',
+          'schema': IntentCodec.schema,
+        },
+      },
+      // Streamed like the summary, for one unglamorous reason: it is the
+      // adapter's only transport, and a second one would be a second set of
+      // error paths to get right. The answer is small enough that the
+      // difference is noise next to the model's own latency.
+      'stream': true,
+    });
+
+    return intentCodec.parse(raw, context: context);
   }
 
   /// The user's key, or [MissingApiKeyFailure].

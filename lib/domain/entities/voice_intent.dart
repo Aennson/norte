@@ -34,6 +34,40 @@ enum IntentType {
     IntentType.createReminder => true,
     IntentType.queryStatus || IntentType.unknown => false,
   };
+
+  /// `true` when acting on the intent reaches Jira.
+  ///
+  /// The distinction the "always confirm Jira writes" setting turns on: a
+  /// mistaken local task is a row the user deletes, a mistaken transition is a
+  /// change their team sees (`docs/architecture.md` §6.2).
+  bool get writesToJira =>
+      this == IntentType.updateJira || this == IntentType.addComment;
+
+  /// Slots without which the intent cannot be acted on at all.
+  ///
+  /// The app asks for **only** what is missing from this list and re-parses
+  /// with the answer, rather than making the user say the whole command again
+  /// (`sprint-05` validation rules, S05-UT-05). Optional slots — a task's
+  /// priority, a due date — are deliberately absent: they refine an action,
+  /// they do not gate it.
+  List<String> get requiredSlots => switch (this) {
+    IntentType.updateJira => const <String>['issueKey', 'transition'],
+    IntentType.addComment => const <String>['issueKey', 'comment'],
+    IntentType.createTask => const <String>['title'],
+    IntentType.createReminder => const <String>['text', 'triggerAt'],
+    IntentType.queryStatus => const <String>['issueKey'],
+    IntentType.unknown => const <String>[],
+  };
+
+  /// The wire value [name] read back, or [unknown] for anything else.
+  ///
+  /// A value outside the enum is not an error to raise but an intent to
+  /// refuse: the point of `unknown` is that an answer nobody recognises never
+  /// becomes an action (`sprint-05` validation rules).
+  static IntentType fromWire(Object? value) => IntentType.values.firstWhere(
+    (IntentType type) => type.name == value,
+    orElse: () => IntentType.unknown,
+  );
 }
 
 /// What the AI understood from a spoken utterance.
@@ -63,4 +97,31 @@ abstract class VoiceIntent with _$VoiceIntent {
   /// confidence is under [confidenceThreshold] (BR-04).
   bool get canRunUnconfirmed =>
       !type.isMutating || confidence >= confidenceThreshold;
+
+  /// Required slots this intent does not carry, in the order they are asked
+  /// for.
+  ///
+  /// A slot present but blank counts as missing — a model that answered
+  /// `{"issueKey": ""}` has not identified a ticket, and treating that as an
+  /// answer would send an empty key to Jira.
+  List<String> get missingSlots => <String>[
+    for (final String slot in type.requiredSlots)
+      if (!_hasSlot(slot)) slot,
+  ];
+
+  /// `true` when every required slot is present.
+  bool get isComplete => missingSlots.isEmpty;
+
+  /// The value of [slot] as trimmed text, or `null` when it is absent, blank,
+  /// or not text at all.
+  String? slotText(String slot) => switch (slots[slot]) {
+    final String value when value.trim().isNotEmpty => value.trim(),
+    _ => null,
+  };
+
+  bool _hasSlot(String slot) => switch (slots[slot]) {
+    null => false,
+    final String value => value.trim().isNotEmpty,
+    _ => true,
+  };
 }
