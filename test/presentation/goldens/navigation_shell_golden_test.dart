@@ -64,6 +64,7 @@ void main() {
         matchesGoldenFile('images/navigation_shell_mobile.png'),
       );
     },
+    tags: 'golden',
   );
 
   testWidgets(
@@ -85,6 +86,7 @@ void main() {
         matchesGoldenFile('images/navigation_shell_desktop.png'),
       );
     },
+    tags: 'golden',
   );
 
   testWidgets('S00-GT-02: mobile in the light theme', (
@@ -96,7 +98,7 @@ void main() {
       find.byType(MaterialApp),
       matchesGoldenFile('images/navigation_shell_mobile_light.png'),
     );
-  });
+  }, tags: 'golden');
 
   testWidgets('S00-GT-02: the layout switches at the 900px breakpoint', (
     WidgetTester tester,

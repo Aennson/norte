@@ -24,6 +24,14 @@
 | E2E | `E2E` | `integration_test/` + Riverpod overrides with fakes | `integration_test/` |
 | Eval | `EV` | versioned PT-BR dataset in `test/fixtures/intents/` | `test/evals/` |
 
+**Golden tests have a canonical platform: Linux, the one CI runs.** Flutter
+rasterises text per operating system, so a committed `.png` only matches where it
+was generated — on Windows or macOS the same widget produces a ~1% pixel
+difference that is not a defect. Every golden test therefore carries the
+`golden` tag; off Linux, run `flutter test --exclude-tags golden`. Goldens are
+never regenerated on another platform (it would break CI), and CI runs them with
+no exclusion, so the gate is never skipped where it counts. See DEC-006.
+
 ## 2. Mandatory test case specification format
 
 Every test is **documented in the sprint before being implemented**, in this format:

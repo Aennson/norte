@@ -69,6 +69,8 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      # No --exclude-tags here: Linux is the canonical platform for the golden
+      # files (DEC-006), so this job is where they are actually enforced.
       - name: G3 + goldens — unit, golden and integration tests
         run: flutter test --coverage
 

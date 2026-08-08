@@ -91,9 +91,18 @@ Developer can close them locally.
    The `e2e` CI job runs the real thing on GitHub's runner, where that host is
    reachable: it built the Linux bundle and passed both scenarios on run #2.
 
+3. **Windows needs the Visual Studio ATL component.** `flutter build windows`
+   fails with `error C1083: Cannot open include file: 'atlstr.h'` from
+   `flutter_secure_storage_windows` — ATL is not part of the default
+   "Desktop development with C++" workload, and the current 4.2.2 release still
+   requires it (DEC-007). One-time fix on the developer's machine:
+   `vs_installer.exe modify --add Microsoft.VisualStudio.Component.VC.ATL`.
+   Does not affect CI, which builds the Linux host for E2E.
+
 **Decisions taken:** DEC-001 (`onAccent` token + darkened light accent),
 DEC-002 (`lucide_icons_flutter`), DEC-003 (branch name), DEC-004 (Linux desktop
-as E2E host), DEC-005 (plugin versions) — all in `docs/reports/decisions.md`.
+as E2E host), DEC-005 (plugin versions), DEC-006 (goldens canonical on Linux),
+DEC-007 (ATL requirement) — all in `docs/reports/decisions.md`.
 
 ## 6. Tests
 
@@ -111,7 +120,9 @@ as E2E host), DEC-005 (plugin versions) — all in `docs/reports/decisions.md`.
 | S00-E2E-01 | Navigation smoke test | 2 | ✅ (CI, Linux desktop host) |
 | — | Fakes sanity suite (added under §5.4) | 24 | ✅ |
 
-67 tests green under `flutter test`; 12 golden files committed under
+67 tests green under `flutter test` on Linux (54 with
+`--exclude-tags golden`, the 13 golden assertions being Linux-canonical —
+DEC-006); 13 golden files committed under
 `test/presentation/goldens/images/`.
 
 ## 7. Definition of Done

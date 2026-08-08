@@ -1,0 +1,13 @@
+# Test tags used by the project.
+#
+# Declaring them here stops `flutter test` from warning about unknown tags and
+# documents what each one means.
+
+tags:
+  golden:
+    description: >-
+      Pixel-exact comparison against a committed .png. Flutter rasterises text
+      differently per operating system, so a golden only matches on the platform
+      that generated it. The committed files are generated on Linux, which is
+      what CI runs; on any other host these tests report differences that are
+      not defects. Run `flutter test --exclude-tags golden` off Linux.

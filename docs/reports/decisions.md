@@ -117,3 +117,66 @@ Sprints 04–06), so the bump costs nothing today and removes a known build risk
 `sqlite3_flutter_libs` stays on `^0.5.42`: its `0.6.0` release is published as
 `0.6.0+eol`, and choosing a replacement belongs with the persistence work in
 Sprint 01, where it can actually be exercised.
+
+---
+
+## DEC-006 — Golden tests are canonical on Linux only (Sprint 00)
+
+**Status:** accepted.
+
+**Context.** Running `flutter test` on Windows failed all 13 golden assertions
+with differences of 0.65%–1.25% of the pixels, while every other test passed.
+The layout was identical; only the glyph rasterisation differed. Flutter renders
+text through the host operating system's font stack, so a committed `.png`
+reproduces exactly only on the platform that produced it. The same suite is green
+on Linux, both locally and in CI.
+
+Regenerating the files on Windows is not an option — it would immediately break
+the Linux CI job, which is the gate that guards merges (`docs/project-rules.md`
+§7.3).
+
+**Decision.** Linux is the canonical platform for goldens.
+
+1. Every test that asserts `matchesGoldenFile` carries the `golden` tag,
+   declared in `dart_test.yaml`.
+2. CI runs on Linux with **no exclusion** — the goldens are enforced there, every
+   run, exactly as the sprint requires.
+3. Off Linux, developers run `flutter test --exclude-tags golden`; the local
+   verification script does this automatically.
+4. Goldens are regenerated only on Linux.
+
+**This does not weaken S00-GT-01/GT-02.** The tests are neither removed nor
+marked `skip` (`docs/project-rules.md` §5.4, §8): they run on every CI run and a
+real visual regression still fails the build. What changed is that they stopped
+being evaluated on a platform where their result carries no information.
+
+**Impact.** `dart_test.yaml` added; the two golden test files tagged;
+`docs/testing-strategy.md` §1 records the rule.
+
+---
+
+## DEC-007 — `flutter_secure_storage` kept at `^9.2.4` (Sprint 00)
+
+**Status:** accepted.
+
+**Context.** `flutter build windows` fails with
+`error C1083: Cannot open include file: 'atlstr.h'` from
+`flutter_secure_storage_windows`. ATL is a Visual Studio component that the
+"Desktop development with C++" workload does not install by default.
+
+Upgrading was evaluated: `flutter_secure_storage_windows` **4.2.2 still includes
+`<atlstr.h>`**, so the newer release does not remove the requirement.
+
+**Decision.** Keep `^9.2.4` — moving to 11.0.0 would change ten packages without
+fixing anything. The dependency is declared but unused until Sprint 02.
+
+The Windows build environment must include the ATL component:
+
+```
+"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" modify ^
+  --installPath "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools" ^
+  --add Microsoft.VisualStudio.Component.VC.ATL --quiet --norestart
+```
+
+**Impact.** No dependency change. The requirement is documented here and in the
+environment setup script.
