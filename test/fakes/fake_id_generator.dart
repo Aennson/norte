@@ -15,6 +15,12 @@ class FakeIdGenerator implements IdGenerator {
   /// name the identifier it will look up later.
   FakeIdGenerator.fixed(String id) : _delegate = _FixedId(id);
 
+  /// Hands out [ids] in order, then keeps returning the last one.
+  ///
+  /// Lets a test that asserts on several operations name each one — an outbox
+  /// assertion reads far better against `op-1` than against a UUID.
+  FakeIdGenerator.sequence(List<String> ids) : _delegate = _SequencedIds(ids);
+
   final IdGenerator _delegate;
 
   /// Every id handed out, in call order.
@@ -35,4 +41,15 @@ class _FixedId implements IdGenerator {
 
   @override
   String newId() => _id;
+}
+
+class _SequencedIds implements IdGenerator {
+  _SequencedIds(this._ids) : assert(_ids.length > 0, 'needs at least one id');
+
+  final List<String> _ids;
+  int _index = 0;
+
+  @override
+  String newId() =>
+      _ids[_index < _ids.length ? _index++ : _ids.length - 1];
 }
