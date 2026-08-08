@@ -25,6 +25,21 @@ Every command below was run at `HEAD` of the sprint branch.
 | G6 — secrets | `grep -rEn "(api[_-]?key\|token)[[:space:]]*=[[:space:]]*['\"]" lib/` | no match ✅ |
 | E2E | `xvfb-run flutter test integration_test/` | green on the CI Linux desktop host — `✓ Built build/linux/x64/debug/bundle/norte`, 2/2 scenarios passing ✅ |
 
+**Re-run on the Developer's Windows machine** (Flutter 3.44.9 / Dart 3.12.2,
+Windows 11 25H2), which closes the two environment gaps of §5:
+
+| Gate | Command | Result |
+|---|---|---|
+| G1 | `flutter analyze` | `No issues found! (ran in 12.1s)` ✅ |
+| G2 | `dart format --output=none --set-exit-if-changed .` | `Formatted 47 files (0 changed)` ✅ |
+| G3 | `flutter test` | `00:02 +67: All tests passed!` — after generating the Windows golden set (DEC-006) ✅ |
+| G4 | `dart run tool/check_coverage.dart` | domain+application **100.0%** (13/13) · project **84.3%** (397/471) — `gate G4: OK` ✅ |
+| G5 | `dart run tool/check_imports.dart` | `check_imports: OK` ✅ |
+| G6 | secret scan over `lib/` | no match ✅ |
+| Android build | `flutter build apk --debug` | `√ Built build\app\outputs\flutter-apk\app-debug.apk` ✅ |
+| Windows build | `flutter build windows --debug` | `√ Built build\windows\x64\runner\Debug\norte.exe` ✅ (after installing the ATL component, DEC-007) |
+| E2E | `flutter test integration_test/ -d windows` | `00:03 +2: All tests passed!` ✅ |
+
 **CI evidence.** Workflow run
 [#2](https://github.com/Aennson/norte/actions/runs/31226818154) on
 `6e37da8` — all three jobs (`quality`, `test`, `e2e`) **success**. Run #1 failed
@@ -46,7 +61,7 @@ is reported as met rather than skipped because `domain/failures/` and
 
 | # | Deliverable | Status | Where |
 |---|---|---|---|
-| 1 | App compiles; `main.dart` is the composition root with `ProviderScope` | ⚠️ partial | `lib/main.dart` — compiles and boots under the test harness; no target platform buildable here (§5) |
+| 1 | App compiles; `main.dart` is the composition root with `ProviderScope` | ✅ (iOS pending) | `lib/main.dart` — Android APK and Windows `.exe` both built on the Developer's machine (§2); iOS needs a macOS host (§5.1) |
 | 2 | `NorteColors` (ThemeExtension, dark+light) + `NorteTypography` | ✅ | `lib/presentation/shared/theme/` |
 | 3 | Shared components, each with a golden | ✅ | `norte_button.dart`, `norte_card.dart`, `status_badge.dart`, `empty_state.dart` |
 | 4 | `go_router` with 4 destinations + voice button | ✅ | `lib/presentation/app/norte_router.dart`, `norte_shell.dart`, `lib/presentation/voice/voice_button.dart` |
@@ -74,30 +89,33 @@ Each provisional port names the sprint that promotes it.
 
 ## 5. Deviations and gaps
 
-**Blocking: none.** The two items below are environment limits, recorded so the
-Developer can close them locally.
+**Blocking: none. All three items below are now closed** — they were limits of
+the Linux container the sprint was executed in, and each was verified on the
+Developer's Windows machine (evidence in §2).
 
-1. **Target-platform builds were not verified.** Android, iOS and Windows are all
-   unbuildable in this Linux container: the Android SDK download
-   (`dl.google.com`) is refused by the environment's egress policy with HTTP 403,
-   and iOS/Windows need their own hosts. Deliverable 1 is therefore evidenced by
-   compilation + the app booting under the Flutter test harness (S00-E2E-01 boots
-   the real `ProviderScope`/`NorteApp` tree), not by a platform artifact.
-   **Action for the Developer:** run `flutter build apk --debug` and
-   `flutter build windows --debug` locally once before merging.
-2. **S00-E2E-01 could not be executed in this container** (resolved in CI). The
-   Linux desktop host (DEC-004) builds until `sqlite3_flutter_libs` fetches the
-   SQLite amalgamation from `sqlite.org`, which the same egress policy refuses.
-   The `e2e` CI job runs the real thing on GitHub's runner, where that host is
-   reachable: it built the Linux bundle and passed both scenarios on run #2.
-
-3. **Windows needs the Visual Studio ATL component.** `flutter build windows`
-   fails with `error C1083: Cannot open include file: 'atlstr.h'` from
-   `flutter_secure_storage_windows` — ATL is not part of the default
-   "Desktop development with C++" workload, and the current 4.2.2 release still
-   requires it (DEC-007). One-time fix on the developer's machine:
-   `vs_installer.exe modify --add Microsoft.VisualStudio.Component.VC.ATL`.
-   Does not affect CI, which builds the Linux host for E2E.
+1. **Target-platform builds** — ~~not verified~~ **closed for Android and
+   Windows.** In the container, Android, iOS and Windows were all unbuildable:
+   the Android SDK download (`dl.google.com`) is refused by the environment's
+   egress policy with HTTP 403, and iOS/Windows need their own hosts.
+   Both buildable targets now have a real artifact:
+   `flutter build apk --debug` → `app-debug.apk`, and
+   `flutter build windows --debug` → `norte.exe`. **iOS remains unverified** —
+   it requires a macOS host, which the project does not have; it is the one
+   piece of deliverable 1 still outstanding.
+2. **S00-E2E-01** — ~~not executable in this container~~ **closed.** The Linux
+   desktop host (DEC-004) built until `sqlite3_flutter_libs` fetched the SQLite
+   amalgamation from `sqlite.org`, which the same egress policy refused. It has
+   since passed twice against a real host: the `e2e` CI job on GitHub's runner
+   (run #2, Linux bundle) and `flutter test integration_test/ -d windows`
+   locally — 2/2 scenarios in both.
+3. **Windows ATL component** — **closed.** `flutter build windows` failed with
+   `error C1083: Cannot open include file: 'atlstr.h'` from
+   `flutter_secure_storage_windows`; ATL is not part of the default "Desktop
+   development with C++" workload, and the current 4.2.2 release still requires
+   it (DEC-007). Installed on the Developer's machine with
+   `setup.exe modify --productId Microsoft.VisualStudio.Product.BuildTools --channelId VisualStudio.17.Release --add Microsoft.VisualStudio.Component.VC.ATL`
+   (run elevated), after which the build succeeds. Does not affect CI, which
+   builds the Linux host for E2E.
 
 **Decisions taken:** DEC-001 (`onAccent` token + darkened light accent),
 DEC-002 (`lucide_icons_flutter`), DEC-003 (branch name), DEC-004 (Linux desktop
@@ -117,14 +135,17 @@ DEC-007 (ATL requirement) — all in `docs/reports/decisions.md`.
 | S00-GT-01 | Shared component goldens | 10 (5 × dark/light) | ✅ |
 | S00-GT-02 | Navigation shell | 4 | ✅ |
 | S00-IT-01 | check_imports detects a violation | 9 | ✅ |
-| S00-E2E-01 | Navigation smoke test | 2 | ✅ (CI, Linux desktop host) |
+| S00-E2E-01 | Navigation smoke test | 2 | ✅ (CI Linux desktop host + Windows desktop) |
 | — | Fakes sanity suite (added under §5.4) | 24 | ✅ |
 
 67 tests green under `flutter test`; 2 under `flutter test integration_test/`.
-The 13 golden files are committed under
-`test/presentation/goldens/images/linux/` — golden sets are per operating
-system (DEC-006), and every golden test runs on every platform against its own
-files, with no tolerance and nothing skipped.
+Golden sets are per operating system (DEC-006), and every golden test runs on
+every platform against its own files, with no tolerance and nothing skipped.
+Two sets are committed — 13 files each under
+`test/presentation/goldens/images/linux/` (what CI compares against) and
+`images/windows/`, generated on the Developer's machine with
+`flutter test --update-goldens`. `macos/` will be added the first time the
+suite runs there.
 
 ## 7. Definition of Done
 
@@ -136,5 +157,6 @@ files, with no tolerance and nothing skipped.
 
 **Remaining to close the sprint** (`docs/project-rules.md` §7.3): open the
 sprint PR to `master` and merge it only with Actions 100% green on the PR head.
-The Developer should also run the platform builds listed in §5.1 first — that is
-the one piece of deliverable 1 this environment could not produce.
+The platform builds of §5.1 are done — Android and Windows both produce a real
+artifact; iOS stays unverified until a macOS host exists, and is carried
+forward rather than blocking the merge.

@@ -193,3 +193,15 @@ The Windows build environment must include the ATL component:
 
 **Impact.** No dependency change. The requirement is documented here and in the
 environment setup script.
+
+**Applied.** Installed on the Developer's Windows machine during sprint-00
+closure. The `--installPath` form above fails when the path contains spaces
+unless the installer is already elevated; the form that worked, run elevated:
+
+```
+setup.exe modify --productId Microsoft.VisualStudio.Product.BuildTools ^
+  --channelId VisualStudio.17.Release ^
+  --add Microsoft.VisualStudio.Component.VC.ATL --quiet --norestart
+```
+
+`flutter build windows --debug` succeeds afterwards.
