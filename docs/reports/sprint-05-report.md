@@ -231,11 +231,30 @@ contract matches the service.
 - [ ] **p95 latency (committed → intent) measured with the real engine in a manual test** — §7, **not executed**
 - [x] Report `docs/reports/sprint-05-report.md` — this document
 - [x] Linux golden set committed from the workflow artifact (DEC-011) — §6
-- [x] GitHub Actions 100% green on the sprint PR — §10
+- [x] GitHub Actions 100% green on the sprint PR — §10, **all six checks pass**
 
 ## 10. CI
 
-To be filled from the final run on the pull request.
+All three jobs green, on the branch push and again on the pull request, at
+`67b4535` — the commit that carries the DEC-028 credential fix:
+
+| Job | Branch push ([run 31284679235](https://github.com/Aennson/norte/actions/runs/31284679235)) | Pull request ([run 31284681007](https://github.com/Aennson/norte/actions/runs/31284681007)) |
+|---|---|---|
+| G1 analyze · G2 format · G5 imports · G6 secrets | pass, 41s | pass, 45s |
+| G3 tests · G4 coverage · goldens | pass, 1m51s | pass, 1m39s |
+| E2E (Linux desktop host) | pass, 5m31s | pass, 5m49s |
+
+No skips, no re-runs (`docs/project-rules.md` §7.3). The E2E job runs each
+suite in its own invocation (DEC-010) — nine suites, thirty-three scenarios,
+including the seven this sprint added.
+
+**Worth naming:** the golden job compares against the Linux set committed in
+§6, and it passed on the first attempt after the voice components were added.
+The earlier red run on this branch was that job, before the set existed — a
+missing golden, not a differing one.
+
+[PR #7](https://github.com/Aennson/norte/pull/7) reports mergeable. Merging is
+the Developer's, not the executing AI's.
 
 ---
 
