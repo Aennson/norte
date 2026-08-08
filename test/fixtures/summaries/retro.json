@@ -1,0 +1,28 @@
+{
+  "sections": [
+    {
+      "title": "What went well",
+      "body": "The team shipped the outbox on time and nobody had to work a weekend for it. Pairing on the dispatcher was called out twice as the reason the retry logic landed correct the first time."
+    },
+    {
+      "title": "What to improve",
+      "body": "Code review latency. Two pull requests sat for three days. There was no agreement on whether that is a staffing problem or a notification problem, and the disagreement was left open."
+    },
+    {
+      "title": "Action items",
+      "body": "Two follow-ups were committed to; see the list."
+    }
+  ],
+  "actionItems": [
+    {
+      "description": "Update the runbook",
+      "assignee": "Ana",
+      "dueDate": null
+    },
+    {
+      "description": "Set up a review reminder in Slack",
+      "assignee": null,
+      "dueDate": "2026-08-15T00:00:00Z"
+    }
+  ]
+}

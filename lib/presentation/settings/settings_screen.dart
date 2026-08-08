@@ -3,12 +3,15 @@ import 'package:flutter/material.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../shared/theme/norte_spacing.dart';
 import '../shared/widgets/norte_screen.dart';
+import 'ai_settings_section.dart';
 import 'jira_settings_section.dart';
+import 'template_settings_section.dart';
 
 /// Settings destination.
 ///
-/// Holds the Jira connection from Sprint 02; the AI engine settings arrive in
-/// Sprint 07.
+/// Holds the Jira connection from Sprint 02, and from Sprint 03 the Claude key
+/// and the summarization templates. Choosing between engines arrives in
+/// Sprint 07, when there is a second one to choose.
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -24,6 +27,10 @@ class SettingsScreen extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: const <Widget>[
           JiraSettingsSection(),
+          SizedBox(height: NorteSpacing.lg),
+          AiSettingsSection(),
+          SizedBox(height: NorteSpacing.lg),
+          TemplateSettingsSection(),
           SizedBox(height: NorteSpacing.lg),
         ],
       ),

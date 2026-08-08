@@ -1,0 +1,284 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:dio/dio.dart';
+
+import '../../domain/entities/meeting.dart';
+import '../../domain/entities/meeting_template.dart';
+import '../../domain/failures/failure.dart';
+import '../../domain/ports/ai_credential_store.dart';
+import '../../domain/ports/ai_engine.dart';
+import '../../domain/ports/clock.dart';
+import 'meeting_summary_codec.dart';
+
+/// [AiEngine] over the Claude Messages API (`docs/architecture.md` §7.2).
+///
+/// **BYOK.** The key is the user's own, read from [AiCredentialStore] on each
+/// request and never held in a field (BR-08). No key configured is
+/// [MissingApiKeyFailure], not a crash and not a generic auth error — the two
+/// send the user to different places, and only one of them is Settings.
+///
+/// **Prompt caching.** The template's system prompt is sent as the system
+/// message with `cache_control`, and the transcript as the user message. That
+/// split is the whole point: the system prompt is identical for every meeting
+/// summarized under a template, so it is billed once and read cheaply
+/// thereafter. Nothing meeting-specific may leak into it, which is why the
+/// codec builds it from the template alone.
+///
+/// **Streaming.** Summaries are streamed. Not for progressive display — a
+/// summary is JSON and cannot be rendered until it closes — but because a long
+/// retro can take longer to generate than a plain HTTP request is willing to
+/// wait. Streaming is the difference between a slow summary and a timeout.
+///
+/// **Errors.** Every outcome is a [Failure]; a `DioException` never escapes
+/// (`docs/project-rules.md` §6).
+class ClaudeApiEngine implements AiEngine {
+  ClaudeApiEngine({
+    required this.dio,
+    required this.credentialStore,
+    required this.clock,
+    this.model = defaultModel,
+    this.baseUrl = defaultBaseUrl,
+    this.maxTokens = defaultMaxTokens,
+    this.codec = const MeetingSummaryCodec(),
+  });
+
+  final Dio dio;
+  final AiCredentialStore credentialStore;
+  final Clock clock;
+
+  /// Model id. Configurable because the user pays for it.
+  final String model;
+  final String baseUrl;
+  final int maxTokens;
+  final MeetingSummaryCodec codec;
+
+  /// The default model.
+  static const String defaultModel = 'claude-opus-5';
+
+  /// The API host.
+  static const String defaultBaseUrl = 'https://api.anthropic.com';
+
+  /// The API version header the Messages API requires.
+  static const String apiVersion = '2023-06-01';
+
+  /// Ceiling on one response. Generous on purpose: on this model the budget
+  /// covers thinking as well as the summary, and a truncated summary is
+  /// indistinguishable from a meeting that had nothing to say.
+  static const int defaultMaxTokens = 16000;
+
+  @override
+  AiCapabilities get capabilities => const AiCapabilities(
+    // Remote. This is what makes the PII redactor mandatory (BR-07).
+    isLocal: false,
+    supportsStreaming: true,
+    supportsPromptCache: true,
+    maxTokens: defaultMaxTokens,
+  );
+
+  @override
+  Future<MeetingSummary> summarize(
+    String transcript,
+    MeetingTemplate template,
+  ) async {
+    final String key = await _apiKey();
+    final String raw = await _stream(key, <String, Object?>{
+      'model': model,
+      'max_tokens': maxTokens,
+      // The cached half. `cache_control` marks the prefix — tools, then
+      // system — as reusable across every summary under this template.
+      'system': <Object?>[
+        <String, Object?>{
+          'type': 'text',
+          'text': codec.systemPromptFor(template),
+          'cache_control': <String, Object?>{'type': 'ephemeral'},
+        },
+      ],
+      // The uncached half: everything that varies per meeting sits after the
+      // breakpoint, so it never invalidates the prefix.
+      'messages': <Object?>[
+        <String, Object?>{'role': 'user', 'content': transcript},
+      ],
+      'output_config': <String, Object?>{
+        // Summarizing is not the kind of work that rewards deep deliberation,
+        // and the user is paying per token.
+        'effort': 'medium',
+        // Constrains the answer to the codec's shape. It does not make the
+        // parser optional — `CopilotCliEngine` has no such affordance, and a
+        // constrained model can still be cut short.
+        'format': <String, Object?>{
+          'type': 'json_schema',
+          'schema': MeetingSummaryCodec.schemaFor(template),
+        },
+      },
+      'stream': true,
+    });
+
+    return codec.parse(
+      raw,
+      template,
+      generatedAt: clock.now().toUtc(),
+      engineId: model,
+    );
+  }
+
+  @override
+  Future<String> parseIntent(String utterance) async {
+    // Sprint 05 owns the intent pipeline: its prompt, its schema, its
+    // confidence handling (BR-04). Answering here with something plausible
+    // would be implementing a future sprint (`docs/project-rules.md` §8).
+    throw const EngineFailure('intent parsing arrives in Sprint 05');
+  }
+
+  /// The user's key, or [MissingApiKeyFailure].
+  Future<String> _apiKey() async {
+    final String? key = await credentialStore.read();
+    if (key == null || key.trim().isEmpty) throw const MissingApiKeyFailure();
+    return key.trim();
+  }
+
+  /// Performs one streaming request and returns the assembled text.
+  Future<String> _stream(String apiKey, Map<String, Object?> body) async {
+    try {
+      final Response<ResponseBody> response = await dio.post<ResponseBody>(
+        '$baseUrl/v1/messages',
+        data: body,
+        options: Options(
+          responseType: ResponseType.stream,
+          headers: <String, Object?>{
+            'x-api-key': apiKey,
+            'anthropic-version': apiVersion,
+            'content-type': 'application/json',
+            'accept': 'text/event-stream',
+          },
+          validateStatus: (int? status) => status != null && status < 500,
+        ),
+      );
+
+      final int status = response.statusCode ?? 0;
+      if (status >= 400) throw _failureFor(status, response.headers);
+
+      final ResponseBody? stream = response.data;
+      if (stream == null) {
+        throw const AiResponseFailure('the engine returned an empty response');
+      }
+      return await _readSse(stream);
+    } on Failure {
+      rethrow;
+    } on DioException catch (error) {
+      throw _failureForDio(error);
+    } catch (_) {
+      // As in the Jira adapter: nothing but a Failure leaves this method, so
+      // an unanticipated response cannot escape as a raw error past the use
+      // case's `on Failure` and vanish.
+      throw const AiResponseFailure(
+        'the engine returned something this app could not read',
+      );
+    }
+  }
+
+  /// Accumulates `content_block_delta` text from the event stream.
+  ///
+  /// Only text deltas are collected. Thinking blocks stream too and are
+  /// deliberately dropped: they are the model's reasoning, not the summary,
+  /// and concatenating them would corrupt the JSON the codec has to read.
+  Future<String> _readSse(ResponseBody body) async {
+    final StringBuffer answer = StringBuffer();
+    Failure? failure;
+
+    await for (final String line
+        in utf8.decoder.bind(body.stream).transform(const LineSplitter())) {
+      if (!line.startsWith('data:')) continue;
+      final String payload = line.substring(5).trim();
+      if (payload.isEmpty || payload == '[DONE]') continue;
+
+      final Object? event = switch (payload) {
+        final String text => _tryDecode(text),
+      };
+      if (event is! Map<String, Object?>) continue;
+
+      switch (event['type']) {
+        case 'content_block_delta':
+          final Object? delta = event['delta'];
+          if (delta is Map<String, Object?> && delta['type'] == 'text_delta') {
+            final Object? text = delta['text'];
+            if (text is String) answer.write(text);
+          }
+        case 'error':
+          // The API reports mid-stream problems in the stream itself; a 200
+          // that ends in an error event must not read as a short summary.
+          failure = _failureForStreamError(event['error']);
+      }
+    }
+
+    if (failure != null) throw failure;
+    if (answer.isEmpty) {
+      throw const AiResponseFailure('the engine returned an empty summary');
+    }
+    return answer.toString();
+  }
+
+  Object? _tryDecode(String payload) {
+    try {
+      return jsonDecode(payload);
+    } on FormatException {
+      return null;
+    }
+  }
+
+  Failure _failureForStreamError(Object? error) {
+    final String? type = error is Map<String, Object?>
+        ? error['type'] as String?
+        : null;
+    return switch (type) {
+      'overloaded_error' => const RateLimitFailure('Claude is overloaded'),
+      'rate_limit_error' => const RateLimitFailure('Claude is rate limiting'),
+      'authentication_error' => const AuthFailure(
+        'Claude rejected the API key',
+      ),
+      _ => const EngineFailure('the engine failed part-way through'),
+    };
+  }
+
+  Failure _failureFor(int status, Headers headers) => switch (status) {
+    401 || 403 => const AuthFailure(
+      'Claude rejected the API key — check it in Settings',
+    ),
+    404 => const NotFoundFailure('no such Claude model'),
+    413 => const ValidationFailure(
+      'the transcript is too long for one request',
+      'transcript',
+    ),
+    429 => RateLimitFailure('Claude is rate limiting', _retryAfter(headers)),
+    _ => EngineFailure('Claude answered $status'),
+  };
+
+  Failure _failureForDio(DioException error) {
+    final Object? thrown = error.error;
+    if (thrown is Failure) return thrown;
+    return switch (error.type) {
+      DioExceptionType.connectionTimeout ||
+      DioExceptionType.sendTimeout ||
+      DioExceptionType.receiveTimeout ||
+      DioExceptionType.transformTimeout => const TimeoutFailure(
+        'Claude did not answer in time',
+      ),
+      DioExceptionType.connectionError ||
+      DioExceptionType.unknown => const NetworkFailure('cannot reach Claude'),
+      DioExceptionType.badCertificate => const NetworkFailure(
+        'Claude presented an untrusted certificate',
+      ),
+      DioExceptionType.cancel => const NetworkFailure('request cancelled'),
+      DioExceptionType.badResponse => _failureFor(
+        error.response?.statusCode ?? 0,
+        error.response?.headers ?? Headers(),
+      ),
+    };
+  }
+
+  Duration? _retryAfter(Headers headers) {
+    final String? value = headers.value('retry-after');
+    final int? seconds = value == null ? null : int.tryParse(value);
+    return seconds == null ? null : Duration(seconds: seconds);
+  }
+}

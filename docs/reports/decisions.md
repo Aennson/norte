@@ -374,3 +374,71 @@ forbids pushing anywhere else.
 in a worktree, with every other §7 rule honoured: `master` untouched, commits
 authored by the Developer with the AI as `Co-Authored-By`, and a single PR to
 `master` that merges only on 100% green Actions.
+
+---
+
+## DEC-014 — The Sprint 02 manual Jira pass is carried to Sprint 09 (Sprint 02 → 03)
+
+**Status:** accepted · decided by the Developer on 2026-08-08, when Sprint 03 was
+opened.
+
+**Context.** Sprint 02's Definition of Done requires a manual pass against a
+real Jira site (`docs/reports/sprint-02-report.md` §6). It was never executed,
+and the reason is not scheduling: **the Developer's site cannot be reached from
+the Developer's machine.** A Zscaler Browser Access gateway answers before Jira
+does, returning `200 text/html` or a `303` to `p.zpa-auth.net`, and it does not
+read the `Authorization` header at all. No credential the app can send changes
+the outcome — that transcript is what motivated Sprint 09 in the first place
+(`docs/sprints/sprint-09-gateway-access.md`, *Why this sprint exists*).
+
+So the box is not a task waiting for an afternoon. It is a test that the current
+network makes impossible, and the sprint that makes it possible is already
+planned and specified.
+
+**Decision.** The Sprint 02 manual pass is **discharged into S09-MT-01**, which
+supersedes it: S09-MT-01's steps 4 and 5 are the Sprint 02 §6 script (link,
+comment, transition, refresh, verify in a browser, verify no token in logs)
+performed against that same real site, once a route to it exists. The Sprint 02
+DoD box is closed on that basis, with §6 rewritten to state plainly that the
+pass did not happen and where it now lives. Sprint 09's Definition of Done gains
+an explicit line for the inherited obligation, so closing it cannot quietly drop
+the debt.
+
+**What this does not claim.** No pass was performed and none is recorded as
+performed. Sprint 02's automated evidence is unchanged and stands on its own:
+293 tests, the contract suite against a real loopback server in both Cloud and
+Data Center configurations, and two genuine defects found and fixed by the
+Developer's attempt to run this very script (report §5). The attempt produced
+the interception transcript — the sprint's most valuable manual finding — even
+though it could not produce a green pass.
+
+**Rejected alternatives.**
+
+- *Hold Sprint 03 until the pass happens* — `docs/project-rules.md` §1 exists to
+  stop work being built on unverified foundations, not to block on a test the
+  network forbids. Nothing in Sprint 03 touches Jira; the meetings pipeline
+  shares no code path with the gateway.
+- *Tick the box as passed* — a false record, and the one thing a report may
+  never contain.
+- *Move Sprint 09 ahead of Sprint 03* — Sprint 09 is v1.1 by design
+  (`docs/project-rules.md` §1), and its own entry criteria require an
+  organisational answer on app-held sessions that is not yet on record.
+
+**Impact.** `docs/reports/sprint-02-report.md` §6 and §7;
+`docs/sprints/sprint-09-gateway-access.md` Definition of Done.
+
+---
+
+## DEC-015 — Development branch for Sprint 03 (Sprint 03)
+
+**Status:** accepted.
+
+**Context.** `docs/project-rules.md` §7.1 names sprint branches
+`sprint-XX/<slug>`. As in Sprint 00 (DEC-003), Sprint 01 (DEC-009) and
+Sprint 02 (DEC-013), the execution environment pins the branch to
+`claude/next-phase-273c71` and forbids pushing anywhere else.
+
+**Decision.** Sprint 03 is developed and pushed on `claude/next-phase-273c71`,
+in a worktree, with every other §7 rule honoured: `master` untouched, commits
+authored by the Developer with the AI as `Co-Authored-By`, and a single PR to
+`master` that merges only on 100% green Actions.

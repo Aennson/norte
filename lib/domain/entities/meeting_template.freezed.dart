@@ -476,8 +476,8 @@ return $default(_that.id,_that.type,_that.systemPrompt,_that.sections,_that.extr
 /// @nodoc
 
 
-class _MeetingTemplate implements MeetingTemplate {
-  const _MeetingTemplate({required this.id, required this.type, required this.systemPrompt, final  List<TemplateSection> sections = const <TemplateSection>[], this.extractActionItems = true}): _sections = sections;
+class _MeetingTemplate extends MeetingTemplate {
+  const _MeetingTemplate({required this.id, required this.type, required this.systemPrompt, final  List<TemplateSection> sections = const <TemplateSection>[], this.extractActionItems = true}): _sections = sections,super._();
   
 
 @override final  String id;

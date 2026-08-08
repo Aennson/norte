@@ -1,0 +1,12 @@
+Here is the summary you asked for:
+
+```json
+{
+  "sections": [
+    {"title": "What went well", "body": "Shipped on time."},
+    {"title": "What to improve", "body": "Review latency."},
+    {"title": "Action items", "body": "One follow-up."}
+  ],
+  "actionItems": [{"description": "Update the runbook", "assignee": null, "dueDate": null}]
+}
+```

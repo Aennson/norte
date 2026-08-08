@@ -11,38 +11,11 @@
 /// (`Clock`, `NotificationScheduler`) and their fakes implement the real thing.
 library;
 
-/// What an AI engine can do — mirrors `docs/architecture.md` §7.1.
-class AiCapabilities {
-  const AiCapabilities({
-    required this.isLocal,
-    required this.supportsStreaming,
-    required this.supportsPromptCache,
-    required this.maxTokens,
-  });
-
-  /// `true` when inference runs on the user's machine, which is the only
-  /// condition under which PII redaction may be relaxed (BR-07).
-  final bool isLocal;
-
-  final bool supportsStreaming;
-  final bool supportsPromptCache;
-  final int maxTokens;
-}
-
-/// Provisional `AiEngine` — promoted in Sprint 03 (`summarize`) and Sprint 05
-/// (`parseIntent`), once `MeetingSummary` and `VoiceIntent` exist.
-abstract interface class AiEngine {
-  /// Summarizes [transcript] under [systemPrompt]; returns the raw model text.
-  Future<String> summarize(String transcript, String systemPrompt);
-
-  /// Parses [utterance] into the intent JSON described in §6.2.
-  Future<String> parseIntent(String utterance);
-
-  AiCapabilities get capabilities;
-}
-
-// `JiraGateway` and `JiraIssueSnapshot` were promoted in Sprint 02 and now
-// live in `lib/domain/` — `FakeJiraGateway` implements the real port.
+// `JiraGateway` and `JiraIssueSnapshot` were promoted in Sprint 02, and
+// `AiEngine` and `AiCapabilities` in Sprint 03 — all four now live in
+// `lib/domain/`, and their fakes implement the real ports. `AiEngine`'s
+// `parseIntent` still returns raw text; it is promoted to `VoiceIntent` in
+// Sprint 05, which is where that entity acquires a caller.
 
 /// Result of a batch transcription.
 class Transcript {

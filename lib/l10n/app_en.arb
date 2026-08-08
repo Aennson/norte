@@ -451,5 +451,256 @@
   "jiraErrorNotRestApi": "That URL answered, but not as the Jira REST API — check the site address, and whether the site is behind single sign-on.",
   "@jiraErrorNotRestApi": {
     "description": "Error when a 2xx response is not the API's JSON, typically an SSO login page."
+  },
+
+  "meetingsNewMeeting": "New meeting",
+  "@meetingsNewMeeting": {
+    "description": "Primary action on the meetings screen."
+  },
+  "meetingsLoadingLabel": "Loading meetings",
+  "@meetingsLoadingLabel": {
+    "description": "Accessible label of the meetings loading skeleton."
+  },
+  "meetingsErrorMessage": "Could not load your meetings.",
+  "@meetingsErrorMessage": {
+    "description": "Error state of the meetings screen."
+  },
+  "meetingsActionItemSummary": "{converted} of {total} action items converted",
+  "@meetingsActionItemSummary": {
+    "description": "How many of a saved meeting's follow-ups became tasks.",
+    "placeholders": {
+      "total": { "type": "int" },
+      "converted": { "type": "int" }
+    }
+  },
+  "meetingsTranscriptKept": "Transcript kept",
+  "@meetingsTranscriptKept": {
+    "description": "Shown on a saved meeting the user chose to keep whole."
+  },
+  "meetingsTranscriptDiscarded": "Transcript discarded",
+  "@meetingsTranscriptDiscarded": {
+    "description": "Shown on a saved meeting whose transcript was ephemeral (BR-03)."
+  },
+
+  "meetingTypeDaily": "Daily",
+  "@meetingTypeDaily": {
+    "description": "Name of the daily stand-up meeting type."
+  },
+  "meetingTypeRetro": "Retro",
+  "@meetingTypeRetro": {
+    "description": "Name of the retrospective meeting type."
+  },
+  "meetingTypePlanning": "Planning",
+  "@meetingTypePlanning": {
+    "description": "Name of the sprint planning meeting type."
+  },
+  "meetingTypeOneOnOne": "1:1",
+  "@meetingTypeOneOnOne": {
+    "description": "Name of the one-to-one meeting type."
+  },
+  "meetingTypeCustom": "Custom",
+  "@meetingTypeCustom": {
+    "description": "Name of a meeting type the user defined."
+  },
+
+  "newMeetingTitle": "New meeting",
+  "@newMeetingTitle": {
+    "description": "Title of the paste-a-transcript screen."
+  },
+  "newMeetingTitleField": "Title",
+  "@newMeetingTitleField": {
+    "description": "Label of the meeting title field."
+  },
+  "newMeetingTitleRequired": "Give the meeting a title.",
+  "@newMeetingTitleRequired": {
+    "description": "Validation message when the meeting title is blank."
+  },
+  "newMeetingTypeLabel": "Meeting type",
+  "@newMeetingTypeLabel": {
+    "description": "Label above the template chips."
+  },
+  "newMeetingTranscriptField": "Transcript",
+  "@newMeetingTranscriptField": {
+    "description": "Label of the transcript field."
+  },
+  "newMeetingTranscriptHint": "Paste the transcript from Teams, Meet, or anywhere else.",
+  "@newMeetingTranscriptHint": {
+    "description": "Placeholder of the transcript field."
+  },
+  "newMeetingTranscriptRequired": "Paste a transcript first.",
+  "@newMeetingTranscriptRequired": {
+    "description": "Validation message when the transcript is blank."
+  },
+  "newMeetingSaveTranscript": "Save the transcript too",
+  "@newMeetingSaveTranscript": {
+    "description": "Label of the BR-03 retention toggle."
+  },
+  "newMeetingSaveTranscriptOn": "The full text will be stored alongside the summary.",
+  "@newMeetingSaveTranscriptOn": {
+    "description": "What happens with the retention toggle on."
+  },
+  "newMeetingSaveTranscriptOff": "Only the summary is kept. The text is discarded when you leave.",
+  "@newMeetingSaveTranscriptOff": {
+    "description": "What happens with the retention toggle off — the default (BR-03)."
+  },
+  "newMeetingProcess": "Summarize",
+  "@newMeetingProcess": {
+    "description": "Action that sends the transcript to the AI engine."
+  },
+  "newMeetingProcessing": "Summarizing…",
+  "@newMeetingProcessing": {
+    "description": "Label of the summarize button while it runs."
+  },
+  "newMeetingNoTemplates": "No templates. Restore the defaults in Settings.",
+  "@newMeetingNoTemplates": {
+    "description": "Empty state when the user has deleted every template."
+  },
+
+  "summaryTitle": "Summary",
+  "@summaryTitle": {
+    "description": "Title of the summary review screen."
+  },
+  "summaryGone": "That summary is no longer in memory.",
+  "@summaryGone": {
+    "description": "Shown when the summary screen is reached with nothing to show."
+  },
+  "summaryEmptySection": "Not covered in this meeting.",
+  "@summaryEmptySection": {
+    "description": "Body of a section the meeting did not cover."
+  },
+  "summaryActionItems": "Follow-ups",
+  "@summaryActionItems": {
+    "description": "Heading of the convertible follow-up list. Deliberately not \"Action items\": a template may itself have a section by that name, and two identical headings on one screen read as a rendering bug."
+  },
+  "summaryConvert": "Make a task",
+  "@summaryConvert": {
+    "description": "Converts one action item into a task."
+  },
+  "summaryConverted": "Converted",
+  "@summaryConverted": {
+    "description": "Marks an action item that already produced a task."
+  },
+  "summaryConvertedToast": "Task created.",
+  "@summaryConvertedToast": {
+    "description": "Confirmation after converting an action item."
+  },
+  "summaryAlreadyConverted": "That action item is already a task.",
+  "@summaryAlreadyConverted": {
+    "description": "Refusal when an action item is converted twice."
+  },
+  "summarySave": "Save summary",
+  "@summarySave": {
+    "description": "Persists the reviewed summary."
+  },
+  "summarySaved": "Summary saved.",
+  "@summarySaved": {
+    "description": "Confirmation after saving a summary."
+  },
+  "summaryDiscardWarning": "Nothing is saved yet. Leaving this screen discards the summary and the transcript.",
+  "@summaryDiscardWarning": {
+    "description": "BR-03 warning when the transcript is ephemeral."
+  },
+  "summaryDiscardWarningWithTranscript": "Nothing is saved yet. Leaving this screen discards the summary and the transcript you chose to keep.",
+  "@summaryDiscardWarningWithTranscript": {
+    "description": "BR-03 warning when the user opted to keep the transcript."
+  },
+
+  "aiSectionTitle": "Claude",
+  "@aiSectionTitle": {
+    "description": "Title of the AI settings section."
+  },
+  "aiSectionDescription": "Meeting summaries use your own Claude API key. It is stored in this device's secure storage and never leaves it except to call the API.",
+  "@aiSectionDescription": {
+    "description": "Explains the BYOK model and where the key lives."
+  },
+  "aiKeyField": "API key",
+  "@aiKeyField": {
+    "description": "Label of the Claude API key field."
+  },
+  "aiKeyFieldHint": "sk-ant-…",
+  "@aiKeyFieldHint": {
+    "description": "Placeholder showing the shape of a Claude API key."
+  },
+  "aiKeyRequired": "Paste your API key.",
+  "@aiKeyRequired": {
+    "description": "Validation message when the key field is empty."
+  },
+  "aiKeyConfigured": "Key configured",
+  "@aiKeyConfigured": {
+    "description": "State line when a key is stored. Never shows the key itself (BR-08)."
+  },
+  "aiKeyNotConfigured": "No key configured",
+  "@aiKeyNotConfigured": {
+    "description": "State line when no key is stored."
+  },
+  "aiClearKey": "Remove key",
+  "@aiClearKey": {
+    "description": "Clears the stored Claude API key."
+  },
+
+  "aiErrorMissingKey": "Add your Claude API key in Settings to summarize meetings.",
+  "@aiErrorMissingKey": {
+    "description": "Failure when no API key is configured."
+  },
+  "aiErrorRejectedKey": "Claude rejected that API key. Check it in Settings.",
+  "@aiErrorRejectedKey": {
+    "description": "Failure when the API key is present but refused."
+  },
+  "aiErrorUnreadable": "Claude answered with something this app could not read. Try again.",
+  "@aiErrorUnreadable": {
+    "description": "Failure when the summary cannot be parsed, after the retry."
+  },
+  "aiErrorRateLimited": "Claude is rate limiting right now. Try again shortly.",
+  "@aiErrorRateLimited": {
+    "description": "Failure on HTTP 429 or an overloaded engine."
+  },
+  "aiErrorOffline": "Cannot reach Claude. Check your connection.",
+  "@aiErrorOffline": {
+    "description": "Failure when the network is unavailable."
+  },
+  "aiErrorTimeout": "Claude did not answer in time. Try again.",
+  "@aiErrorTimeout": {
+    "description": "Failure when the request times out."
+  },
+  "aiErrorStorage": "Could not read this device's secure storage.",
+  "@aiErrorStorage": {
+    "description": "Failure when the secure store is unavailable."
+  },
+  "aiErrorGeneric": "Summarizing failed. Try again.",
+  "@aiErrorGeneric": {
+    "description": "Fallback failure message."
+  },
+
+  "templatesSectionTitle": "Meeting templates",
+  "@templatesSectionTitle": {
+    "description": "Title of the template settings section."
+  },
+  "templatesSectionDescription": "A template is the instruction and the headings a summary is built from. Edit them to match how your team runs its meetings.",
+  "@templatesSectionDescription": {
+    "description": "Explains what a template is."
+  },
+  "templatesEdit": "Edit",
+  "@templatesEdit": {
+    "description": "Opens the template editor."
+  },
+  "templatesRestoreDefaults": "Restore the built-in templates",
+  "@templatesRestoreDefaults": {
+    "description": "Re-seeds any built-in template the user deleted. Never overwrites an edited one."
+  },
+  "templatesPromptField": "Instruction",
+  "@templatesPromptField": {
+    "description": "Label of the system prompt field in the template editor."
+  },
+  "templatesSectionsField": "Sections",
+  "@templatesSectionsField": {
+    "description": "Label of the section headings field in the template editor."
+  },
+  "templatesSectionsHint": "One heading per line, in the order they should appear.",
+  "@templatesSectionsHint": {
+    "description": "Placeholder of the section headings field."
+  },
+  "templatesExtractActionItems": "Extract action items",
+  "@templatesExtractActionItems": {
+    "description": "Toggle for whether the template asks for follow-ups."
   }
 }
