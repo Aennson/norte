@@ -658,3 +658,123 @@ and forbids pushing anywhere else.
 honoured: `master` untouched, commits authored by the Developer with the AI as
 `Co-Authored-By`, and a single PR to `master` that merges only on 100% green
 Actions.
+
+---
+
+## DEC-024 — The provisional ports file is retired (Sprint 05)
+
+**Status:** accepted.
+
+**Context.** Sprint 00 could not create domain entities, so the fakes whose
+real ports needed them were declared in primitives in
+`test/fakes/ports/provisional_ports.dart`, each marked with the sprint that
+would promote it. `JiraGateway` went in Sprint 02, `AiEngine` in Sprint 03,
+`BatchTranscription` in Sprint 04. Sprint 05 promotes the last one,
+`RealtimeTranscription`, into `lib/domain/ports/transcription_engine.dart`,
+typed against `Uint8List` as `docs/architecture.md` §9.1 specifies.
+
+**Decision.** Delete the file rather than leave it as a stub. Its whole purpose
+was to hold contracts awaiting promotion, and none remain; a file of comments
+explaining that it is empty is a file the next reader opens to learn nothing.
+
+Worth recording for its own sake: **every provisional port was promoted
+unchanged in shape.** `Transcript` and `BatchTranscription` arrived in Sprint 04
+exactly as Sprint 00 sketched them (DEC-021), and `TranscriptEvent`'s
+`text`/`isCommitted` pair survived untouched into the real port. The one thing
+that changed was `AiEngine.parseIntent`, which Sprint 00 could only type as
+`String` and this sprint promotes to `VoiceIntent` (DEC-017).
+
+**Impact.** `test/fakes/ports/provisional_ports.dart` deleted;
+`test/fakes/fakes.dart` loses the export and gains a note;
+`lib/domain/ports/transcription_engine.dart` gains `TranscriptEvent` and
+`RealtimeTranscription`.
+
+---
+
+## DEC-025 — What Sprint 05's reminder stub resolves, and what it refuses (Sprint 05)
+
+**Status:** accepted.
+
+**Context.** The sprint's scope note says `createReminder` "only creates the
+persisted `Reminder` entity", and Sprint 06's entry criteria expect the entity
+"persisted via the stub". But `Reminder.triggerAt` is a `DateTime`, and the
+parser returns a slot like `+20m`, `today 15:00` or `friday 15:00`. Something
+has to turn one into the other, and the sprint's "Out" section excludes
+"date/time parsing beyond what the `AiEngine` returns in the slots".
+
+**Decision.** `CreateReminder` resolves exactly the forms that need nothing but
+the injected clock — an ISO 8601 instant, and a relative offset (`+90s`,
+`+20m`, `+1h`, `+2d`) — and returns `ValidationFailure` for a wall-clock
+phrase, naming the `triggerAt` field.
+
+Resolving `tomorrow 09:00` correctly needs the device timezone and a weekday
+calendar, which is precisely S06-IT-02. Implementing it here would be doing a
+future sprint's work without its tests; refusing it leaves Sprint 06 a case it
+has to make pass, which is the honest way to hand work forward. The boundary is
+pinned by a test of its own so it cannot drift silently.
+
+`NotificationScheduler` is deliberately **not** a constructor parameter, so
+"Sprint 05 does not schedule" is a fact about the type rather than a promise in
+a comment.
+
+**Impact.** `lib/application/usecases/create_reminder.dart`;
+`test/application/create_reminder_test.dart`; Sprint 06 inherits the wall-clock
+forms.
+
+---
+
+## DEC-026 — The Scribe realtime wire format is an assumption until the manual pass (Sprint 05)
+
+**Status:** accepted, with an open obligation.
+
+**Context.** `ScribeRealtimeEngine` speaks a WebSocket protocol this repository
+cannot exercise: every automated test drives it through `FakeRealtimeSocket`,
+because a suite that called the real service would violate
+`docs/project-rules.md` §5.4. The adapter's assumptions about frame names —
+`partial_transcript`, `final_transcript`, an `error` frame carrying a typed
+code — are therefore **unverified against the service**.
+
+**Decision.** Ship the adapter with a deliberately tolerant reader: it accepts
+`partial`/`final`/`committed` in the type, an `is_final` boolean, and either
+`text` or `transcript` as the field. A protocol revision then degrades into a
+harmless spelling difference rather than the silent loss of every voice
+command — the same risk `docs/architecture.md` §15 records for the Copilot CLI,
+wearing a different coat.
+
+**The obligation this leaves open:** the manual script is the only thing that
+can confirm the wire format, and until it is run against a real key the
+adapter's protocol is a well-reasoned guess. It is carried in the Sprint 05
+report rather than closed by silence.
+
+**Impact.** `lib/infrastructure/transcription/scribe_realtime_engine.dart`;
+`lib/infrastructure/transcription/realtime_socket.dart`;
+`docs/reports/sprint-05-report.md` §7.
+
+---
+
+## DEC-027 — The voice settings are read on demand, not watched (Sprint 05)
+
+**Status:** accepted.
+
+**Context.** `VoiceSettingsStore` was first written with a `watch()`, and the
+router held a snapshot from a `StreamProvider`. Writing S05-E2E-01 (C) found
+the flaw: between launch and the stream's first emission the router reports the
+defaults rather than the user's choice. With a default of "always confirm" that
+window is harmless — the user is asked when they expected not to be — but the
+shape of the bug is a confirmation decision that depends on scheduling.
+
+**Decision.** `VoiceSettingsStore` has `read` and `write` and no `watch`.
+`IntentRouter` reads it at the moment it needs to know, which costs one local
+query and has no window at all. The Settings screen uses a `FutureProvider`
+invalidated after a write — the pattern `aiConfiguredProvider` and
+`transcriptionConfiguredProvider` already use, so the codebase gains no new
+idiom.
+
+**Rejected alternative.** *Keep the stream and seed it with a synchronous
+read* — two sources of truth for one boolean, and the seeding is the same
+scheduling assumption written more elaborately.
+
+**Impact.** `lib/domain/ports/voice_settings_store.dart`;
+`lib/infrastructure/persistence/drift_voice_settings_store.dart`;
+`lib/application/voice/intent_router.dart`;
+`lib/presentation/voice/voice_providers.dart`.

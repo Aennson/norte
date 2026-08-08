@@ -6,7 +6,7 @@ import 'package:norte/domain/failures/result.dart';
 
 import '../fakes/fakes.dart';
 
-/// The Sprint 05 reminder stub (`sprint-05` scope note, DEC-024).
+/// The Sprint 05 reminder stub (`sprint-05` scope note, DEC-025).
 ///
 /// Not a documented sprint case — added under `docs/project-rules.md` §5.4.
 /// What it pins is the **boundary**: which `triggerAt` forms this sprint

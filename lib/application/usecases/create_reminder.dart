@@ -14,7 +14,7 @@ import '../../domain/ports/reminder_repository.dart';
 /// "Sprint 05 does not schedule" is a fact about the constructor rather than a
 /// promise in a comment.
 ///
-/// **What it can resolve, and what it cannot** (DEC-024). The sprint's "Out"
+/// **What it can resolve, and what it cannot** (DEC-025). The sprint's "Out"
 /// section excludes date/time parsing beyond what the `AiEngine` returns in
 /// the slots, so this reads only the two forms that need nothing but the
 /// injected clock:

@@ -26,4 +26,4 @@ export 'fake_voice_settings_store.dart';
 // could only sketch in primitives — `JiraGateway`, `AiEngine`,
 // `BatchTranscription`, and now `RealtimeTranscription` — has been promoted to
 // `lib/domain/ports/` with its real entity types, and every fake implements the
-// real thing (DEC-023).
+// real thing (DEC-024).
