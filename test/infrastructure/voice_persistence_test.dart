@@ -114,19 +114,5 @@ void main() {
       // of their tasks; falling back to "confirm" cannot hurt them.
       expect(await store.read(), const VoiceSettings());
     });
-
-    test('watch emits the current value and every change', () async {
-      final List<bool> seen = <bool>[];
-      final sub = store.watch().listen(
-        (VoiceSettings s) => seen.add(s.alwaysConfirmJiraWrites),
-      );
-
-      await pumpEventQueue();
-      await store.write(const VoiceSettings(alwaysConfirmJiraWrites: false));
-      await pumpEventQueue();
-
-      expect(seen, <bool>[true, false]);
-      await sub.cancel();
-    });
   });
 }

@@ -57,6 +57,10 @@ class ConfirmSheet extends StatelessWidget {
   /// **BR-04** — the line the bar is read against.
   static const double threshold = 0.75;
 
+  /// Keys the widget and E2E suites drive this sheet by.
+  static const Key confirmButtonKey = Key('voice.confirm');
+  static const Key cancelButtonKey = Key('voice.cancel');
+
   @override
   Widget build(BuildContext context) {
     final colors = NorteColors.of(context);
@@ -139,6 +143,7 @@ class ConfirmSheet extends StatelessWidget {
                 children: <Widget>[
                   Expanded(
                     child: NorteButton(
+                      key: ConfirmSheet.cancelButtonKey,
                       label: cancelLabel,
                       onPressed: onCancel,
                       variant: NorteButtonVariant.secondary,
@@ -147,6 +152,7 @@ class ConfirmSheet extends StatelessWidget {
                   const SizedBox(width: NorteSpacing.md),
                   Expanded(
                     child: NorteButton(
+                      key: ConfirmSheet.confirmButtonKey,
                       label: confirmLabel,
                       onPressed: onConfirm,
                     ),

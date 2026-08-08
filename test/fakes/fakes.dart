@@ -13,6 +13,7 @@ export 'fake_id_generator.dart';
 export 'fake_jira_credential_store.dart';
 export 'fake_jira_gateway.dart';
 export 'fake_meeting_repository.dart';
+export 'fake_microphone.dart';
 export 'fake_meeting_template_repository.dart';
 export 'fake_notification_scheduler.dart';
 export 'fake_outbox_repository.dart';

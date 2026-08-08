@@ -66,6 +66,9 @@ class VoiceOverlay extends StatelessWidget {
   /// The prompt character of the design system's terminal aesthetic.
   static const String prompt = '❯';
 
+  /// Key the widget and E2E suites drive the stop button by.
+  static const Key stopButtonKey = Key('voice.stop');
+
   @override
   Widget build(BuildContext context) {
     final colors = NorteColors.of(context);
@@ -132,6 +135,7 @@ class VoiceOverlay extends StatelessWidget {
                 ],
                 const SizedBox(height: NorteSpacing.lg),
                 NorteButton(
+                  key: VoiceOverlay.stopButtonKey,
                   label: stopLabel,
                   onPressed: onStop,
                   variant: NorteButtonVariant.secondary,

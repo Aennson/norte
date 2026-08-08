@@ -68,15 +68,22 @@ class NorteShell extends StatelessWidget {
     final isDesktop =
         MediaQuery.sizeOf(context).width >= NorteSpacing.desktopBreakpoint;
 
-    final panel = voicePanel;
-    final content = panel == null
-        ? child
-        : Stack(
-            children: <Widget>[
-              Positioned.fill(child: child),
-              Positioned(left: 0, right: 0, bottom: 0, child: panel),
-            ],
-          );
+    // The Stack is always here, even with nothing to put in it. Wrapping the
+    // shell only when a panel exists would re-parent the whole navigation
+    // subtree the moment the user speaks — rebuilding every screen, dropping
+    // their scroll positions, and re-subscribing every database stream behind
+    // them. An empty second child costs one `SizedBox`.
+    final content = Stack(
+      children: <Widget>[
+        Positioned.fill(child: child),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: voicePanel ?? const SizedBox.shrink(),
+        ),
+      ],
+    );
 
     if (isDesktop) {
       return Scaffold(

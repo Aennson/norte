@@ -71,9 +71,12 @@ class VoiceSettingsSection extends ConsumerWidget {
               Switch(
                 key: VoiceSettingsSection.alwaysConfirmSwitchKey,
                 value: settings.alwaysConfirmJiraWrites,
-                onChanged: (bool value) => ref
-                    .read(voiceSettingsStoreProvider)
-                    .write(settings.copyWith(alwaysConfirmJiraWrites: value)),
+                onChanged: (bool value) async {
+                  await ref
+                      .read(voiceSettingsStoreProvider)
+                      .write(settings.copyWith(alwaysConfirmJiraWrites: value));
+                  ref.invalidate(voiceSettingsProvider);
+                },
               ),
             ],
           ),

@@ -6,6 +6,7 @@ import '../../domain/entities/voice_settings.dart';
 import '../../domain/failures/failure.dart';
 import '../../domain/failures/result.dart';
 import '../../domain/ports/task_repository.dart';
+import '../../domain/ports/voice_settings_store.dart';
 import '../usecases/add_jira_comment.dart';
 import '../usecases/create_reminder.dart';
 import '../usecases/create_task.dart';
@@ -116,9 +117,14 @@ class IntentRouter {
   final AddJiraComment addJiraComment;
   final RefreshJiraStatus refreshJiraStatus;
 
-  /// The user's confirmation preferences, read per call so a change in
-  /// Settings takes effect on the next command rather than the next launch.
-  final VoiceSettings settings;
+  /// The user's confirmation preferences.
+  ///
+  /// The **store**, not a snapshot of it, and read on every call. A snapshot
+  /// taken when the router was built has a window in which it is wrong — the
+  /// one right after launch, before a stream has emitted, which is exactly
+  /// when a user who turned confirmation off would be surprised to be asked.
+  /// Asking the store costs one local read and has no such window.
+  final VoiceSettingsStore settings;
 
   /// Routes [intent].
   ///
@@ -140,7 +146,7 @@ class IntentRouter {
     }
 
     if (!confirmed) {
-      final ConfirmationReason? reason = _confirmationFor(intent);
+      final ConfirmationReason? reason = await _confirmationFor(intent);
       if (reason != null) {
         return Ok<RouteOutcome>(
           ConfirmationRequired(intent: intent, reason: reason),
@@ -159,12 +165,15 @@ class IntentRouter {
   }
 
   /// Why [intent] needs a yes, or `null` when it may simply run.
-  ConfirmationReason? _confirmationFor(VoiceIntent intent) {
-    // The Jira rule is checked first because it is the stricter one: a write
-    // at 0.99 with the setting on still asks, and reporting `lowConfidence`
-    // for it would tell the user the parse was doubtful when it was not.
-    if (intent.type.writesToJira && settings.alwaysConfirmJiraWrites) {
-      return ConfirmationReason.jiraWrite;
+  Future<ConfirmationReason?> _confirmationFor(VoiceIntent intent) async {
+    if (intent.type.writesToJira) {
+      final VoiceSettings preferences = await settings.read();
+      // The Jira rule is checked first because it is the stricter one: a write
+      // at 0.99 with the setting on still asks, and reporting `lowConfidence`
+      // for it would tell the user the parse was doubtful when it was not.
+      if (preferences.alwaysConfirmJiraWrites) {
+        return ConfirmationReason.jiraWrite;
+      }
     }
     if (!intent.canRunUnconfirmed) return ConfirmationReason.lowConfidence;
     return null;

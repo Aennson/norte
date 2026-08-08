@@ -16,6 +16,8 @@ import 'package:norte/domain/failures/failure.dart';
 import 'package:norte/domain/failures/result.dart';
 import 'package:norte/domain/ports/task_repository.dart';
 
+import '../fakes/fake_voice_settings_store.dart';
+
 class _SpyCreateTask extends Mock implements CreateTask {}
 
 class _SpyCreateReminder extends Mock implements CreateReminder {}
@@ -127,8 +129,8 @@ void main() {
         updateJiraStatus: updateJiraStatus,
         addJiraComment: addJiraComment,
         refreshJiraStatus: refreshJiraStatus,
-        settings: VoiceSettings(
-          alwaysConfirmJiraWrites: alwaysConfirmJiraWrites,
+        settings: FakeVoiceSettingsStore(
+          VoiceSettings(alwaysConfirmJiraWrites: alwaysConfirmJiraWrites),
         ),
       );
 

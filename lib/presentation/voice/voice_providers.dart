@@ -44,13 +44,16 @@ final Provider<ReminderRepository> reminderRepositoryProvider =
       (Ref ref) => throw UnimplementedError('wired in main.dart'),
     );
 
-/// The user's voice preferences, live.
+/// The user's voice preferences, for the Settings screen to render.
 ///
-/// A stream rather than a one-shot read: flipping the switch in Settings has
-/// to reach the next command, not the next launch.
-final StreamProvider<VoiceSettings> voiceSettingsProvider =
-    StreamProvider<VoiceSettings>(
-      (Ref ref) => ref.watch(voiceSettingsStoreProvider).watch(),
+/// A read rather than a stream, and invalidated by the screen after a write —
+/// the pattern `aiConfiguredProvider` and `transcriptionConfiguredProvider`
+/// already use. The **pipeline** does not go through here at all: `IntentRouter`
+/// reads the store itself when it needs to know, so no confirmation decision
+/// can ever depend on whether a provider had refreshed yet.
+final FutureProvider<VoiceSettings> voiceSettingsProvider =
+    FutureProvider<VoiceSettings>(
+      (Ref ref) => ref.watch(voiceSettingsStoreProvider).read(),
     );
 
 final Provider<CreateReminder> createReminderProvider =
@@ -74,11 +77,9 @@ final Provider<IntentRouter> intentRouterProvider = Provider<IntentRouter>(
     updateJiraStatus: ref.watch(updateJiraStatusProvider),
     addJiraComment: ref.watch(addJiraCommentProvider),
     refreshJiraStatus: ref.watch(refreshJiraStatusProvider),
-    // Defaults until the store answers. The default confirms, so a command
-    // spoken in the first milliseconds after launch is not treated more
-    // leniently than one spoken later.
-    settings:
-        ref.watch(voiceSettingsProvider).valueOrNull ?? const VoiceSettings(),
+    // The store itself: the router reads it when it needs to know, which
+    // removes the window in which a stream had not yet emitted.
+    settings: ref.watch(voiceSettingsStoreProvider),
   ),
 );
 
@@ -177,9 +178,20 @@ class VoiceSession extends Notifier<VoiceSessionState> {
   /// When the last committed segment arrived, for the latency measurement.
   DateTime? _committedAt;
 
+  /// `true` once the container is gone, so an in-flight [stop] does not try to
+  /// read providers that no longer exist.
+  ///
+  /// The pipeline is asynchronous and the user can close the app in the middle
+  /// of it; without this, quitting mid-command throws from inside a `Future`
+  /// nobody is awaiting.
+  bool _disposed = false;
+
   @override
   VoiceSessionState build() {
-    ref.onDispose(() => unawaited(_events?.cancel()));
+    ref.onDispose(() {
+      _disposed = true;
+      unawaited(_events?.cancel());
+    });
     return const VoiceSessionState();
   }
 
@@ -216,8 +228,10 @@ class VoiceSession extends Notifier<VoiceSessionState> {
   Future<void> stop() async {
     await _events?.cancel();
     _events = null;
+    if (_disposed) return;
     await ref.read(realtimeTranscriptionProvider).stop();
     await ref.read(microphoneProvider).close();
+    if (_disposed) return;
     state = const VoiceSessionState();
   }
 
@@ -275,6 +289,15 @@ class VoiceSession extends Notifier<VoiceSessionState> {
     // The microphone has done its job; closing it now is what makes the pause
     // between speaking and acting a pause rather than a recording.
     await ref.read(microphoneProvider).close();
+
+    // A segment spoken while a question is on screen **is the answer**. Read
+    // as a fresh command it would be nonsense — "PROJ-123" on its own names
+    // no action — and the user would be told to rephrase the very thing the
+    // app asked them for (S05-UT-05).
+    if (state.askingFor != null) {
+      await answerSlot(utterance);
+      return;
+    }
 
     await _parseAndRoute(
       utterance,

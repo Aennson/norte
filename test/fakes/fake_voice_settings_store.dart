@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:norte/domain/entities/voice_settings.dart';
 import 'package:norte/domain/failures/failure.dart';
 import 'package:norte/domain/ports/voice_settings_store.dart';
@@ -13,9 +11,6 @@ class FakeVoiceSettingsStore implements VoiceSettingsStore {
   FakeVoiceSettingsStore([this.settings = const VoiceSettings()]);
 
   VoiceSettings settings;
-
-  final StreamController<VoiceSettings> _controller =
-      StreamController<VoiceSettings>.broadcast();
 
   /// Number of times [write] has been called.
   int writes = 0;
@@ -34,19 +29,7 @@ class FakeVoiceSettingsStore implements VoiceSettingsStore {
     _guard();
     writes++;
     settings = value;
-    if (!_controller.isClosed) _controller.add(value);
   }
-
-  @override
-  Stream<VoiceSettings> watch() {
-    scheduleMicrotask(() {
-      if (!_controller.isClosed) _controller.add(settings);
-    });
-    return _controller.stream;
-  }
-
-  /// Releases the broadcast controller.
-  Future<void> dispose() => _controller.close();
 
   void _guard() {
     final Failure? failure = failWith;

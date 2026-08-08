@@ -44,18 +44,6 @@ class DriftVoiceSettingsStore implements VoiceSettingsStore {
     );
   }
 
-  @override
-  Stream<VoiceSettings> watch() {
-    return (_database.select(_database.settingsRows)
-          ..where(($SettingsRowsTable s) => s.key.equals(key)))
-        .watchSingleOrNull()
-        .map((SettingsRow? row) => _decode(row?.value))
-        .handleError(
-          (Object error) =>
-              throw StorageFailure('watching the voice settings failed'),
-        );
-  }
-
   String _encode(VoiceSettings settings) => jsonEncode(<String, Object?>{
     'alwaysConfirmJiraWrites': settings.alwaysConfirmJiraWrites,
   });
