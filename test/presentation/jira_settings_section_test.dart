@@ -215,4 +215,98 @@ void main() {
     expect(find.text('Jira'), findsOneWidget);
     expect(find.textContaining('secure storage'), findsOneWidget);
   });
+
+  group('Data Center (DEC-012)', () {
+    Future<void> chooseDataCenter(WidgetTester tester) async {
+      await tester.tap(find.byKey(JiraSettingsSection.dataCenterChipKey));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('Cloud is what a fresh form offers', (
+      WidgetTester tester,
+    ) async {
+      await pump(tester);
+
+      expect(find.byKey(JiraSettingsSection.cloudChipKey), findsOneWidget);
+      expect(find.byKey(JiraSettingsSection.dataCenterChipKey), findsOneWidget);
+      // The e-mail field is there, because Cloud needs one.
+      expect(find.byKey(JiraSettingsSection.emailFieldKey), findsOneWidget);
+    });
+
+    testWidgets('choosing it drops the e-mail field', (
+      WidgetTester tester,
+    ) async {
+      await pump(tester);
+      await chooseDataCenter(tester);
+
+      // A personal access token authenticates on its own, so asking for an
+      // e-mail would be asking for something the request will not carry.
+      expect(find.byKey(JiraSettingsSection.emailFieldKey), findsNothing);
+      expect(find.text('Personal access token'), findsOneWidget);
+      expect(find.text('API token'), findsNothing);
+    });
+
+    testWidgets('a site and a token are enough to connect', (
+      WidgetTester tester,
+    ) async {
+      await pump(tester);
+      await chooseDataCenter(tester);
+      await type(
+        tester,
+        JiraSettingsSection.siteUrlFieldKey,
+        'https://jira.example.com',
+      );
+      await type(tester, JiraSettingsSection.apiTokenFieldKey, 'synthetic-pat');
+
+      await tester.tap(find.byKey(JiraSettingsSection.connectButtonKey));
+      await tester.pumpAndSettle();
+
+      final JiraCredentials stored = (await store.read())!;
+      expect(stored.deployment, JiraDeployment.dataCenter);
+      expect(stored.siteUrl, 'https://jira.example.com');
+      expect(stored.email, isEmpty);
+      expect(stored.apiToken, 'synthetic-pat');
+
+      // With no e-mail to name, the site stands in for the account.
+      expect(
+        find.text('Connected as https://jira.example.com'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a missing token is still refused', (
+      WidgetTester tester,
+    ) async {
+      await pump(tester);
+      await chooseDataCenter(tester);
+      await type(
+        tester,
+        JiraSettingsSection.siteUrlFieldKey,
+        'https://jira.example.com',
+      );
+
+      await tester.tap(find.byKey(JiraSettingsSection.connectButtonKey));
+      await tester.pumpAndSettle();
+
+      expect(store.writes, 0);
+      expect(
+        find.text('Fill in the site, the e-mail and the token.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('disconnecting returns the form to Cloud', (
+      WidgetTester tester,
+    ) async {
+      store = FakeJiraCredentialStore.configured();
+      await pump(tester);
+      await chooseDataCenter(tester);
+      expect(find.byKey(JiraSettingsSection.emailFieldKey), findsNothing);
+
+      await tester.tap(find.byKey(JiraSettingsSection.disconnectButtonKey));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(JiraSettingsSection.emailFieldKey), findsOneWidget);
+    });
+  });
 }

@@ -62,7 +62,7 @@
   "sortByDueDate": "Prazo",
 
   "jiraSectionTitle": "Jira",
-  "jiraSectionDescription": "Vincule tarefas a issues de um site Jira Cloud. Seu token de API fica no armazenamento seguro do aparelho e nunca sai de lá.",
+  "jiraSectionDescription": "Vincule tarefas a issues de um site Jira Cloud ou Server/Data Center. Seu token fica no armazenamento seguro do aparelho e nunca sai de lá.",
   "jiraFieldSiteUrl": "URL do site",
   "jiraFieldSiteUrlHint": "https://seu-time.atlassian.net",
   "jiraFieldEmail": "E-mail da conta",
@@ -105,5 +105,10 @@
   "jiraDivergenceTitle": "O Jira discorda do status local",
   "jiraDivergenceMessage": "Aqui esta tarefa está “{local}”; na {issueKey} está “{remote}”. Nada muda até você escolher.",
   "jiraDivergenceKeepLocal": "Manter o local",
-  "jiraDivergenceAdoptRemote": "Adotar o do Jira"
+  "jiraDivergenceAdoptRemote": "Adotar o do Jira",
+
+  "jiraFieldDeployment": "Tipo de Jira",
+  "jiraDeploymentCloud": "Cloud",
+  "jiraDeploymentDataCenter": "Server / Data Center",
+  "jiraFieldApiTokenDataCenter": "Token de acesso pessoal"
 }

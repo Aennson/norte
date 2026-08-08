@@ -62,7 +62,7 @@
   "sortByDueDate": "Scadenza",
 
   "jiraSectionTitle": "Jira",
-  "jiraSectionDescription": "Collega le attività alle issue di un sito Jira Cloud. Il token API resta nell'archivio sicuro del dispositivo e non lo lascia mai.",
+  "jiraSectionDescription": "Collega le attività alle issue di un sito Jira Cloud o Server/Data Center. Il token resta nell'archivio sicuro del dispositivo e non lo lascia mai.",
   "jiraFieldSiteUrl": "URL del sito",
   "jiraFieldSiteUrlHint": "https://il-tuo-team.atlassian.net",
   "jiraFieldEmail": "E-mail dell'account",
@@ -105,5 +105,10 @@
   "jiraDivergenceTitle": "Jira non concorda con lo stato locale",
   "jiraDivergenceMessage": "Qui questa attività è “{local}”; su {issueKey} è “{remote}”. Non cambia nulla finché non scegli.",
   "jiraDivergenceKeepLocal": "Mantieni il locale",
-  "jiraDivergenceAdoptRemote": "Adotta quello di Jira"
+  "jiraDivergenceAdoptRemote": "Adotta quello di Jira",
+
+  "jiraFieldDeployment": "Tipo di Jira",
+  "jiraDeploymentCloud": "Cloud",
+  "jiraDeploymentDataCenter": "Server / Data Center",
+  "jiraFieldApiTokenDataCenter": "Token di accesso personale"
 }

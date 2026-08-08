@@ -27,6 +27,30 @@ class _Subject {
   final Future<void> Function() dispose;
 }
 
+/// Builds a REST subject for [deployment] against its own fake server.
+Future<_Subject> _restSubject(
+  JiraDeployment deployment,
+  Map<String, String> issues,
+) async {
+  final FakeJiraServer server = await FakeJiraServer.start(issues: issues);
+  return _Subject(
+    gateway: JiraRestAdapter(
+      dio: Dio(),
+      credentialStore: FakeJiraCredentialStore(
+        JiraCredentials(
+          siteUrl: server.siteUrl,
+          email: deployment.needsEmail ? 'dev@example.com' : '',
+          apiToken: 'synthetic-token',
+          deployment: deployment,
+        ),
+      ),
+    ),
+    forceUnauthorized: () => server.forceStatus = 401,
+    forceRateLimited: () => server.forceStatus = 429,
+    dispose: server.close,
+  );
+}
+
 /// S02-CT-01 — the same stimuli against every [JiraGateway] implementation.
 ///
 /// The point of a contract suite is that the layers above cannot tell which
@@ -62,26 +86,10 @@ void main() {
             dispose: () async {},
           );
         },
-        'JiraRestAdapter': () async {
-          final FakeJiraServer server = await FakeJiraServer.start(
-            issues: issues,
-          );
-          return _Subject(
-            gateway: JiraRestAdapter(
-              dio: Dio(),
-              credentialStore: FakeJiraCredentialStore(
-                JiraCredentials(
-                  siteUrl: server.siteUrl,
-                  email: 'dev@example.com',
-                  apiToken: 'synthetic-token',
-                ),
-              ),
-            ),
-            forceUnauthorized: () => server.forceStatus = 401,
-            forceRateLimited: () => server.forceStatus = 429,
-            dispose: server.close,
-          );
-        },
+        'JiraRestAdapter (Cloud)': () =>
+            _restSubject(JiraDeployment.cloud, issues),
+        'JiraRestAdapter (Data Center)': () =>
+            _restSubject(JiraDeployment.dataCenter, issues),
       };
 
   for (final MapEntry<String, Future<_Subject> Function()> entry
@@ -184,4 +192,79 @@ void main() {
       );
     });
   }
+
+  group('the wire format each product expects', () {
+    late FakeJiraServer server;
+
+    Future<JiraRestAdapter> adapterFor(JiraDeployment deployment) async {
+      server = await FakeJiraServer.start(issues: issues);
+      return JiraRestAdapter(
+        dio: Dio(),
+        credentialStore: FakeJiraCredentialStore(
+          JiraCredentials(
+            siteUrl: server.siteUrl,
+            email: deployment.needsEmail ? 'dev@example.com' : '',
+            apiToken: 'synthetic-token',
+            deployment: deployment,
+          ),
+        ),
+      );
+    }
+
+    tearDown(() => server.close());
+
+    test('S02-CT-01: Cloud speaks v3, Basic and ADF', () async {
+      final JiraRestAdapter adapter = await adapterFor(JiraDeployment.cloud);
+
+      await adapter.addComment(
+        issueKey: 'PROJ-123',
+        body: 'shipped',
+        operationId: 'op-1',
+      );
+
+      expect(server.restVersions, everyElement('3'));
+      expect(server.authorizations.single, startsWith('Basic '));
+      expect(server.commentBodies.single, isA<Map<String, Object?>>());
+    });
+
+    test('S02-CT-01: Data Center speaks v2, Bearer and plain text', () async {
+      final JiraRestAdapter adapter = await adapterFor(
+        JiraDeployment.dataCenter,
+      );
+
+      await adapter.addComment(
+        issueKey: 'PROJ-123',
+        body: 'shipped',
+        operationId: 'op-1',
+      );
+
+      expect(server.restVersions, everyElement('2'));
+      // The PAT goes as a bearer, and the account e-mail never appears.
+      expect(server.authorizations.single, 'Bearer synthetic-token');
+      expect(server.commentBodies.single, 'shipped');
+    });
+
+    test(
+      'S02-CT-01: a Data Center credential needs no e-mail to be complete',
+      () async {
+        const JiraCredentials pat = JiraCredentials(
+          siteUrl: 'https://jira.example.com',
+          email: '',
+          apiToken: 'synthetic-token',
+          deployment: JiraDeployment.dataCenter,
+        );
+
+        expect(pat.isComplete, isTrue);
+        // …whereas a Cloud one does.
+        expect(
+          const JiraCredentials(
+            siteUrl: 'https://example.atlassian.net',
+            email: '',
+            apiToken: 'synthetic-token',
+          ).isComplete,
+          isFalse,
+        );
+      },
+    );
+  });
 }

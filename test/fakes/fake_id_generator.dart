@@ -44,7 +44,7 @@ class _FixedId implements IdGenerator {
 }
 
 class _SequencedIds implements IdGenerator {
-  _SequencedIds(this._ids) : assert(_ids.length > 0, 'needs at least one id');
+  _SequencedIds(this._ids) : assert(_ids.isNotEmpty, 'needs at least one id');
 
   final List<String> _ids;
   int _index = 0;

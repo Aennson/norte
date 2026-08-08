@@ -223,7 +223,7 @@
   "@jiraSectionTitle": {
     "description": "Title of the Jira configuration section in Settings."
   },
-  "jiraSectionDescription": "Link tasks to issues on a Jira Cloud site. Your API token is kept in the device's secure storage and never leaves it.",
+  "jiraSectionDescription": "Link tasks to issues on a Jira Cloud or Server/Data Center site. Your token is kept in the device's secure storage and never leaves it.",
   "@jiraSectionDescription": {
     "description": "Explanatory text under the Jira settings title."
   },
@@ -430,5 +430,22 @@
   "jiraDivergenceAdoptRemote": "Adopt from Jira",
   "@jiraDivergenceAdoptRemote": {
     "description": "Divergence decision: take Jira's status locally."
+  },
+
+  "jiraFieldDeployment": "Jira type",
+  "@jiraFieldDeployment": {
+    "description": "Label of the Cloud / Data Center selector."
+  },
+  "jiraDeploymentCloud": "Cloud",
+  "@jiraDeploymentCloud": {
+    "description": "Atlassian-hosted Jira (*.atlassian.net)."
+  },
+  "jiraDeploymentDataCenter": "Server / Data Center",
+  "@jiraDeploymentDataCenter": {
+    "description": "Self-hosted Jira."
+  },
+  "jiraFieldApiTokenDataCenter": "Personal access token",
+  "@jiraFieldApiTokenDataCenter": {
+    "description": "Label of the token field on a self-hosted site."
   }
 }

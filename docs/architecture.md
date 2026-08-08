@@ -147,8 +147,9 @@ Task (local, Drift) ──optional──> JiraLink ──REST──> Jira Cloud
 
 ### 4.2 Authentication
 
-- **v1.0:** API Token (Basic auth) for simplicity — stored in `flutter_secure_storage`.
-- **Evolution:** OAuth 2.0 (3LO) once there is public distribution.
+- **v1.0 — Jira Cloud:** API Token (Basic auth: account e-mail + token) — stored in `flutter_secure_storage`.
+- **v1.0 — Jira Server/Data Center:** Personal Access Token (`Bearer`) against REST v2 — same storage. The deployment is chosen by the user in Settings, never inferred from the URL (see `docs/reports/decisions.md` — **DEC-012**).
+- **Evolution:** OAuth 2.0 (3LO) on Cloud once there is public distribution.
 
 ### 4.3 Synchronization
 

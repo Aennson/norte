@@ -311,4 +311,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get jiraDivergenceAdoptRemote => 'Adopt from Jira';
+
+  @override
+  String get jiraFieldDeployment => 'Jira type';
+
+  @override
+  String get jiraDeploymentCloud => 'Cloud';
+
+  @override
+  String get jiraDeploymentDataCenter => 'Server / Data Center';
+
+  @override
+  String get jiraFieldApiTokenDataCenter => 'Personal access token';
 }

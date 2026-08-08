@@ -639,6 +639,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Adopt from Jira'**
   String get jiraDivergenceAdoptRemote;
+
+  /// Label of the Cloud / Data Center selector.
+  ///
+  /// In en, this message translates to:
+  /// **'Jira type'**
+  String get jiraFieldDeployment;
+
+  /// Atlassian-hosted Jira (*.atlassian.net).
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud'**
+  String get jiraDeploymentCloud;
+
+  /// Self-hosted Jira.
+  ///
+  /// In en, this message translates to:
+  /// **'Server / Data Center'**
+  String get jiraDeploymentDataCenter;
+
+  /// Label of the token field on a self-hosted site.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal access token'**
+  String get jiraFieldApiTokenDataCenter;
 }
 
 class _AppLocalizationsDelegate

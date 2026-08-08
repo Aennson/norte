@@ -9,12 +9,25 @@ import '../../domain/ports/jira_credential_store.dart';
 import '../../domain/ports/jira_gateway.dart';
 import 'redacting_log_interceptor.dart';
 
-/// [JiraGateway] over the Jira Cloud REST API v3.
+/// [JiraGateway] over the Jira REST API.
 ///
-/// **Authentication** is Basic with an API token (`docs/architecture.md`
-/// §4.2). The token is read from the [JiraCredentialStore] on each request
-/// and turned into an `Authorization` header — it is never held in a field,
-/// never written to a config, and never reaches a log (BR-08, enforced by
+/// **Two products, one adapter.** `JiraDeployment` decides three things and
+/// nothing else changes (DEC-012):
+///
+/// | | Cloud | Data Center |
+/// |---|---|---|
+/// | path | `/rest/api/3/…` | `/rest/api/2/…` |
+/// | auth | `Basic base64(email:token)` | `Bearer <PAT>` |
+/// | rich text | Atlassian Document Format | plain string |
+///
+/// The shape of every request and the reading of every response are shared,
+/// which is the point: the contract suite runs the same nine cases against
+/// both configurations, so neither can drift.
+///
+/// **Authentication** uses a token either way (`docs/architecture.md` §4.2).
+/// It is read from the [JiraCredentialStore] on each request and turned into
+/// an `Authorization` header — never held in a field, never written to a
+/// config, never reaching a log (BR-08, enforced by
 /// [RedactingLogInterceptor]).
 ///
 /// **Idempotency.** Jira Cloud offers no idempotency-key header, so the
@@ -52,7 +65,7 @@ class JiraRestAdapter implements JiraGateway {
     final Map<String, Object?> body = await _send<Map<String, Object?>>(
       credentials,
       method: 'GET',
-      path: '/rest/api/3/issue/$issueKey',
+      path: '${_issuePath(credentials)}/$issueKey',
       query: const <String, Object?>{'fields': 'status'},
     );
     return JiraIssueSnapshot(
@@ -79,7 +92,7 @@ class JiraRestAdapter implements JiraGateway {
     final Map<String, Object?> body = await _send<Map<String, Object?>>(
       credentials,
       method: 'GET',
-      path: '/rest/api/3/issue/$issueKey/transitions',
+      path: '${_issuePath(credentials)}/$issueKey/transitions',
     );
 
     final String? transitionId = _transitionIdFor(body, status);
@@ -98,7 +111,7 @@ class JiraRestAdapter implements JiraGateway {
     await _send<Map<String, Object?>?>(
       credentials,
       method: 'POST',
-      path: '/rest/api/3/issue/$issueKey/transitions',
+      path: '${_issuePath(credentials)}/$issueKey/transitions',
       body: <String, Object?>{
         'transition': <String, Object?>{'id': transitionId},
       },
@@ -115,9 +128,9 @@ class JiraRestAdapter implements JiraGateway {
     await _send<Map<String, Object?>?>(
       credentials,
       method: 'POST',
-      path: '/rest/api/3/issue/$issueKey/comment',
+      path: '${_issuePath(credentials)}/$issueKey/comment',
       body: <String, Object?>{
-        'body': _document(body),
+        'body': _richText(credentials.deployment, body),
         'properties': <Object?>[
           <String, Object?>{
             'key': operationIdProperty,
@@ -139,14 +152,14 @@ class JiraRestAdapter implements JiraGateway {
     final Map<String, Object?> created = await _send<Map<String, Object?>>(
       credentials,
       method: 'POST',
-      path: '/rest/api/3/issue',
+      path: _issuePath(credentials),
       body: <String, Object?>{
         'fields': <String, Object?>{
           'project': <String, Object?>{'key': projectKey},
           'summary': summary,
           'issuetype': <String, Object?>{'name': 'Task'},
           if (description != null && description.isNotEmpty)
-            'description': _document(description),
+            'description': _richText(credentials.deployment, description),
         },
       },
     );
@@ -181,7 +194,7 @@ class JiraRestAdapter implements JiraGateway {
         options: Options(
           method: method,
           headers: <String, Object?>{
-            'Authorization': _basicAuth(credentials),
+            'Authorization': _authorization(credentials),
             'Accept': 'application/json',
             if (body != null) 'Content-Type': 'application/json',
           },
@@ -198,10 +211,19 @@ class JiraRestAdapter implements JiraGateway {
     }
   }
 
-  String _basicAuth(JiraCredentials credentials) {
-    final String pair = '${credentials.email}:${credentials.apiToken}';
-    return 'Basic ${base64Encode(utf8.encode(pair))}';
-  }
+  /// The `Authorization` value for [credentials].
+  ///
+  /// Cloud pairs the account e-mail with the API token as Basic; Data Center
+  /// sends the Personal Access Token as a bearer, which is what its own
+  /// documentation prescribes and the only scheme a PAT works with.
+  String _authorization(JiraCredentials credentials) =>
+      switch (credentials.deployment) {
+        JiraDeployment.cloud =>
+          'Basic '
+              '${base64Encode(utf8.encode('${credentials.email}:'
+              '${credentials.apiToken}'))}',
+        JiraDeployment.dataCenter => 'Bearer ${credentials.apiToken}',
+      };
 
   Failure _failureFor(int status, Headers headers) => switch (status) {
     401 || 403 => const AuthFailure('Jira rejected the credentials'),
@@ -273,6 +295,21 @@ String? _transitionIdFor(Map<String, Object?> body, String status) {
   }
   return null;
 }
+
+/// Path of the issue collection for [credentials]' REST version.
+String _issuePath(JiraCredentials credentials) =>
+    '/rest/api/${credentials.deployment.restVersion}/issue';
+
+/// A rich-text field value in the form [deployment] accepts.
+///
+/// v3 replaced plain strings with Atlassian Document Format; v2 never did.
+/// Sending the wrong one is a 400 with a message about the field, which is
+/// why this is a decision and not a default.
+Object _richText(JiraDeployment deployment, String text) =>
+    switch (deployment) {
+      JiraDeployment.cloud => _document(text),
+      JiraDeployment.dataCenter => text,
+    };
 
 /// Wraps [text] in the minimal Atlassian Document Format node the v3 API
 /// expects wherever v2 took a plain string.

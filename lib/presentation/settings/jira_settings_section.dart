@@ -9,6 +9,7 @@ import '../shared/theme/norte_spacing.dart';
 import '../shared/theme/norte_typography.dart';
 import '../shared/widgets/norte_button.dart';
 import '../shared/widgets/norte_card.dart';
+import '../shared/widgets/norte_chip.dart';
 import '../shared/widgets/norte_text_field.dart';
 
 /// Where the user connects a Jira site.
@@ -27,6 +28,8 @@ class JiraSettingsSection extends ConsumerStatefulWidget {
   static const Key apiTokenFieldKey = Key('jira.apiToken');
   static const Key connectButtonKey = Key('jira.connect');
   static const Key disconnectButtonKey = Key('jira.disconnect');
+  static const Key cloudChipKey = Key('jira.deployment.cloud');
+  static const Key dataCenterChipKey = Key('jira.deployment.dataCenter');
 
   @override
   ConsumerState<JiraSettingsSection> createState() =>
@@ -39,6 +42,7 @@ class _JiraSettingsSectionState extends ConsumerState<JiraSettingsSection> {
   final TextEditingController _apiToken = TextEditingController();
 
   bool _showIncomplete = false;
+  JiraDeployment _deployment = JiraDeployment.cloud;
 
   @override
   void dispose() {
@@ -53,6 +57,7 @@ class _JiraSettingsSectionState extends ConsumerState<JiraSettingsSection> {
       siteUrl: _siteUrl.text.trim(),
       email: _email.text.trim(),
       apiToken: _apiToken.text.trim(),
+      deployment: _deployment,
     );
     if (!credentials.isComplete) {
       setState(() => _showIncomplete = true);
@@ -71,6 +76,7 @@ class _JiraSettingsSectionState extends ConsumerState<JiraSettingsSection> {
     _siteUrl.clear();
     _email.clear();
     _apiToken.clear();
+    setState(() => _deployment = JiraDeployment.cloud);
     ref.invalidate(jiraCredentialsProvider);
   }
 
@@ -99,28 +105,62 @@ class _JiraSettingsSectionState extends ConsumerState<JiraSettingsSection> {
           Text(
             stored == null
                 ? l10n.jiraNotConnected
-                : l10n.jiraConnectedAs(stored.email),
+                : l10n.jiraConnectedAs(stored.accountLabel),
             style: NorteTypography.mono.copyWith(
               color: stored == null ? colors.textMuted : colors.success,
             ),
           ),
           const SizedBox(height: NorteSpacing.lg),
+          Text(
+            l10n.jiraFieldDeployment,
+            style: NorteTypography.caption.copyWith(
+              color: colors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: NorteSpacing.sm),
+          Wrap(
+            spacing: NorteSpacing.sm,
+            children: <Widget>[
+              NorteChip(
+                key: JiraSettingsSection.cloudChipKey,
+                label: l10n.jiraDeploymentCloud,
+                isSelected: _deployment == JiraDeployment.cloud,
+                onSelected: () =>
+                    setState(() => _deployment = JiraDeployment.cloud),
+              ),
+              NorteChip(
+                key: JiraSettingsSection.dataCenterChipKey,
+                label: l10n.jiraDeploymentDataCenter,
+                isSelected: _deployment == JiraDeployment.dataCenter,
+                onSelected: () =>
+                    setState(() => _deployment = JiraDeployment.dataCenter),
+              ),
+            ],
+          ),
+          const SizedBox(height: NorteSpacing.md),
           NorteTextField(
             key: JiraSettingsSection.siteUrlFieldKey,
             label: l10n.jiraFieldSiteUrl,
             hint: l10n.jiraFieldSiteUrlHint,
             controller: _siteUrl,
           ),
-          const SizedBox(height: NorteSpacing.md),
-          NorteTextField(
-            key: JiraSettingsSection.emailFieldKey,
-            label: l10n.jiraFieldEmail,
-            controller: _email,
-          ),
+          // A Data Center personal access token authenticates on its own, so
+          // asking for an e-mail there would be asking for something the
+          // request will not carry (DEC-012).
+          if (_deployment.needsEmail) ...<Widget>[
+            const SizedBox(height: NorteSpacing.md),
+            NorteTextField(
+              key: JiraSettingsSection.emailFieldKey,
+              label: l10n.jiraFieldEmail,
+              controller: _email,
+            ),
+          ],
           const SizedBox(height: NorteSpacing.md),
           NorteTextField(
             key: JiraSettingsSection.apiTokenFieldKey,
-            label: l10n.jiraFieldApiToken,
+            label: _deployment.needsEmail
+                ? l10n.jiraFieldApiToken
+                : l10n.jiraFieldApiTokenDataCenter,
             controller: _apiToken,
             isSecret: true,
             errorText: _showIncomplete ? l10n.jiraCredentialsIncomplete : null,

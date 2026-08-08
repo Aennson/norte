@@ -2,12 +2,18 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-/// A real HTTP server that answers like Jira Cloud REST v3.
+/// A real HTTP server that answers like Jira — both products.
 ///
 /// The contract suite (S02-CT-01) needs `JiraRestAdapter` to be exercised
 /// through an actual socket — mocking dio would test the mock, not the
 /// adapter's URL building, header handling, status classification and JSON
 /// reading, which is exactly where an adapter goes wrong.
+///
+/// It answers on `/rest/api/2/…` and `/rest/api/3/…` alike and accepts either
+/// `Basic` or `Bearer`, so one server can stand in for a Cloud site and for a
+/// Data Center one (DEC-012). What it does *not* do is paper over the
+/// difference: [commentBodies] records what each request actually sent, and
+/// the contract suite asserts that v3 got a document and v2 got a string.
 ///
 /// It binds to the loopback interface on an ephemeral port, so it needs no
 /// network and cannot collide with a parallel test
@@ -51,6 +57,13 @@ class FakeJiraServer {
   /// reached the log.
   final List<String> authorizations = <String>[];
 
+  /// The `body` field of every comment posted, as it arrived — a `Map` from a
+  /// v3 client, a `String` from a v2 one.
+  final List<Object?> commentBodies = <Object?>[];
+
+  /// REST versions the requests used, in order.
+  final List<String> restVersions = <String>[];
+
   /// When set, every request is answered with this status instead.
   int? forceStatus;
 
@@ -93,16 +106,29 @@ class FakeJiraServer {
       return;
     }
 
-    // Unauthenticated requests are 401, so the adapter's Basic header is not
-    // merely decorative in these tests.
-    if (authorization == null || !authorization.startsWith('Basic ')) {
+    // Unauthenticated requests are 401, so the adapter's Authorization header
+    // is not merely decorative in these tests. Either scheme is accepted:
+    // which one is correct for a site is the adapter's business, and the
+    // contract suite checks it directly.
+    if (authorization == null ||
+        !(authorization.startsWith('Basic ') ||
+            authorization.startsWith('Bearer '))) {
       _write(request, 401, <String, Object?>{
         'errorMessages': <String>['no credentials'],
       });
       return;
     }
 
-    const String prefix = '/rest/api/3/issue';
+    final RegExpMatch? version = RegExp(
+      r'^/rest/api/([23])/issue',
+    ).firstMatch(path);
+    if (version == null) {
+      _write(request, 404, <String, Object?>{});
+      return;
+    }
+    restVersions.add(version.group(1)!);
+
+    final String prefix = '/rest/api/${version.group(1)}/issue';
     if (request.method == 'POST' && path == prefix) {
       final String key = 'NEW-${issues.length + 1}';
       issues[key] = 'To Do';
@@ -154,6 +180,10 @@ class FakeJiraServer {
         issues[key] = _requestedTransition() ?? status;
         _write(request, 204, null);
       case 'POST comment':
+        final Object? posted = bodies.last;
+        commentBodies.add(
+          posted is Map<String, Object?> ? posted['body'] : null,
+        );
         _write(request, 201, <String, Object?>{'id': '10000'});
       default:
         _write(request, 404, <String, Object?>{});

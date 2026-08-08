@@ -25,6 +25,7 @@ class SecureJiraCredentialStore implements JiraCredentialStore {
   static const String siteUrlKey = 'jira.siteUrl';
   static const String emailKey = 'jira.email';
   static const String apiTokenKey = 'jira.apiToken';
+  static const String deploymentKey = 'jira.deployment';
 
   @override
   Future<JiraCredentials?> read() async {
@@ -33,10 +34,17 @@ class SecureJiraCredentialStore implements JiraCredentialStore {
       final String? email = await _storage.read(key: emailKey);
       final String? apiToken = await _storage.read(key: apiTokenKey);
       if (siteUrl == null || email == null || apiToken == null) return null;
+      final String? deployment = await _storage.read(key: deploymentKey);
       return JiraCredentials(
         siteUrl: siteUrl,
         email: email,
         apiToken: apiToken,
+        // A set written before DEC-012 has no deployment recorded, and
+        // Cloud is what it was: the default keeps it readable.
+        deployment: JiraDeployment.values.firstWhere(
+          (JiraDeployment value) => value.name == deployment,
+          orElse: () => JiraDeployment.cloud,
+        ),
       );
     } catch (_) {
       throw const StorageFailure('reading the Jira credentials failed');
@@ -49,6 +57,10 @@ class SecureJiraCredentialStore implements JiraCredentialStore {
       await _storage.write(key: siteUrlKey, value: credentials.siteUrl);
       await _storage.write(key: emailKey, value: credentials.email);
       await _storage.write(key: apiTokenKey, value: credentials.apiToken);
+      await _storage.write(
+        key: deploymentKey,
+        value: credentials.deployment.name,
+      );
     } catch (_) {
       throw const StorageFailure('storing the Jira credentials failed');
     }
@@ -60,6 +72,7 @@ class SecureJiraCredentialStore implements JiraCredentialStore {
       await _storage.delete(key: siteUrlKey);
       await _storage.delete(key: emailKey);
       await _storage.delete(key: apiTokenKey);
+      await _storage.delete(key: deploymentKey);
     } catch (_) {
       throw const StorageFailure('clearing the Jira credentials failed');
     }

@@ -315,3 +315,45 @@ Linux machine the project has.
 
 **Impact.** `.github/workflows/goldens.yml` added; `docs/testing-strategy.md` §1
 records the procedure.
+
+---
+
+## DEC-012 — Jira Server/Data Center alongside Cloud (Sprint 02)
+
+**Status:** accepted.
+
+**Context.** `docs/architecture.md` §4 and the Sprint 02 scope both name **Jira
+Cloud REST v3** with Basic auth. During the sprint the Developer identified the
+target site as `jira.dedalus.com` — a self-hosted **Jira Server/Data Center**
+instance. The two products are not interchangeable in the three places an HTTP
+client cannot paper over:
+
+| | Cloud | Data Center |
+|---|---|---|
+| path | `/rest/api/3/…` | `/rest/api/2/…` |
+| auth | `Basic base64(email:token)` | `Bearer <personal access token>` |
+| rich text | Atlassian Document Format | plain string |
+
+The adapter as specified would have failed against the Developer's own site, so
+the manual Definition-of-Done test could not have been performed at all.
+
+**Decision.** `JiraRestAdapter` supports both, selected by a `JiraDeployment`
+field on `JiraCredentials` that the user picks in Settings. Detection is
+deliberately *not* inferred from the URL: a Data Center instance can live at any
+hostname, and guessing wrong produces a 404 the user cannot diagnose.
+
+Everything else is shared — request shape, response reading, status
+classification, failure mapping — and the S02-CT-01 contract suite runs its nine
+cases against **three** subjects (`FakeJiraGateway`, REST-as-Cloud,
+REST-as-Data-Center), plus three cases that assert each product gets the wire
+format it expects. Neither configuration can drift from the other.
+
+This is a scope extension, authorised by the Developer during the sprint. No
+documented criterion is weakened: every S02 test still runs, and Cloud remains
+the default so the specified behaviour is what an unconfigured install gets.
+
+**Impact.** `docs/architecture.md` §4.2 records the second deployment;
+`JiraCredentials`, `JiraRestAdapter`, `SecureJiraCredentialStore`,
+`JiraSettingsSection`, the three ARB files, `FakeJiraServer` and the contract
+suite. OAuth 2.0 (3LO) remains the Cloud evolution path; Data Center's is
+unchanged, since a PAT is already its long-lived credential.

@@ -34,6 +34,53 @@ void main() {
       expect(complete.copy(apiToken: '\n').isComplete, isFalse);
     });
 
+    test('a Data Center set needs no e-mail (DEC-012)', () {
+      const JiraCredentials pat = JiraCredentials(
+        siteUrl: 'https://jira.example.com',
+        email: '',
+        apiToken: 'synthetic-pat',
+        deployment: JiraDeployment.dataCenter,
+      );
+
+      expect(pat.isComplete, isTrue);
+      // …and names the site, since a PAT names nobody.
+      expect(pat.accountLabel, 'https://jira.example.com');
+      expect(complete.accountLabel, 'dev@example.com');
+      // A site and a token are still required.
+      expect(
+        const JiraCredentials(
+          siteUrl: 'https://jira.example.com',
+          email: '',
+          apiToken: '',
+          deployment: JiraDeployment.dataCenter,
+        ).isComplete,
+        isFalse,
+      );
+    });
+
+    test('each deployment knows its REST version and what it asks for', () {
+      expect(JiraDeployment.cloud.restVersion, '3');
+      expect(JiraDeployment.dataCenter.restVersion, '2');
+      expect(JiraDeployment.cloud.needsEmail, isTrue);
+      expect(JiraDeployment.dataCenter.needsEmail, isFalse);
+    });
+
+    test('the deployment is part of the identity', () {
+      expect(
+        complete,
+        isNot(complete.copy(deployment: JiraDeployment.dataCenter)),
+      );
+    });
+
+    test('toString names the deployment but still hides the token', () {
+      final String printed = complete
+          .copy(deployment: JiraDeployment.dataCenter)
+          .toString();
+
+      expect(printed, contains('dataCenter'));
+      expect(printed, isNot(contains('synthetic-token')));
+    });
+
     test('equality is by value', () {
       expect(complete, complete.copy());
       expect(complete.hashCode, complete.copy().hashCode);
@@ -115,10 +162,15 @@ void main() {
 /// `copyWith` for a plain class, so the tests above read as variations on one
 /// credential set rather than five near-identical literals.
 extension on JiraCredentials {
-  JiraCredentials copy({String? siteUrl, String? email, String? apiToken}) =>
-      JiraCredentials(
-        siteUrl: siteUrl ?? this.siteUrl,
-        email: email ?? this.email,
-        apiToken: apiToken ?? this.apiToken,
-      );
+  JiraCredentials copy({
+    String? siteUrl,
+    String? email,
+    String? apiToken,
+    JiraDeployment? deployment,
+  }) => JiraCredentials(
+    siteUrl: siteUrl ?? this.siteUrl,
+    email: email ?? this.email,
+    apiToken: apiToken ?? this.apiToken,
+    deployment: deployment ?? this.deployment,
+  );
 }
