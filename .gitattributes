@@ -1,0 +1,22 @@
+# Line endings are normalised to LF in the repository.
+#
+# Norte is developed on Windows and its CI — including the golden comparison and
+# the E2E host — runs on Linux (docs/reports/decisions.md DEC-004). Without this
+# file, core.autocrlf rewrites checked-out files to CRLF and every regenerated
+# file shows up as modified with an empty diff.
+* text=auto eol=lf
+
+# Golden images are compared byte for byte with no tolerance (DEC-006). Marking
+# them binary explicitly keeps any text heuristic away from them.
+*.png binary
+*.jpg binary
+*.ico binary
+*.ttf binary
+*.otf binary
+*.keystore binary
+*.jks binary
+
+# Windows-only tooling that must keep CRLF to run.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
