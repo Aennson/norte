@@ -522,4 +522,114 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get templatesExtractActionItems => 'Extract action items';
+
+  @override
+  String get recordMeetingTitle => 'Record meeting';
+
+  @override
+  String get recordMeetingStart => 'Record audio';
+
+  @override
+  String get recordMeetingStartHint =>
+      'Record the meeting and have it transcribed for you.';
+
+  @override
+  String get recordMeetingReady => 'Ready to record';
+
+  @override
+  String get recordMeetingRecording => 'Recording';
+
+  @override
+  String get recordMeetingPaused => 'Paused';
+
+  @override
+  String get recordMeetingPause => 'Pause';
+
+  @override
+  String get recordMeetingResume => 'Resume';
+
+  @override
+  String get recordMeetingStop => 'Stop and transcribe';
+
+  @override
+  String get recordMeetingDiscard => 'Discard recording';
+
+  @override
+  String get recordMeetingDiscardConfirm =>
+      'Discard this recording? The audio is deleted and cannot be recovered.';
+
+  @override
+  String get recordMeetingLimitLabel => 'Maximum length';
+
+  @override
+  String recordMeetingLimitValue(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get recordMeetingInterrupted =>
+      'Recording paused by the system. Resume when you are ready - nothing was lost.';
+
+  @override
+  String get recordMeetingStageUploading => 'Uploading the audio';
+
+  @override
+  String get recordMeetingStageTranscribing => 'Transcribing';
+
+  @override
+  String get recordMeetingStageSummarizing => 'Summarizing';
+
+  @override
+  String get recordMeetingKeepAudio =>
+      'The recording is kept so you can try again without recording it over.';
+
+  @override
+  String get recordMeetingPermissionTitle => 'Microphone access is off';
+
+  @override
+  String get recordMeetingPermissionBody =>
+      'Norte needs the microphone to record a meeting. The audio stays on this device until you send it for transcription, and it is deleted afterwards.';
+
+  @override
+  String get recordMeetingPermissionAllow => 'Allow microphone';
+
+  @override
+  String get recordMeetingPermissionSettings => 'Open settings';
+
+  @override
+  String get recordMeetingPermissionPermanent =>
+      'The prompt will not appear again - grant microphone access in your system settings.';
+
+  @override
+  String get transcriptionErrorFailed =>
+      'The audio could not be transcribed. Try again.';
+
+  @override
+  String get transcriptionErrorNoKey =>
+      'No transcription key is configured. Add one in Settings.';
+
+  @override
+  String get transcriptionErrorRejected =>
+      'The transcription key was rejected. Check it in Settings.';
+
+  @override
+  String get transcriptionErrorTooLong =>
+      'The recording is too long to upload.';
+
+  @override
+  String get recordingErrorFailed =>
+      'The recording could not be made. Try again.';
+
+  @override
+  String get settingsWhisperSection => 'Transcription';
+
+  @override
+  String get settingsWhisperDescription =>
+      'Your own transcription key. It is stored in this device\'s secure store and never leaves it except to transcribe your audio.';
+
+  @override
+  String get settingsWhisperKeyField => 'Transcription API key';
+
+  @override
+  String get settingsWhisperConfigured => 'Key configured';
 }

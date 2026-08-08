@@ -15,6 +15,10 @@ import 'infrastructure/persistence/drift_outbox_repository.dart';
 import 'infrastructure/persistence/drift_task_repository.dart';
 import 'infrastructure/persistence/norte_database.dart';
 import 'infrastructure/persistence/norte_database_factory.dart';
+import 'infrastructure/platform/record_audio_recorder.dart';
+import 'infrastructure/platform/temp_audio_store.dart';
+import 'infrastructure/transcription/secure_transcription_credential_store.dart';
+import 'infrastructure/transcription/whisper_batch_engine.dart';
 import 'jira_background_sync.dart';
 import 'presentation/app/norte_app.dart';
 import 'presentation/jira/jira_providers.dart';
@@ -62,6 +66,17 @@ Future<void> main() async {
     clock: const SystemClock(),
   );
 
+  final SecureTranscriptionCredentialStore whisperCredentials =
+      SecureTranscriptionCredentialStore(const FlutterSecureStorage());
+  final WhisperBatchEngine whisper = WhisperBatchEngine(
+    dio: Dio(),
+    credentialStore: whisperCredentials,
+  );
+  final TempAudioStore audio = TempAudioStore();
+  final RecordAudioRecorder recorder = RecordAudioRecorder(
+    clock: const SystemClock(),
+  );
+
   final OutboxDispatcher dispatcher = OutboxDispatcher(
     outbox: outbox,
     gateway: jira,
@@ -85,6 +100,12 @@ Future<void> main() async {
       meetingTemplateRepositoryProvider.overrideWithValue(templates),
       aiCredentialStoreProvider.overrideWithValue(aiCredentials),
       aiEngineProvider.overrideWithValue(ai),
+      transcriptionCredentialStoreProvider.overrideWithValue(
+        whisperCredentials,
+      ),
+      batchTranscriptionProvider.overrideWithValue(whisper),
+      audioStoreProvider.overrideWithValue(audio),
+      audioRecorderProvider.overrideWithValue(recorder),
     ],
   );
   container.read(jiraSyncControllerProvider).start();

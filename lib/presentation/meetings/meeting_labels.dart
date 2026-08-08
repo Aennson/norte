@@ -1,3 +1,4 @@
+import '../../application/usecases/transcribe_meeting_audio.dart';
 import '../../domain/entities/meeting.dart';
 import '../../domain/failures/failure.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -37,5 +38,26 @@ String meetingFailureText(AppLocalizations l10n, Failure failure) =>
       },
       AlreadyConvertedFailure() => l10n.summaryAlreadyConverted,
       StorageFailure() => l10n.aiErrorStorage,
+      // Sprint 04. `MissingApiKeyFailure` and `AuthFailure` above already
+      // cover both providers' key problems — the message names Settings, and
+      // Settings is where both keys live, so one string serves both without
+      // lying about either.
+      TranscriptionFailure() => l10n.transcriptionErrorFailed,
+      RecordingFailure() => l10n.recordingErrorFailed,
       _ => l10n.aiErrorGeneric,
     };
+
+/// The name of the stage a recording-to-summary run is in.
+///
+/// Four names rather than one spinner: they take wildly different amounts of
+/// time and fail for different reasons, and a user watching a ninety-minute
+/// meeting upload deserves to know it is the upload they are waiting on.
+String transcriptionStageLabel(
+  AppLocalizations l10n,
+  TranscriptionStage stage,
+) => switch (stage) {
+  TranscriptionStage.uploading => l10n.recordMeetingStageUploading,
+  TranscriptionStage.transcribing => l10n.recordMeetingStageTranscribing,
+  TranscriptionStage.summarizing => l10n.recordMeetingStageSummarizing,
+  TranscriptionStage.done => l10n.recordMeetingStageSummarizing,
+};

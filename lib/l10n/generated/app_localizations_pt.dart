@@ -525,4 +525,113 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get templatesExtractActionItems => 'Extrair ações';
+
+  @override
+  String get recordMeetingTitle => 'Gravar reunião';
+
+  @override
+  String get recordMeetingStart => 'Gravar áudio';
+
+  @override
+  String get recordMeetingStartHint =>
+      'Grave a reunião e receba a transcrição pronta.';
+
+  @override
+  String get recordMeetingReady => 'Pronto para gravar';
+
+  @override
+  String get recordMeetingRecording => 'Gravando';
+
+  @override
+  String get recordMeetingPaused => 'Pausado';
+
+  @override
+  String get recordMeetingPause => 'Pausar';
+
+  @override
+  String get recordMeetingResume => 'Retomar';
+
+  @override
+  String get recordMeetingStop => 'Parar e transcrever';
+
+  @override
+  String get recordMeetingDiscard => 'Descartar gravação';
+
+  @override
+  String get recordMeetingDiscardConfirm =>
+      'Descartar esta gravação? O áudio é apagado e não dá para recuperar.';
+
+  @override
+  String get recordMeetingLimitLabel => 'Duração máxima';
+
+  @override
+  String recordMeetingLimitValue(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get recordMeetingInterrupted =>
+      'Gravação pausada pelo sistema. Retome quando quiser — nada foi perdido.';
+
+  @override
+  String get recordMeetingStageUploading => 'Enviando o áudio';
+
+  @override
+  String get recordMeetingStageTranscribing => 'Transcrevendo';
+
+  @override
+  String get recordMeetingStageSummarizing => 'Resumindo';
+
+  @override
+  String get recordMeetingKeepAudio =>
+      'A gravação foi mantida para você tentar de novo sem gravar tudo outra vez.';
+
+  @override
+  String get recordMeetingPermissionTitle => 'Acesso ao microfone desligado';
+
+  @override
+  String get recordMeetingPermissionBody =>
+      'O Norte precisa do microfone para gravar uma reunião. O áudio fica neste aparelho até você enviá-lo para transcrição, e é apagado depois.';
+
+  @override
+  String get recordMeetingPermissionAllow => 'Permitir microfone';
+
+  @override
+  String get recordMeetingPermissionSettings => 'Abrir configurações';
+
+  @override
+  String get recordMeetingPermissionPermanent =>
+      'O aviso não vai aparecer de novo — libere o microfone nas configurações do sistema.';
+
+  @override
+  String get transcriptionErrorFailed =>
+      'Não deu para transcrever o áudio. Tente de novo.';
+
+  @override
+  String get transcriptionErrorNoKey =>
+      'Nenhuma chave de transcrição configurada. Adicione uma em Ajustes.';
+
+  @override
+  String get transcriptionErrorRejected =>
+      'A chave de transcrição foi recusada. Confira em Ajustes.';
+
+  @override
+  String get transcriptionErrorTooLong =>
+      'A gravação é longa demais para enviar.';
+
+  @override
+  String get recordingErrorFailed => 'Não deu para gravar. Tente de novo.';
+
+  @override
+  String get settingsWhisperSection => 'Transcrição';
+
+  @override
+  String get settingsWhisperDescription =>
+      'Sua própria chave de transcrição. Ela fica no cofre seguro deste aparelho e só sai dele para transcrever o seu áudio.';
+
+  @override
+  String get settingsWhisperKeyField => 'Chave da API de transcrição';
+
+  @override
+  String get settingsWhisperConfigured => 'Chave configurada';
 }

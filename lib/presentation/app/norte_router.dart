@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../meetings/meetings_screen.dart';
 import '../meetings/new_meeting_screen.dart';
+import '../meetings/record_meeting_screen.dart';
 import '../meetings/summary_screen.dart';
 import '../reminders/reminders_screen.dart';
 import '../settings/settings_screen.dart';
@@ -64,6 +65,10 @@ GoRouter buildNorteRouter({String initialLocation = NorteRoutes.tasks}) {
                   GoRoute(
                     path: 'new',
                     builder: (_, _) => const NewMeetingScreen(),
+                  ),
+                  GoRoute(
+                    path: 'record',
+                    builder: (_, _) => const RecordMeetingScreen(),
                   ),
                   GoRoute(
                     path: 'summary',

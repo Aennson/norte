@@ -3,14 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/usecases/convert_action_item_to_task.dart';
 import '../../application/usecases/save_meeting.dart';
 import '../../application/usecases/summarize_meeting.dart';
+import '../../application/usecases/transcribe_meeting_audio.dart';
 import '../../domain/entities/meeting.dart';
 import '../../domain/entities/meeting_template.dart';
 import '../../domain/failures/failure.dart';
 import '../../domain/failures/result.dart';
 import '../../domain/ports/ai_credential_store.dart';
 import '../../domain/ports/ai_engine.dart';
+import '../../domain/ports/audio_recorder.dart';
+import '../../domain/ports/audio_store.dart';
 import '../../domain/ports/meeting_repository.dart';
 import '../../domain/ports/meeting_template_repository.dart';
+import '../../domain/ports/transcription_credential_store.dart';
+import '../../domain/ports/transcription_engine.dart';
 import '../tasks/task_providers.dart';
 
 /// The ports the composition root supplies. Each throws until overridden, so
@@ -45,6 +50,43 @@ final Provider<MeetingTemplateRepository> meetingTemplateRepositoryProvider =
       ),
     );
 
+final Provider<TranscriptionCredentialStore>
+transcriptionCredentialStoreProvider = Provider<TranscriptionCredentialStore>(
+  (Ref ref) => throw UnimplementedError(
+    'transcriptionCredentialStoreProvider must be overridden in the '
+    'composition root',
+  ),
+);
+
+final Provider<AudioRecorder> audioRecorderProvider = Provider<AudioRecorder>(
+  (Ref ref) => throw UnimplementedError(
+    'audioRecorderProvider must be overridden in the composition root',
+  ),
+);
+
+final Provider<AudioStore> audioStoreProvider = Provider<AudioStore>(
+  (Ref ref) => throw UnimplementedError(
+    'audioStoreProvider must be overridden in the composition root',
+  ),
+);
+
+final Provider<BatchTranscription> batchTranscriptionProvider =
+    Provider<BatchTranscription>(
+      (Ref ref) => throw UnimplementedError(
+        'batchTranscriptionProvider must be overridden in the composition root',
+      ),
+    );
+
+/// How long a single recording may run.
+///
+/// Ninety minutes by default, which covers a long planning session; it is a
+/// provider rather than a constant because the sprint requires it to be
+/// configurable, and because the right ceiling on a phone with 2 GB free is
+/// not the right ceiling on a desktop.
+final Provider<Duration> recordingLimitProvider = Provider<Duration>(
+  (Ref ref) => const Duration(minutes: 90),
+);
+
 /// The three meeting use cases, assembled from the ports above.
 final Provider<SummarizeMeeting> summarizeMeetingProvider =
     Provider<SummarizeMeeting>(
@@ -52,6 +94,16 @@ final Provider<SummarizeMeeting> summarizeMeetingProvider =
         engine: ref.watch(aiEngineProvider),
         clock: ref.watch(clockProvider),
         idGenerator: ref.watch(idGeneratorProvider),
+      ),
+    );
+
+/// Sprint 04's use case, holding Sprint 03's rather than repeating it.
+final Provider<TranscribeMeetingAudio> transcribeMeetingAudioProvider =
+    Provider<TranscribeMeetingAudio>(
+      (Ref ref) => TranscribeMeetingAudio(
+        engine: ref.watch(batchTranscriptionProvider),
+        store: ref.watch(audioStoreProvider),
+        summarize: ref.watch(summarizeMeetingProvider),
       ),
     );
 
@@ -94,6 +146,16 @@ final StreamProvider<List<MeetingTemplate>> meetingTemplateListProvider =
 final FutureProvider<bool> aiConfiguredProvider = FutureProvider<bool>(
   (Ref ref) async => await ref.watch(aiCredentialStoreProvider).read() != null,
 );
+
+/// `true` when a transcription key is configured. Separate from
+/// [aiConfiguredProvider] because the two keys are separate: recording works
+/// without a Claude key right up to the summarizing stage, and pasting works
+/// without a Whisper key entirely.
+final FutureProvider<bool> transcriptionConfiguredProvider =
+    FutureProvider<bool>(
+      (Ref ref) async =>
+          await ref.watch(transcriptionCredentialStoreProvider).read() != null,
+    );
 
 /// What the composer screen is doing right now.
 enum MeetingComposerStatus { editing, processing, failed, summarized }
@@ -160,6 +222,21 @@ class MeetingComposer extends Notifier<MeetingComposerState> {
   /// which is the only point at which it is an informed one (BR-03).
   void setRetention(RetentionPolicy retention) {
     state = state.copyWith(retention: retention);
+  }
+
+  /// Takes over a meeting summarized by another flow.
+  ///
+  /// Sprint 04's recording flow ends here, which is the point: from this call
+  /// onward there is one summary screen, one save path and one BR-03 gate, no
+  /// matter whether the transcript was pasted or spoken. A second result
+  /// screen would have been a second place for `SaveMeeting`'s retention rule
+  /// to be got wrong.
+  void adopt(Meeting meeting) {
+    state = state.copyWith(
+      status: MeetingComposerStatus.summarized,
+      meeting: meeting,
+      clearFailure: true,
+    );
   }
 
   /// Clears everything, including any in-memory transcript.

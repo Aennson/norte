@@ -20,6 +20,7 @@ import '../shared/widgets/norte_screen.dart';
 import '../shared/widgets/norte_text_field.dart';
 import 'meeting_labels.dart';
 import 'meeting_providers.dart';
+import 'record_meeting_screen.dart';
 import 'summary_screen.dart';
 
 /// Where the user pastes a transcript and has it summarized
@@ -44,6 +45,7 @@ class NewMeetingScreen extends ConsumerStatefulWidget {
   static const Key transcriptFieldKey = Key('meeting.transcript');
   static const Key saveTranscriptKey = Key('meeting.saveTranscript');
   static const Key processButtonKey = Key('meeting.process');
+  static const Key recordButtonKey = Key('meeting.record');
   static const Key retryButtonKey = Key('meeting.retry');
 
   @override
@@ -197,6 +199,26 @@ class _NewMeetingScreenState extends ConsumerState<NewMeetingScreen> {
           icon: LucideIcons.sparkles,
           isLoading: isProcessing,
           onPressed: isProcessing ? null : _process,
+        ),
+        const SizedBox(height: NorteSpacing.lg),
+        // The second input flow (Sprint 04). It sits below the paste flow
+        // rather than beside it because pasting is v1.0's primary input
+        // (`docs/architecture.md` §5.1); the template and the retention choice
+        // above apply to both, which is why recording is entered from here
+        // rather than from its own tab.
+        NorteButton(
+          key: NewMeetingScreen.recordButtonKey,
+          label: l10n.recordMeetingStart,
+          icon: LucideIcons.mic,
+          variant: NorteButtonVariant.secondary,
+          onPressed: isProcessing
+              ? null
+              : () => context.push(RecordMeetingScreen.routePath),
+        ),
+        const SizedBox(height: NorteSpacing.sm),
+        Text(
+          l10n.recordMeetingStartHint,
+          style: NorteTypography.caption.copyWith(color: colors.textSecondary),
         ),
       ],
     );
