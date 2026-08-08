@@ -44,16 +44,25 @@ class AddJiraComment {
       );
     }
 
-    final OutboxOperation queued = await outbox.enqueue(
-      OutboxOperation(
-        operationId: idGenerator.newId(),
-        kind: OutboxOperationKind.comment,
-        issueKey: link.issueKey,
-        payload: text,
-        taskId: task.id,
-        createdAt: clock.now().toUtc(),
-      ),
-    );
+    final OutboxOperation queued;
+    try {
+      queued = await outbox.enqueue(
+        OutboxOperation(
+          operationId: idGenerator.newId(),
+          kind: OutboxOperationKind.comment,
+          issueKey: link.issueKey,
+          payload: text,
+          taskId: task.id,
+          createdAt: clock.now().toUtc(),
+        ),
+      );
+    } on Failure catch (failure) {
+      // The queue is the durability guarantee (BR-05); if it could
+      // not accept the operation, the user has to be told rather
+      // than left believing their action is safely waiting.
+      return Err<OutboxOperation>(failure);
+    }
+
     return Ok<OutboxOperation>(queued);
   }
 }
