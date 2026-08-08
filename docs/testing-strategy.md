@@ -39,6 +39,12 @@ the layout unchanged. Each platform therefore keeps its own set under
   machine never invalidates another's files.
 - A deliberate UI change must be regenerated on each platform in use before CI
   goes green.
+- The **Linux set is produced by the `Generate Linux goldens` workflow**
+  (`.github/workflows/goldens.yml`, run from the Actions tab): it regenerates on
+  the same runner image and pinned Flutter version the `test` job compares
+  against, uploads the files as an artifact, and never pushes. A set generated
+  on any other Linux — including a local WSL distribution — will not match. See
+  DEC-011.
 
 Wiring lives in `test/support/platform_goldens.dart`; see DEC-006.
 
@@ -93,6 +99,8 @@ Fixtures live in `test/fixtures/` (JSON/text), **with no real personal data** �
 ## 6. Coverage and CI
 
 - `flutter test --coverage` + `lcov` — gates: domain+application ≥ 90%, project ≥ 80% (lines).
+  Machine-generated sources (`*.g.dart`, `*.freezed.dart`, `lib/l10n/generated/`) are
+  excluded from both figures; the thresholds themselves are unchanged (DEC-008).
 - CI pipeline (defined in Sprint 00, GitHub Actions): analyze → format → check_imports → test+coverage → goldens → desktop E2E.
 - Golden failures attach the image diff as an artifact.
 - A green CI is mandatory to close a sprint (evidence in the sprint report).

@@ -1,0 +1,45 @@
+name: Generate Linux goldens
+
+# Golden files are stored per operating system and compared with no tolerance
+# (DEC-006). The Linux set is the one CI checks against, so it has to be
+# produced on the same runner image and Flutter version the `test` job uses —
+# a developer on Windows or macOS cannot generate it.
+#
+# Run this workflow from the Actions tab (or `gh workflow run goldens.yml`)
+# after any deliberate UI change, download the artifact, and commit the files
+# under test/presentation/goldens/images/linux/.
+#
+# It never pushes: the goldens enter the repository through a normal commit,
+# reviewed like any other change.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  goldens:
+    name: Regenerate test/presentation/goldens/images/linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          # Must match FLUTTER_VERSION in ci.yml — a different renderer would
+          # produce files the `test` job then rejects.
+          flutter-version: 3.44.9
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # --update-goldens only ever writes the running platform's directory.
+      - name: Regenerate the Linux golden set
+        run: flutter test --update-goldens
+
+      - name: Upload the regenerated files
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-goldens
+          path: test/presentation/goldens/images/linux/
+          if-no-files-found: error

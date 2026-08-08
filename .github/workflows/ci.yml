@@ -116,5 +116,15 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: S00-E2E-01 — navigation smoke test
-        run: xvfb-run -a --server-args="-screen 0 1280x800x24" flutter test integration_test/
+      # One invocation per file: the desktop runner launches a real window per
+      # suite, and starting the next before the previous one has fully exited
+      # makes `flutter test` give up with "Unable to start the app on the
+      # device". Sequencing them keeps the run deterministic.
+      - name: E2E scenarios
+        run: |
+          set -e
+          for suite in integration_test/*_test.dart; do
+            echo "::group::$suite"
+            xvfb-run -a --server-args="-screen 0 1280x800x24" flutter test "$suite"
+            echo "::endgroup::"
+          done

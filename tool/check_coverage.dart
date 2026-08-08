@@ -16,6 +16,18 @@
 import 'dart:convert';
 import 'dart:io';
 
+/// `true` for a file produced by a code generator rather than written by hand.
+///
+/// Generated sources are excluded from both thresholds (DEC-008): they are
+/// build output, their correctness belongs to the generator's own test suite,
+/// and the volume they add (`drift` alone emits hundreds of lines per table)
+/// would otherwise decide the gate instead of the authored code it is meant to
+/// measure.
+bool isGenerated(String path) =>
+    path.endsWith('.g.dart') ||
+    path.endsWith('.freezed.dart') ||
+    path.contains('lib/l10n/generated/');
+
 /// Line counts for a group of source files.
 class CoverageTally {
   int found = 0;
@@ -77,18 +89,29 @@ int runCoverageCheck(String lcovPath, {StringSink? out}) {
   bool isCore(String path) =>
       path.contains('lib/domain/') || path.contains('lib/application/');
 
+  final Iterable<MapEntry<String, CoverageTally>> authored = byFile.entries
+      .where((MapEntry<String, CoverageTally> e) => !isGenerated(e.key));
+
   final CoverageTally core = _sum(
-    byFile.entries
+    authored
         .where((MapEntry<String, CoverageTally> e) => isCore(e.key))
         .map((MapEntry<String, CoverageTally> e) => e.value),
   );
-  final CoverageTally project = _sum(byFile.values);
+  final CoverageTally project = _sum(
+    authored.map((MapEntry<String, CoverageTally> e) => e.value),
+  );
+  final CoverageTally generated = _sum(
+    byFile.entries
+        .where((MapEntry<String, CoverageTally> e) => isGenerated(e.key))
+        .map((MapEntry<String, CoverageTally> e) => e.value),
+  );
 
   sink.writeln('check_coverage:');
   sink.writeln(
     '  domain+application  ${core.found == 0 ? "no instrumented lines yet" : core}',
   );
   sink.writeln('  project             $project');
+  sink.writeln('  generated (excl.)   $generated');
 
   var failed = false;
 
