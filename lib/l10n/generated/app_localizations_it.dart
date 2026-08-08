@@ -330,4 +330,202 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get jiraErrorNotRestApi =>
       'Quell\'URL ha risposto, ma non come API REST di Jira — controlla l\'indirizzo del sito e se è protetto da single sign-on.';
+
+  @override
+  String get meetingsNewMeeting => 'Nuova riunione';
+
+  @override
+  String get meetingsLoadingLabel => 'Caricamento delle riunioni';
+
+  @override
+  String get meetingsErrorMessage =>
+      'Non è stato possibile caricare le tue riunioni.';
+
+  @override
+  String meetingsActionItemSummary(int total, int converted) {
+    return '$converted di $total azioni convertite';
+  }
+
+  @override
+  String get meetingsTranscriptKept => 'Trascrizione conservata';
+
+  @override
+  String get meetingsTranscriptDiscarded => 'Trascrizione eliminata';
+
+  @override
+  String get meetingTypeDaily => 'Daily';
+
+  @override
+  String get meetingTypeRetro => 'Retrospettiva';
+
+  @override
+  String get meetingTypePlanning => 'Planning';
+
+  @override
+  String get meetingTypeOneOnOne => '1:1';
+
+  @override
+  String get meetingTypeCustom => 'Personalizzato';
+
+  @override
+  String get newMeetingTitle => 'Nuova riunione';
+
+  @override
+  String get newMeetingTitleField => 'Titolo';
+
+  @override
+  String get newMeetingTitleRequired => 'Dai un titolo alla riunione.';
+
+  @override
+  String get newMeetingTypeLabel => 'Tipo di riunione';
+
+  @override
+  String get newMeetingTranscriptField => 'Trascrizione';
+
+  @override
+  String get newMeetingTranscriptHint =>
+      'Incolla la trascrizione da Teams, Meet o da dove preferisci.';
+
+  @override
+  String get newMeetingTranscriptRequired => 'Incolla prima una trascrizione.';
+
+  @override
+  String get newMeetingSaveTranscript => 'Conserva anche la trascrizione';
+
+  @override
+  String get newMeetingSaveTranscriptOn =>
+      'Il testo completo verrà conservato insieme al riassunto.';
+
+  @override
+  String get newMeetingSaveTranscriptOff =>
+      'Viene conservato solo il riassunto. Il testo è eliminato quando esci.';
+
+  @override
+  String get newMeetingProcess => 'Riassumi';
+
+  @override
+  String get newMeetingProcessing => 'Riassumo…';
+
+  @override
+  String get newMeetingNoTemplates =>
+      'Nessun modello. Ripristina quelli predefiniti nelle Impostazioni.';
+
+  @override
+  String get summaryTitle => 'Riassunto';
+
+  @override
+  String get summaryGone => 'Quel riassunto non è più in memoria.';
+
+  @override
+  String get summaryEmptySection => 'Non trattato in questa riunione.';
+
+  @override
+  String get summaryActionItems => 'Azioni';
+
+  @override
+  String get summaryConvert => 'Crea attività';
+
+  @override
+  String get summaryConverted => 'Convertita';
+
+  @override
+  String get summaryConvertedToast => 'Attività creata.';
+
+  @override
+  String get summaryAlreadyConverted => 'Quell\'azione è già un\'attività.';
+
+  @override
+  String get summarySave => 'Salva riassunto';
+
+  @override
+  String get summarySaved => 'Riassunto salvato.';
+
+  @override
+  String get summaryDiscardWarning =>
+      'Non è stato ancora salvato nulla. Uscire da questa schermata elimina il riassunto e la trascrizione.';
+
+  @override
+  String get summaryDiscardWarningWithTranscript =>
+      'Non è stato ancora salvato nulla. Uscire da questa schermata elimina il riassunto e la trascrizione che hai scelto di conservare.';
+
+  @override
+  String get aiSectionTitle => 'Claude';
+
+  @override
+  String get aiSectionDescription =>
+      'I riassunti delle riunioni usano la tua chiave API di Claude. Resta nell\'archivio sicuro di questo dispositivo e ne esce solo per chiamare l\'API.';
+
+  @override
+  String get aiKeyField => 'Chiave API';
+
+  @override
+  String get aiKeyFieldHint => 'sk-ant-…';
+
+  @override
+  String get aiKeyRequired => 'Incolla la tua chiave API.';
+
+  @override
+  String get aiKeyConfigured => 'Chiave configurata';
+
+  @override
+  String get aiKeyNotConfigured => 'Nessuna chiave configurata';
+
+  @override
+  String get aiClearKey => 'Rimuovi chiave';
+
+  @override
+  String get aiErrorMissingKey =>
+      'Aggiungi la tua chiave API di Claude nelle Impostazioni per riassumere le riunioni.';
+
+  @override
+  String get aiErrorRejectedKey =>
+      'Claude ha rifiutato quella chiave API. Controllala nelle Impostazioni.';
+
+  @override
+  String get aiErrorUnreadable =>
+      'Claude ha risposto con qualcosa che questa app non è riuscita a leggere. Riprova.';
+
+  @override
+  String get aiErrorRateLimited =>
+      'Claude sta limitando le richieste in questo momento. Riprova tra poco.';
+
+  @override
+  String get aiErrorOffline =>
+      'Impossibile raggiungere Claude. Controlla la connessione.';
+
+  @override
+  String get aiErrorTimeout => 'Claude non ha risposto in tempo. Riprova.';
+
+  @override
+  String get aiErrorStorage =>
+      'Non è stato possibile leggere l\'archivio sicuro di questo dispositivo.';
+
+  @override
+  String get aiErrorGeneric => 'Il riassunto non è riuscito. Riprova.';
+
+  @override
+  String get templatesSectionTitle => 'Modelli di riunione';
+
+  @override
+  String get templatesSectionDescription =>
+      'Un modello è l\'istruzione e i titoli con cui viene costruito il riassunto. Modificali per rispecchiare come il tuo team conduce le riunioni.';
+
+  @override
+  String get templatesEdit => 'Modifica';
+
+  @override
+  String get templatesRestoreDefaults => 'Ripristina i modelli predefiniti';
+
+  @override
+  String get templatesPromptField => 'Istruzione';
+
+  @override
+  String get templatesSectionsField => 'Sezioni';
+
+  @override
+  String get templatesSectionsHint =>
+      'Un titolo per riga, nell\'ordine in cui devono comparire.';
+
+  @override
+  String get templatesExtractActionItems => 'Estrai le azioni';
 }

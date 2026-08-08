@@ -27,7 +27,12 @@ class NorteChip extends StatelessWidget {
 
   final bool isSelected;
 
-  final VoidCallback onSelected;
+  /// Tap handler. `null` makes the chip a label rather than a control — used
+  /// where a chip states a fact (the type of a saved meeting) or is
+  /// temporarily unavailable (the template picker while a summary runs). A
+  /// null handler also drops the button semantics, so a screen reader is not
+  /// told about an action that is not there.
+  final VoidCallback? onSelected;
 
   /// Optional 6px leading dot, matching [StatusBadge]'s status colours.
   final Color? dotColor;
@@ -40,7 +45,7 @@ class NorteChip extends StatelessWidget {
 
     return Semantics(
       selected: isSelected,
-      button: true,
+      button: onSelected != null,
       child: Material(
         color: isSelected ? colors.accentSubtle : colors.surface,
         borderRadius: radius,

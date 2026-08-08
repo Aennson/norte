@@ -213,7 +213,16 @@ void main() {
     await pump(tester);
 
     expect(find.text('Jira'), findsOneWidget);
-    expect(find.textContaining('secure storage'), findsOneWidget);
+    // Scoped to this section. Sprint 03 added a Claude key that makes the
+    // same promise in the same words, so an unscoped search now finds two
+    // — and the assertion this test is making is about the Jira one.
+    expect(
+      find.descendant(
+        of: find.byType(JiraSettingsSection),
+        matching: find.textContaining('secure storage'),
+      ),
+      findsOneWidget,
+    );
   });
 
   group('Data Center (DEC-012)', () {

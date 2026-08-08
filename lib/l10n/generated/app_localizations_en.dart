@@ -327,4 +327,199 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get jiraErrorNotRestApi =>
       'That URL answered, but not as the Jira REST API — check the site address, and whether the site is behind single sign-on.';
+
+  @override
+  String get meetingsNewMeeting => 'New meeting';
+
+  @override
+  String get meetingsLoadingLabel => 'Loading meetings';
+
+  @override
+  String get meetingsErrorMessage => 'Could not load your meetings.';
+
+  @override
+  String meetingsActionItemSummary(int total, int converted) {
+    return '$converted of $total action items converted';
+  }
+
+  @override
+  String get meetingsTranscriptKept => 'Transcript kept';
+
+  @override
+  String get meetingsTranscriptDiscarded => 'Transcript discarded';
+
+  @override
+  String get meetingTypeDaily => 'Daily';
+
+  @override
+  String get meetingTypeRetro => 'Retro';
+
+  @override
+  String get meetingTypePlanning => 'Planning';
+
+  @override
+  String get meetingTypeOneOnOne => '1:1';
+
+  @override
+  String get meetingTypeCustom => 'Custom';
+
+  @override
+  String get newMeetingTitle => 'New meeting';
+
+  @override
+  String get newMeetingTitleField => 'Title';
+
+  @override
+  String get newMeetingTitleRequired => 'Give the meeting a title.';
+
+  @override
+  String get newMeetingTypeLabel => 'Meeting type';
+
+  @override
+  String get newMeetingTranscriptField => 'Transcript';
+
+  @override
+  String get newMeetingTranscriptHint =>
+      'Paste the transcript from Teams, Meet, or anywhere else.';
+
+  @override
+  String get newMeetingTranscriptRequired => 'Paste a transcript first.';
+
+  @override
+  String get newMeetingSaveTranscript => 'Save the transcript too';
+
+  @override
+  String get newMeetingSaveTranscriptOn =>
+      'The full text will be stored alongside the summary.';
+
+  @override
+  String get newMeetingSaveTranscriptOff =>
+      'Only the summary is kept. The text is discarded when you leave.';
+
+  @override
+  String get newMeetingProcess => 'Summarize';
+
+  @override
+  String get newMeetingProcessing => 'Summarizing…';
+
+  @override
+  String get newMeetingNoTemplates =>
+      'No templates. Restore the defaults in Settings.';
+
+  @override
+  String get summaryTitle => 'Summary';
+
+  @override
+  String get summaryGone => 'That summary is no longer in memory.';
+
+  @override
+  String get summaryEmptySection => 'Not covered in this meeting.';
+
+  @override
+  String get summaryActionItems => 'Action items';
+
+  @override
+  String get summaryConvert => 'Make a task';
+
+  @override
+  String get summaryConverted => 'Converted';
+
+  @override
+  String get summaryConvertedToast => 'Task created.';
+
+  @override
+  String get summaryAlreadyConverted => 'That action item is already a task.';
+
+  @override
+  String get summarySave => 'Save summary';
+
+  @override
+  String get summarySaved => 'Summary saved.';
+
+  @override
+  String get summaryDiscardWarning =>
+      'Nothing is saved yet. Leaving this screen discards the summary and the transcript.';
+
+  @override
+  String get summaryDiscardWarningWithTranscript =>
+      'Nothing is saved yet. Leaving this screen discards the summary and the transcript you chose to keep.';
+
+  @override
+  String get aiSectionTitle => 'Claude';
+
+  @override
+  String get aiSectionDescription =>
+      'Meeting summaries use your own Claude API key. It is stored in this device\'s secure storage and never leaves it except to call the API.';
+
+  @override
+  String get aiKeyField => 'API key';
+
+  @override
+  String get aiKeyFieldHint => 'sk-ant-…';
+
+  @override
+  String get aiKeyRequired => 'Paste your API key.';
+
+  @override
+  String get aiKeyConfigured => 'Key configured';
+
+  @override
+  String get aiKeyNotConfigured => 'No key configured';
+
+  @override
+  String get aiClearKey => 'Remove key';
+
+  @override
+  String get aiErrorMissingKey =>
+      'Add your Claude API key in Settings to summarize meetings.';
+
+  @override
+  String get aiErrorRejectedKey =>
+      'Claude rejected that API key. Check it in Settings.';
+
+  @override
+  String get aiErrorUnreadable =>
+      'Claude answered with something this app could not read. Try again.';
+
+  @override
+  String get aiErrorRateLimited =>
+      'Claude is rate limiting right now. Try again shortly.';
+
+  @override
+  String get aiErrorOffline => 'Cannot reach Claude. Check your connection.';
+
+  @override
+  String get aiErrorTimeout => 'Claude did not answer in time. Try again.';
+
+  @override
+  String get aiErrorStorage => 'Could not read this device\'s secure storage.';
+
+  @override
+  String get aiErrorGeneric => 'Summarizing failed. Try again.';
+
+  @override
+  String get templatesSectionTitle => 'Meeting templates';
+
+  @override
+  String get templatesSectionDescription =>
+      'A template is the instruction and the headings a summary is built from. Edit them to match how your team runs its meetings.';
+
+  @override
+  String get templatesEdit => 'Edit';
+
+  @override
+  String get templatesRestoreDefaults => 'Restore the built-in templates';
+
+  @override
+  String get templatesPromptField => 'Instruction';
+
+  @override
+  String get templatesSectionsField => 'Sections';
+
+  @override
+  String get templatesSectionsHint =>
+      'One heading per line, in the order they should appear.';
+
+  @override
+  String get templatesExtractActionItems => 'Extract action items';
 }

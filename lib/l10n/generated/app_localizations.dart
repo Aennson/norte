@@ -669,6 +669,366 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'That URL answered, but not as the Jira REST API — check the site address, and whether the site is behind single sign-on.'**
   String get jiraErrorNotRestApi;
+
+  /// Primary action on the meetings screen.
+  ///
+  /// In en, this message translates to:
+  /// **'New meeting'**
+  String get meetingsNewMeeting;
+
+  /// Accessible label of the meetings loading skeleton.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading meetings'**
+  String get meetingsLoadingLabel;
+
+  /// Error state of the meetings screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load your meetings.'**
+  String get meetingsErrorMessage;
+
+  /// How many of a saved meeting's follow-ups became tasks.
+  ///
+  /// In en, this message translates to:
+  /// **'{converted} of {total} action items converted'**
+  String meetingsActionItemSummary(int total, int converted);
+
+  /// Shown on a saved meeting the user chose to keep whole.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcript kept'**
+  String get meetingsTranscriptKept;
+
+  /// Shown on a saved meeting whose transcript was ephemeral (BR-03).
+  ///
+  /// In en, this message translates to:
+  /// **'Transcript discarded'**
+  String get meetingsTranscriptDiscarded;
+
+  /// Name of the daily stand-up meeting type.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily'**
+  String get meetingTypeDaily;
+
+  /// Name of the retrospective meeting type.
+  ///
+  /// In en, this message translates to:
+  /// **'Retro'**
+  String get meetingTypeRetro;
+
+  /// Name of the sprint planning meeting type.
+  ///
+  /// In en, this message translates to:
+  /// **'Planning'**
+  String get meetingTypePlanning;
+
+  /// Name of the one-to-one meeting type.
+  ///
+  /// In en, this message translates to:
+  /// **'1:1'**
+  String get meetingTypeOneOnOne;
+
+  /// Name of a meeting type the user defined.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get meetingTypeCustom;
+
+  /// Title of the paste-a-transcript screen.
+  ///
+  /// In en, this message translates to:
+  /// **'New meeting'**
+  String get newMeetingTitle;
+
+  /// Label of the meeting title field.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get newMeetingTitleField;
+
+  /// Validation message when the meeting title is blank.
+  ///
+  /// In en, this message translates to:
+  /// **'Give the meeting a title.'**
+  String get newMeetingTitleRequired;
+
+  /// Label above the template chips.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting type'**
+  String get newMeetingTypeLabel;
+
+  /// Label of the transcript field.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcript'**
+  String get newMeetingTranscriptField;
+
+  /// Placeholder of the transcript field.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste the transcript from Teams, Meet, or anywhere else.'**
+  String get newMeetingTranscriptHint;
+
+  /// Validation message when the transcript is blank.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a transcript first.'**
+  String get newMeetingTranscriptRequired;
+
+  /// Label of the BR-03 retention toggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Save the transcript too'**
+  String get newMeetingSaveTranscript;
+
+  /// What happens with the retention toggle on.
+  ///
+  /// In en, this message translates to:
+  /// **'The full text will be stored alongside the summary.'**
+  String get newMeetingSaveTranscriptOn;
+
+  /// What happens with the retention toggle off — the default (BR-03).
+  ///
+  /// In en, this message translates to:
+  /// **'Only the summary is kept. The text is discarded when you leave.'**
+  String get newMeetingSaveTranscriptOff;
+
+  /// Action that sends the transcript to the AI engine.
+  ///
+  /// In en, this message translates to:
+  /// **'Summarize'**
+  String get newMeetingProcess;
+
+  /// Label of the summarize button while it runs.
+  ///
+  /// In en, this message translates to:
+  /// **'Summarizing…'**
+  String get newMeetingProcessing;
+
+  /// Empty state when the user has deleted every template.
+  ///
+  /// In en, this message translates to:
+  /// **'No templates. Restore the defaults in Settings.'**
+  String get newMeetingNoTemplates;
+
+  /// Title of the summary review screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Summary'**
+  String get summaryTitle;
+
+  /// Shown when the summary screen is reached with nothing to show.
+  ///
+  /// In en, this message translates to:
+  /// **'That summary is no longer in memory.'**
+  String get summaryGone;
+
+  /// Body of a section the meeting did not cover.
+  ///
+  /// In en, this message translates to:
+  /// **'Not covered in this meeting.'**
+  String get summaryEmptySection;
+
+  /// Heading of the extracted follow-ups.
+  ///
+  /// In en, this message translates to:
+  /// **'Action items'**
+  String get summaryActionItems;
+
+  /// Converts one action item into a task.
+  ///
+  /// In en, this message translates to:
+  /// **'Make a task'**
+  String get summaryConvert;
+
+  /// Marks an action item that already produced a task.
+  ///
+  /// In en, this message translates to:
+  /// **'Converted'**
+  String get summaryConverted;
+
+  /// Confirmation after converting an action item.
+  ///
+  /// In en, this message translates to:
+  /// **'Task created.'**
+  String get summaryConvertedToast;
+
+  /// Refusal when an action item is converted twice.
+  ///
+  /// In en, this message translates to:
+  /// **'That action item is already a task.'**
+  String get summaryAlreadyConverted;
+
+  /// Persists the reviewed summary.
+  ///
+  /// In en, this message translates to:
+  /// **'Save summary'**
+  String get summarySave;
+
+  /// Confirmation after saving a summary.
+  ///
+  /// In en, this message translates to:
+  /// **'Summary saved.'**
+  String get summarySaved;
+
+  /// BR-03 warning when the transcript is ephemeral.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing is saved yet. Leaving this screen discards the summary and the transcript.'**
+  String get summaryDiscardWarning;
+
+  /// BR-03 warning when the user opted to keep the transcript.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing is saved yet. Leaving this screen discards the summary and the transcript you chose to keep.'**
+  String get summaryDiscardWarningWithTranscript;
+
+  /// Title of the AI settings section.
+  ///
+  /// In en, this message translates to:
+  /// **'Claude'**
+  String get aiSectionTitle;
+
+  /// Explains the BYOK model and where the key lives.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting summaries use your own Claude API key. It is stored in this device\'s secure storage and never leaves it except to call the API.'**
+  String get aiSectionDescription;
+
+  /// Label of the Claude API key field.
+  ///
+  /// In en, this message translates to:
+  /// **'API key'**
+  String get aiKeyField;
+
+  /// Placeholder showing the shape of a Claude API key.
+  ///
+  /// In en, this message translates to:
+  /// **'sk-ant-…'**
+  String get aiKeyFieldHint;
+
+  /// Validation message when the key field is empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste your API key.'**
+  String get aiKeyRequired;
+
+  /// State line when a key is stored. Never shows the key itself (BR-08).
+  ///
+  /// In en, this message translates to:
+  /// **'Key configured'**
+  String get aiKeyConfigured;
+
+  /// State line when no key is stored.
+  ///
+  /// In en, this message translates to:
+  /// **'No key configured'**
+  String get aiKeyNotConfigured;
+
+  /// Clears the stored Claude API key.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove key'**
+  String get aiClearKey;
+
+  /// Failure when no API key is configured.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your Claude API key in Settings to summarize meetings.'**
+  String get aiErrorMissingKey;
+
+  /// Failure when the API key is present but refused.
+  ///
+  /// In en, this message translates to:
+  /// **'Claude rejected that API key. Check it in Settings.'**
+  String get aiErrorRejectedKey;
+
+  /// Failure when the summary cannot be parsed, after the retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Claude answered with something this app could not read. Try again.'**
+  String get aiErrorUnreadable;
+
+  /// Failure on HTTP 429 or an overloaded engine.
+  ///
+  /// In en, this message translates to:
+  /// **'Claude is rate limiting right now. Try again shortly.'**
+  String get aiErrorRateLimited;
+
+  /// Failure when the network is unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot reach Claude. Check your connection.'**
+  String get aiErrorOffline;
+
+  /// Failure when the request times out.
+  ///
+  /// In en, this message translates to:
+  /// **'Claude did not answer in time. Try again.'**
+  String get aiErrorTimeout;
+
+  /// Failure when the secure store is unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read this device\'s secure storage.'**
+  String get aiErrorStorage;
+
+  /// Fallback failure message.
+  ///
+  /// In en, this message translates to:
+  /// **'Summarizing failed. Try again.'**
+  String get aiErrorGeneric;
+
+  /// Title of the template settings section.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting templates'**
+  String get templatesSectionTitle;
+
+  /// Explains what a template is.
+  ///
+  /// In en, this message translates to:
+  /// **'A template is the instruction and the headings a summary is built from. Edit them to match how your team runs its meetings.'**
+  String get templatesSectionDescription;
+
+  /// Opens the template editor.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get templatesEdit;
+
+  /// Re-seeds any built-in template the user deleted. Never overwrites an edited one.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore the built-in templates'**
+  String get templatesRestoreDefaults;
+
+  /// Label of the system prompt field in the template editor.
+  ///
+  /// In en, this message translates to:
+  /// **'Instruction'**
+  String get templatesPromptField;
+
+  /// Label of the section headings field in the template editor.
+  ///
+  /// In en, this message translates to:
+  /// **'Sections'**
+  String get templatesSectionsField;
+
+  /// Placeholder of the section headings field.
+  ///
+  /// In en, this message translates to:
+  /// **'One heading per line, in the order they should appear.'**
+  String get templatesSectionsHint;
+
+  /// Toggle for whether the template asks for follow-ups.
+  ///
+  /// In en, this message translates to:
+  /// **'Extract action items'**
+  String get templatesExtractActionItems;
 }
 
 class _AppLocalizationsDelegate

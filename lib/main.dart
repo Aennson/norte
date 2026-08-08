@@ -4,9 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'domain/ports/clock.dart';
+import 'infrastructure/ai/claude_api_engine.dart';
+import 'infrastructure/ai/secure_ai_credential_store.dart';
 import 'infrastructure/jira/jira_rest_adapter.dart';
 import 'infrastructure/jira/outbox_dispatcher.dart';
 import 'infrastructure/jira/secure_jira_credential_store.dart';
+import 'infrastructure/persistence/drift_meeting_repository.dart';
+import 'infrastructure/persistence/drift_meeting_template_repository.dart';
 import 'infrastructure/persistence/drift_outbox_repository.dart';
 import 'infrastructure/persistence/drift_task_repository.dart';
 import 'infrastructure/persistence/norte_database.dart';
@@ -14,6 +18,7 @@ import 'infrastructure/persistence/norte_database_factory.dart';
 import 'jira_background_sync.dart';
 import 'presentation/app/norte_app.dart';
 import 'presentation/jira/jira_providers.dart';
+import 'presentation/meetings/meeting_providers.dart';
 import 'presentation/tasks/task_providers.dart';
 
 /// Composition root.
@@ -41,6 +46,22 @@ Future<void> main() async {
     // read it.
     log: (String line) => debugPrint('[jira] $line'),
   );
+  final DriftMeetingRepository meetings = DriftMeetingRepository(database);
+  final DriftMeetingTemplateRepository templates =
+      DriftMeetingTemplateRepository(database);
+  // Safe on every launch: it inserts only ids that are absent, so it neither
+  // duplicates a template nor overwrites one the user has edited.
+  await templates.seedDefaults();
+
+  final SecureAiCredentialStore aiCredentials = SecureAiCredentialStore(
+    const FlutterSecureStorage(),
+  );
+  final ClaudeApiEngine ai = ClaudeApiEngine(
+    dio: Dio(),
+    credentialStore: aiCredentials,
+    clock: const SystemClock(),
+  );
+
   final OutboxDispatcher dispatcher = OutboxDispatcher(
     outbox: outbox,
     gateway: jira,
@@ -60,6 +81,10 @@ Future<void> main() async {
       jiraCredentialStoreProvider.overrideWithValue(credentials),
       outboxDispatchProvider.overrideWithValue(dispatcher.dispatch),
       outboxRetryProvider.overrideWithValue(dispatcher.retry),
+      meetingRepositoryProvider.overrideWithValue(meetings),
+      meetingTemplateRepositoryProvider.overrideWithValue(templates),
+      aiCredentialStoreProvider.overrideWithValue(aiCredentials),
+      aiEngineProvider.overrideWithValue(ai),
     ],
   );
   container.read(jiraSyncControllerProvider).start();

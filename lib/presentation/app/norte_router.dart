@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../meetings/meetings_screen.dart';
+import '../meetings/new_meeting_screen.dart';
+import '../meetings/summary_screen.dart';
 import '../reminders/reminders_screen.dart';
 import '../settings/settings_screen.dart';
 import '../tasks/tasks_screen.dart';
@@ -55,6 +57,19 @@ GoRouter buildNorteRouter({String initialLocation = NorteRoutes.tasks}) {
               GoRoute(
                 path: NorteRoutes.meetings,
                 builder: (_, _) => const MeetingsScreen(),
+                // Nested, so composing a meeting keeps the shell's navigation
+                // and the branch's stack — and so leaving the composer is an
+                // ordinary pop, which is what discards the transcript (BR-03).
+                routes: <RouteBase>[
+                  GoRoute(
+                    path: 'new',
+                    builder: (_, _) => const NewMeetingScreen(),
+                  ),
+                  GoRoute(
+                    path: 'summary',
+                    builder: (_, _) => const SummaryScreen(),
+                  ),
+                ],
               ),
             ],
           ),

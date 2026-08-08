@@ -1,0 +1,246 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../application/usecases/convert_action_item_to_task.dart';
+import '../../application/usecases/save_meeting.dart';
+import '../../application/usecases/summarize_meeting.dart';
+import '../../domain/entities/meeting.dart';
+import '../../domain/entities/meeting_template.dart';
+import '../../domain/failures/failure.dart';
+import '../../domain/failures/result.dart';
+import '../../domain/ports/ai_credential_store.dart';
+import '../../domain/ports/ai_engine.dart';
+import '../../domain/ports/meeting_repository.dart';
+import '../../domain/ports/meeting_template_repository.dart';
+import '../tasks/task_providers.dart';
+
+/// The ports the composition root supplies. Each throws until overridden, so
+/// a missing wire fails loudly at startup instead of silently doing nothing
+/// (`docs/project-rules.md` §3 — `presentation/` may not reach into
+/// `infrastructure/`).
+final Provider<AiEngine> aiEngineProvider = Provider<AiEngine>(
+  (Ref ref) => throw UnimplementedError(
+    'aiEngineProvider must be overridden in the composition root',
+  ),
+);
+
+final Provider<AiCredentialStore> aiCredentialStoreProvider =
+    Provider<AiCredentialStore>(
+      (Ref ref) => throw UnimplementedError(
+        'aiCredentialStoreProvider must be overridden in the composition root',
+      ),
+    );
+
+final Provider<MeetingRepository> meetingRepositoryProvider =
+    Provider<MeetingRepository>(
+      (Ref ref) => throw UnimplementedError(
+        'meetingRepositoryProvider must be overridden in the composition root',
+      ),
+    );
+
+final Provider<MeetingTemplateRepository> meetingTemplateRepositoryProvider =
+    Provider<MeetingTemplateRepository>(
+      (Ref ref) => throw UnimplementedError(
+        'meetingTemplateRepositoryProvider must be overridden in the '
+        'composition root',
+      ),
+    );
+
+/// The three meeting use cases, assembled from the ports above.
+final Provider<SummarizeMeeting> summarizeMeetingProvider =
+    Provider<SummarizeMeeting>(
+      (Ref ref) => SummarizeMeeting(
+        engine: ref.watch(aiEngineProvider),
+        clock: ref.watch(clockProvider),
+        idGenerator: ref.watch(idGeneratorProvider),
+      ),
+    );
+
+final Provider<SaveMeeting> saveMeetingProvider = Provider<SaveMeeting>(
+  (Ref ref) => SaveMeeting(repository: ref.watch(meetingRepositoryProvider)),
+);
+
+final Provider<DeleteMeeting> deleteMeetingProvider = Provider<DeleteMeeting>(
+  (Ref ref) => DeleteMeeting(repository: ref.watch(meetingRepositoryProvider)),
+);
+
+final Provider<ConvertActionItemToTask> convertActionItemProvider =
+    Provider<ConvertActionItemToTask>(
+      (Ref ref) => ConvertActionItemToTask(
+        tasks: ref.watch(taskRepositoryProvider),
+        meetings: ref.watch(meetingRepositoryProvider),
+        clock: ref.watch(clockProvider),
+        idGenerator: ref.watch(idGeneratorProvider),
+      ),
+    );
+
+/// The saved meetings, straight from Drift's `watch` — the list redraws on
+/// every mutation and never polls (`sprint-01` validation rules).
+final StreamProvider<List<Meeting>> meetingListProvider =
+    StreamProvider<List<Meeting>>(
+      (Ref ref) => ref.watch(meetingRepositoryProvider).watchAll(),
+    );
+
+/// The templates the user can summarize under.
+final StreamProvider<List<MeetingTemplate>> meetingTemplateListProvider =
+    StreamProvider<List<MeetingTemplate>>(
+      (Ref ref) => ref.watch(meetingTemplateRepositoryProvider).watchAll(),
+    );
+
+/// `true` when a Claude API key is configured.
+///
+/// A `FutureProvider` rather than a cached bool so that saving a key in
+/// Settings updates the meetings screen without a restart. Note what it does
+/// **not** expose: the key itself never leaves the store (BR-08).
+final FutureProvider<bool> aiConfiguredProvider = FutureProvider<bool>(
+  (Ref ref) async => await ref.watch(aiCredentialStoreProvider).read() != null,
+);
+
+/// What the composer screen is doing right now.
+enum MeetingComposerStatus { editing, processing, failed, summarized }
+
+/// State of the "paste a transcript and summarize it" flow.
+class MeetingComposerState {
+  const MeetingComposerState({
+    this.status = MeetingComposerStatus.editing,
+    this.template,
+    this.retention = RetentionPolicy.ephemeral,
+    this.meeting,
+    this.failure,
+  });
+
+  final MeetingComposerStatus status;
+
+  /// The template the user picked. `null` until the list loads.
+  final MeetingTemplate? template;
+
+  /// **The user's BR-03 choice, made before processing.** It travels with the
+  /// meeting from here so that whatever saves it later cannot get it wrong.
+  final RetentionPolicy retention;
+
+  /// The summarized meeting, held **in memory only**. Leaving the result
+  /// screen without saving discards it, transcript and all (BR-03).
+  final Meeting? meeting;
+
+  /// Why the last attempt failed, for the retry affordance.
+  final Failure? failure;
+
+  MeetingComposerState copyWith({
+    MeetingComposerStatus? status,
+    MeetingTemplate? template,
+    RetentionPolicy? retention,
+    Meeting? meeting,
+    Failure? failure,
+    bool clearFailure = false,
+    bool clearMeeting = false,
+  }) => MeetingComposerState(
+    status: status ?? this.status,
+    template: template ?? this.template,
+    retention: retention ?? this.retention,
+    meeting: clearMeeting ? null : meeting ?? this.meeting,
+    failure: clearFailure ? null : failure ?? this.failure,
+  );
+}
+
+/// Drives the new-meeting → summary → convert flow.
+///
+/// **The transcript is not held here.** It lives in the screen's
+/// `TextEditingController` and is passed in on [summarize]; the summarized
+/// `Meeting` carries it onward in memory. Nothing writes it anywhere until
+/// [save] runs, and `SaveMeeting` strips it unless the user opted in (BR-03).
+class MeetingComposer extends Notifier<MeetingComposerState> {
+  @override
+  MeetingComposerState build() => const MeetingComposerState();
+
+  /// Chooses the template, and with it the meeting type.
+  void selectTemplate(MeetingTemplate template) {
+    state = state.copyWith(template: template);
+  }
+
+  /// Records the user's retention choice — offered **before** processing,
+  /// which is the only point at which it is an informed one (BR-03).
+  void setRetention(RetentionPolicy retention) {
+    state = state.copyWith(retention: retention);
+  }
+
+  /// Clears everything, including any in-memory transcript.
+  ///
+  /// Called when the user leaves the result screen without saving. This *is*
+  /// the discard in "leaving the screen discards it".
+  void reset() {
+    state = const MeetingComposerState();
+  }
+
+  /// Summarizes [transcript] under the selected template.
+  Future<void> summarize({
+    required String transcript,
+    required String title,
+  }) async {
+    final MeetingTemplate? template = state.template;
+    if (template == null) return;
+
+    state = state.copyWith(
+      status: MeetingComposerStatus.processing,
+      clearFailure: true,
+    );
+
+    final Result<Meeting> result = await ref.read(summarizeMeetingProvider)(
+      transcript: transcript,
+      template: template,
+      title: title,
+      retention: state.retention,
+    );
+
+    state = switch (result) {
+      Ok<Meeting>(:final Meeting value) => state.copyWith(
+        status: MeetingComposerStatus.summarized,
+        meeting: value,
+        clearFailure: true,
+      ),
+      Err<Meeting>(:final Failure failure) => state.copyWith(
+        status: MeetingComposerStatus.failed,
+        failure: failure,
+      ),
+    };
+  }
+
+  /// Persists the summary the user is looking at.
+  Future<Failure?> save() async {
+    final Meeting? meeting = state.meeting;
+    if (meeting == null) return null;
+
+    final Result<Meeting> result = await ref.read(saveMeetingProvider)(meeting);
+    return switch (result) {
+      // The stored form comes back — so the screen stops showing a transcript
+      // the app has just committed to forgetting.
+      Ok<Meeting>(:final Meeting value) => () {
+        state = state.copyWith(meeting: value);
+        return null;
+      }(),
+      Err<Meeting>(:final Failure failure) => failure,
+    };
+  }
+
+  /// Converts one action item into a task.
+  Future<Failure?> convert(String itemId) async {
+    final Meeting? meeting = state.meeting;
+    if (meeting == null) return null;
+
+    final Result<ActionItemConversion> result = await ref.read(
+      convertActionItemProvider,
+    )(meeting: meeting, itemId: itemId);
+
+    return switch (result) {
+      Ok<ActionItemConversion>(:final ActionItemConversion value) => () {
+        state = state.copyWith(meeting: value.meeting);
+        return null;
+      }(),
+      Err<ActionItemConversion>(:final Failure failure) => failure,
+    };
+  }
+}
+
+final NotifierProvider<MeetingComposer, MeetingComposerState>
+meetingComposerProvider =
+    NotifierProvider<MeetingComposer, MeetingComposerState>(
+      MeetingComposer.new,
+    );
