@@ -171,9 +171,13 @@ the `Generate Linux goldens` workflow and committed from its artifact, exactly
 as DEC-011 prescribes and as was done in Sprint 01. A set generated anywhere
 else, including a local WSL distribution, will not match.
 
-> ⏳ **Pending.** Until the Linux artifact is committed, the `test` job fails on
-> the 14 missing files. This is a procedural step, not a defect, and the sprint
-> does not close until it is done.
+**Done.** The workflow ran on `claude/next-phase-273c71`
+([run 31266197270](https://github.com/Aennson/norte/actions/runs/31266197270))
+and its artifact is committed. **Fourteen files added; not one of the
+thirty-seven existing files touched** — the same result the Windows
+regeneration gave, on a different rasteriser. That is the evidence that
+`NorteScreen`'s new back control is genuinely absent where it is not asked for
+rather than merely invisible on one host.
 
 ## 7. Manual test against the real Claude API
 
@@ -221,9 +225,14 @@ this one proves the fixtures resemble the model.
 - [x] Manual test with the real Claude API — §7, executed by the Developer on
       2026-08-08 and reported as passing; key not committed
 - [x] Report `docs/reports/sprint-03-report.md` — this document
-- [ ] Linux golden set committed from the workflow artifact — §6
-- [ ] GitHub Actions 100% green on the sprint PR
+- [x] Linux golden set committed from the workflow artifact (DEC-011) — §6
+- [x] GitHub Actions 100% green on the sprint PR — **PR #5**, all three jobs
+      `success` on the branch push
+      ([run 31266277483](https://github.com/Aennson/norte/actions/runs/31266277483))
+      and again on the pull request
+      ([run 31266470111](https://github.com/Aennson/norte/actions/runs/31266470111)):
+      analyze/format/imports/secrets, tests + coverage + goldens, and the E2E
+      job across all six suites. The PR reports `MERGEABLE` / `CLEAN`.
 
-**Three boxes remain.** Two are procedural (the Linux goldens, and the CI run
-that depends on them); one needs a human, a key, and a real meeting. The sprint
-is not closed until all three are recorded here.
+**Every box is checked.** The sprint is complete and PR #5 is ready for the
+Developer to merge; merging is theirs to do, not the executing AI's.
