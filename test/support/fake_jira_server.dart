@@ -75,6 +75,11 @@ class FakeJiraServer {
   /// REST call, and the shape that used to crash the adapter.
   bool forceSsoLoginPage = false;
 
+  /// When set, JSON responses are served under this content type instead of
+  /// `application/json` — what a proxy that rewrites headers, or a
+  /// deployment configured for `text/plain`, does to a perfectly good body.
+  ContentType? jsonContentType;
+
   /// Base URL to hand to the adapter as the site URL.
   String get siteUrl => 'http://${_server.address.host}:${_server.port}';
 
@@ -223,7 +228,7 @@ class FakeJiraServer {
   void _write(HttpRequest request, int status, Object? body) {
     request.response.statusCode = status;
     if (body == null) return;
-    request.response.headers.contentType = ContentType.json;
+    request.response.headers.contentType = jsonContentType ?? ContentType.json;
     request.response.write(jsonEncode(body));
   }
 }

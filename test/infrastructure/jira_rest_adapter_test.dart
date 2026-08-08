@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -348,5 +349,49 @@ void main() {
       // does, the caller sees a Failure it can pattern-match on.
       await expectLater(adapter.getIssue('PROJ-123'), throwsA(isA<Failure>()));
     });
+  });
+
+  group('JSON served under an unexpected content type', () {
+    // A proxy that rewrites headers, or a deployment configured for
+    // text/plain, leaves the body perfectly readable. Refusing it would be
+    // inventing a failure the site never had.
+    setUp(() => server.jsonContentType = ContentType.text);
+
+    test('a read still works', () async {
+      expect((await adapter.getIssue('PROJ-123')).status, 'In Progress');
+    });
+
+    test('a transition still works', () async {
+      await adapter.transitionIssue(
+        issueKey: 'PROJ-123',
+        status: 'Done',
+        operationId: 'op-1',
+      );
+
+      expect(server.issues['PROJ-123'], 'Done');
+    });
+
+    test('so does creating an issue', () async {
+      final JiraIssueSnapshot created = await adapter.createIssue(
+        projectKey: 'NEW',
+        summary: 'Review the connector PR',
+        operationId: 'op-1',
+      );
+
+      expect(created.issueKey, startsWith('NEW-'));
+    });
+  });
+
+  test('the response log names the type without the body', () async {
+    await adapter.getIssue('PROJ-123');
+
+    final String transcript = log.join(' | ');
+    // Enough to tell a JSON object from an HTML login page…
+    expect(transcript, contains('application/json'));
+    expect(transcript, contains('_Map'));
+    // …without a single byte of what the issue actually says. (The key is in
+    // the URL, which is the request line, not the body.)
+    expect(transcript, isNot(contains('In Progress')));
+    expect(transcript, isNot(contains('fields')));
   });
 }

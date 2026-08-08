@@ -62,7 +62,7 @@ class JiraRestAdapter implements JiraGateway {
   @override
   Future<JiraIssueSnapshot> getIssue(String issueKey) async {
     final JiraCredentials credentials = await _credentials();
-    final Map<String, Object?> body = await _send<Map<String, Object?>>(
+    final Map<String, Object?> body = await _sendJson(
       credentials,
       method: 'GET',
       path: '${_issuePath(credentials)}/$issueKey',
@@ -89,7 +89,7 @@ class JiraRestAdapter implements JiraGateway {
     required String operationId,
   }) async {
     final JiraCredentials credentials = await _credentials();
-    final Map<String, Object?> body = await _send<Map<String, Object?>>(
+    final Map<String, Object?> body = await _sendJson(
       credentials,
       method: 'GET',
       path: '${_issuePath(credentials)}/$issueKey/transitions',
@@ -108,7 +108,7 @@ class JiraRestAdapter implements JiraGateway {
       );
     }
 
-    await _send<Map<String, Object?>?>(
+    await _sendVoid(
       credentials,
       method: 'POST',
       path: '${_issuePath(credentials)}/$issueKey/transitions',
@@ -125,7 +125,7 @@ class JiraRestAdapter implements JiraGateway {
     required String operationId,
   }) async {
     final JiraCredentials credentials = await _credentials();
-    await _send<Map<String, Object?>?>(
+    await _sendVoid(
       credentials,
       method: 'POST',
       path: '${_issuePath(credentials)}/$issueKey/comment',
@@ -149,7 +149,7 @@ class JiraRestAdapter implements JiraGateway {
     String? description,
   }) async {
     final JiraCredentials credentials = await _credentials();
-    final Map<String, Object?> created = await _send<Map<String, Object?>>(
+    final Map<String, Object?> created = await _sendJson(
       credentials,
       method: 'POST',
       path: _issuePath(credentials),
@@ -182,9 +182,51 @@ class JiraRestAdapter implements JiraGateway {
     return credentials;
   }
 
-  /// Performs one request and translates every outcome into either a value or
-  /// a [Failure].
-  Future<T> _send<T>(
+  /// Performs one request and returns the JSON object it answered with.
+  ///
+  /// The generic version this replaced took the caller's expected type and
+  /// cast to it, which meant every unexpected body became a raw `TypeError`
+  /// somewhere up the stack. There is no cast here: what comes back is either
+  /// a JSON object or a [Failure] saying why it is not.
+  Future<Map<String, Object?>> _sendJson(
+    JiraCredentials credentials, {
+    required String method,
+    required String path,
+    Map<String, Object?>? query,
+    Object? body,
+  }) async {
+    final Response<Object?> response = await _send(
+      credentials,
+      method: method,
+      path: path,
+      query: query,
+      body: body,
+    );
+
+    // Some deployments serve JSON under a content type dio does not decode —
+    // `text/plain`, or nothing at all behind a proxy that rewrote the header.
+    // The body is still perfectly good JSON, so try it before giving up.
+    final Object? data = _decode(response.data);
+    if (data is Map) return Map<String, Object?>.from(data);
+    throw _unreadable(response.data, response.headers);
+  }
+
+  /// Performs one request whose response body the caller does not read.
+  ///
+  /// A successful transition answers `204` with nothing at all, and a comment
+  /// answers with the created comment — neither is worth parsing, and
+  /// insisting on a shape would invent failures the site never had.
+  Future<void> _sendVoid(
+    JiraCredentials credentials, {
+    required String method,
+    required String path,
+    Object? body,
+  }) async {
+    await _send(credentials, method: method, path: path, body: body);
+  }
+
+  /// The transport half: one request, every outcome a value or a [Failure].
+  Future<Response<Object?>> _send(
     JiraCredentials credentials, {
     required String method,
     required String path,
@@ -210,10 +252,7 @@ class JiraRestAdapter implements JiraGateway {
       );
       final int status = response.statusCode ?? 0;
       if (status >= 400) throw _failureFor(status, response.headers);
-
-      final Object? data = response.data;
-      if (data is! T) throw _unreadable(data, response.headers);
-      return data;
+      return response;
     } on Failure {
       rethrow;
     } on DioException catch (error) {
@@ -332,6 +371,22 @@ String? _transitionIdFor(Map<String, Object?> body, String status) {
     }
   }
   return null;
+}
+
+/// [data] as JSON, when it arrived as text that happens to be JSON.
+///
+/// Returns [data] untouched when it is already decoded, and when it is text
+/// that is not JSON — an HTML login page stays a `String`, which is how
+/// `_unreadable` recognises it.
+Object? _decode(Object? data) {
+  if (data is! String) return data;
+  final String trimmed = data.trim();
+  if (trimmed.isEmpty) return data;
+  try {
+    return jsonDecode(trimmed);
+  } on FormatException {
+    return data;
+  }
 }
 
 /// Path of the issue collection for [credentials]' REST version.

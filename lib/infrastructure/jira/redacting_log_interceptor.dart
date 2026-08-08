@@ -66,10 +66,15 @@ class RedactingLogInterceptor extends Interceptor {
     Response<Object?> response,
     ResponseInterceptorHandler handler,
   ) {
+    // The content type and the decoded Dart type, never the body itself
+    // (BR-08). Between them they answer the only question a 2xx that the
+    // adapter could not read leaves open: what did the site actually send?
     log(
       redact(
         '← ${response.statusCode} ${response.requestOptions.method} '
-        '${response.requestOptions.uri.path}',
+        '${response.requestOptions.uri.path} '
+        '${response.headers.value(Headers.contentTypeHeader) ?? 'no type'} '
+        'as ${response.data.runtimeType}',
       ),
     );
     handler.next(response);
