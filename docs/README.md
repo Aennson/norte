@@ -14,7 +14,7 @@ This folder contains **everything an executing AI needs to implement and test th
    3. [`design-system.md`](design-system.md) — mandatory visual tokens (inspired by Claude Code), components, and layout.
    4. [`testing-strategy.md`](testing-strategy.md) — pyramid, fakes, test case format, E2E, and evals.
 2. **Project premise — languages (BR-11):** the system supports **English (en), Brazilian Portuguese (pt-BR), and Italian (it)**. Every user-facing string is a localized ARB resource from Sprint 00 on (English is the template/fallback); the three locales stay in key parity, enforced by test S00-UT-06 in every sprint.
-3. **Execute the sprints in order** (00 → 08). Each sprint has *Entry Criteria* (verify before starting) and a *Definition of Done* (verify before closing). Do not mix sprint scopes.
+3. **Execute the sprints in order** (00 → 09; 00–08 are v1.0, 09 opens v1.1). Each sprint has *Entry Criteria* (verify before starting) and a *Definition of Done* (verify before closing). Do not mix sprint scopes.
    - **Mandatory Git workflow** ([`project-rules.md §7`](project-rules.md)): `master` is protected; every new feature is born on a **separate branch created as a worktree**; at the end of each sprint, a **PR to `master`** that is only merged with **GitHub Actions 100% green**. Commits authored by the Developer, the AI as a contributor (`Co-Authored-By`). **Premise: everything 100%** — no merge with a failing test, a warning, or a pending job.
 4. **Every test is already specified** with an ID, "what it validates", entry criteria, and exit criteria. Implement exactly what is specified (you may add tests, never remove any) and name each test with its ID: `test('S01-UT-01: ...')`.
 5. When a sprint is finished, write the report in `docs/reports/sprint-XX-report.md` with the evidence required by the DoD.
@@ -45,6 +45,7 @@ This folder contains **everything an executing AI needs to implement and test th
 | [06 — Reminders](sprints/sprint-06-reminders.md) | Voice reminders + notifications on all 3 platforms | S06: 4 UT · 2 IT · 1 GT · 2 E2E |
 | [07 — Copilot CLI](sprints/sprint-07-copilot-cli.md) | Local Windows engine, watchdog, fallback, engine settings | S07: 5 UT · 1 CT · 1 IT · 1 GT · 2 E2E |
 | [08 — Hardening](sprints/sprint-08-hardening.md) | LGPD, wipe, evals in CI, global regression, v1.0 release | S08: 2 UT · 2 IT · 1 GT · 2 E2E + REG suite |
+| [09 — Gateway access](sprints/sprint-09-gateway-access.md) *(v1.1)* | Proxy support and a held browser session for a Jira behind a corporate gateway | S09: 4 UT · 3 IT · 1 CT · 1 GT · 2 E2E + 1 MT |
 
 ## ✅ Gate summary (valid in every sprint)
 

@@ -1,6 +1,6 @@
 ---
 name: sprint-executor
-description: Use when starting, executing, or closing a Norte sprint (sprint-00 through sprint-08) — planning sprint work, checking entry criteria, delivering scope items, running quality gates, writing the sprint report, or preparing the end-of-sprint PR. Also use when asked "what's next" in this project.
+description: Use when starting, executing, or closing a Norte sprint (sprint-00 through sprint-09) — planning sprint work, checking entry criteria, delivering scope items, running quality gates, writing the sprint report, or preparing the end-of-sprint PR. Also use when asked "what's next" in this project.
 ---
 
 # Executing a Norte sprint

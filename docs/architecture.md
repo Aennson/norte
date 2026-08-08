@@ -398,6 +398,10 @@ lib/
 
 **Out of scope for v1.0:** Jira OAuth, system audio capture (loopback), automatic bidirectional sync, multi-user, TTS responses.
 
+### 14.1 v1.1 — first item
+
+9. **Gateway access:** proxy support, and a browser session held by the app, for a Jira that a corporate network control stands in front of (`docs/sprints/sprint-09-gateway-access.md`). Scheduled after v1.0 closes: nothing in Sprints 03–08 depends on it, and it is the only sprint whose acceptance needs a particular corporate network to demonstrate.
+
 ---
 
 ## 15. Risks and Mitigations
