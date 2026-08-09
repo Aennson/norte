@@ -10,7 +10,7 @@ Norte is a personal productivity assistant for developers (Flutter — Android, 
 2. `docs/project-rules.md` — quality gates G1–G6, layer dependency rule, business rules BR-01..BR-11, Git workflow. **This document is law.**
 3. `docs/design-system.md` — visual tokens, components, layout (Claude Code-inspired).
 4. `docs/testing-strategy.md` — test types, fakes, specification format, evals.
-5. The current sprint file in `docs/sprints/` — execute sprints strictly in order (00 → 10; 00–08 deliver v1.0, 09 opens v1.1, 10 is last of all and instruments what every other sprint built).
+5. The current sprint file in `docs/sprints/` — execute sprints strictly in order (00 → 10; 00–08 deliver v1.0, 09 opens v1.1, 10 is last of all and instruments what every other sprint built). **Lettered sprints run in alphabetical order at their number** (05 → 05a → 05b → 06): they exist because the numbering had no room, not because they are optional (DEC-030).
 
 ## Hard rules digest
 

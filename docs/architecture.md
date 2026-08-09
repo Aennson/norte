@@ -279,19 +279,46 @@ deletes, a wrong Jira write is a change their whole team saw.
 Jira intents identify their target by an issue key, which is unambiguous.
 A local task has no such handle: the user says part of its title.
 
-`taskRef` is therefore matched against titles, case- and accent-insensitively,
-and resolved in this order:
+`taskRef` is matched against titles case- and accent-insensitively, through a
+**ladder of four tiers**. Each tier is exhausted before the next is tried, and
+the first that yields **exactly one** task wins:
 
-1. **Exactly one task contains the phrase** → that task.
-2. **Several do** → the app asks which, listing them, exactly as a missing slot
-   is asked for. It does not guess: two tasks called "Ligar para Samara" and
-   "Ligar para Samara de novo" are a question, not a coin toss.
-3. **None does** → the app says so and changes nothing.
+| Tier | Rule | Deterministic? |
+|---|---|---|
+| 1 | The folded title **is** the phrase | yes |
+| 2 | The folded title **contains** the phrase | yes |
+| 3 | The **squashed** title contains the squashed phrase — fold, then drop every rune that is not a letter or a digit | yes |
+| 4 | Similarity ≥ `TextMatch.similarityThreshold`, and the best score clears the runner-up by `similarityMargin` | no |
 
-The same rule governs `updateTask`, `deleteTask` and `commentTask`. A
-destructive action on the wrong row is the failure this ordering exists to
+Within any tier: **several matches** → the app asks which, listing them,
+exactly as a missing slot is asked for. It does not guess — two tasks called
+"Ligar para Samara" and "Ligar para Samara de novo" are a question, not a coin
+toss. **No tier matches** → the app says so and changes nothing.
+
+Tier 1 exists so that a title which *is* the phrase is not held hostage by a
+longer one containing it; without it "Ligar para Samara" could never be acted
+on while "Ligar para Samara de novo" existed.
+
+Tier 3 exists because people spell identifiers out loud with spaces a tracker
+does not write. `HEROBRAZIL-762` heard as "Hero Brazil-762" is not a mishearing
+and must not be treated as one — both squash to `herobrazil762`, so no
+threshold is consulted (Sprint 05b).
+
+**Digits are never approximate.** If the phrase and a candidate both carry
+digit runs and the sets differ, that candidate is excluded from tiers 3 and 4
+outright. `herobrazil762` and `herobrazil763` differ by one character and score
+identically to `herobrasil762` under any edit-distance metric — one is the same
+chamado spelled differently and the other is a different chamado, and no
+scoring function can tell them apart. Letters may be misheard; a number either
+matches or the app asks (DEC-035).
+
+The same ladder governs `updateTask`, `deleteTask` and `commentTask`. A
+destructive action on the wrong row is the failure the ordering exists to
 prevent, which is why `deleteTask` also confirms unconditionally — the
-confidence threshold of BR-04 is a floor here, not a gate.
+confidence threshold of BR-04 is a floor here, not a gate — and why the outcome
+of a mutating local intent **names the row it acted on**, so a resolution the
+user did not expect is visible the moment it happens rather than the next time
+they read the list.
 
 #### 6.3.2 Slot vocabularies
 
@@ -484,6 +511,12 @@ lib/
 5a. **Task commands:** the local-task half of §6.3 — `updateTask`,
    `deleteTask`, `commentTask`, `createTask` with full attributes — plus
    multi-status filtering and search on the Tasks screen.
+5b. **Approximate `taskRef`:** the resolution ladder of §6.3.1, so a spoken
+   reference finds the task the user meant when the transcript spells it
+   differently from the title — and never finds a different one
+   (`docs/sprints/sprint-05b-task-ref-matching.md`). A defect against 5a,
+   found in manual use; scheduled immediately after it because a naming
+   feature that cannot name half the user's tasks is not finished.
 6. **Voice reminders** + notifications on all 3 platforms.
 7. **CopilotCliEngine** (Windows) + fallback + engine settings.
 8. **Hardening:** PII redactor, wipe, intent evals in CI.

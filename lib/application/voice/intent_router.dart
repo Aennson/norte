@@ -7,11 +7,15 @@ import '../../domain/failures/failure.dart';
 import '../../domain/failures/result.dart';
 import '../../domain/ports/task_repository.dart';
 import '../../domain/ports/voice_settings_store.dart';
+import '../../domain/services/text_match.dart';
 import '../usecases/add_jira_comment.dart';
+import '../usecases/comment_task.dart';
 import '../usecases/create_reminder.dart';
 import '../usecases/create_task.dart';
+import '../usecases/delete_task.dart';
 import '../usecases/refresh_jira_status.dart';
 import '../usecases/update_jira_status.dart';
+import '../usecases/update_task.dart';
 
 /// Why the app is asking before it acts.
 enum ConfirmationReason {
@@ -21,6 +25,10 @@ enum ConfirmationReason {
   /// The action writes to Jira and the user has left "always confirm Jira
   /// writes" on (`docs/architecture.md` §6.2).
   jiraWrite,
+
+  /// The action deletes a task. Asked **at any confidence** — there is no undo
+  /// in v1.0 (`sprint-05a` validation rules).
+  deletion,
 }
 
 /// What routing an intent decided.
@@ -37,12 +45,13 @@ final class IntentExecuted extends RouteOutcome {
     this.operation,
     this.reminder,
     this.status,
+    this.deletedTitle,
   });
 
   final VoiceIntent intent;
 
-  /// The task created by `createTask`, or the one a Jira write was queued
-  /// against.
+  /// The task created by `createTask`, the one a local intent changed, or the
+  /// one a Jira write was queued against.
   final Task? task;
 
   /// The queued Jira operation, for `updateJira` and `addComment` (BR-05).
@@ -53,14 +62,31 @@ final class IntentExecuted extends RouteOutcome {
 
   /// The status `queryStatus` read back.
   final String? status;
+
+  /// Title of the task `deleteTask` removed.
+  ///
+  /// The row is gone, so [task] cannot carry it, and "deleted" without saying
+  /// *what* is the one outcome message a user cannot check.
+  final String? deletedTitle;
 }
 
 /// Nothing ran. The user has to say yes first.
 final class ConfirmationRequired extends RouteOutcome {
-  const ConfirmationRequired({required this.intent, required this.reason});
+  const ConfirmationRequired({
+    required this.intent,
+    required this.reason,
+    this.task,
+  });
 
   final VoiceIntent intent;
   final ConfirmationReason reason;
+
+  /// The local task the action would act on, once `taskRef` has resolved.
+  ///
+  /// Resolution happens **before** the confirmation guard so the sheet can
+  /// name the row: "delete a task" is not a question anybody can answer, and
+  /// "delete *Ligar para Samara*" is.
+  final Task? task;
 }
 
 /// Nothing ran. One required slot is missing and the app asks for that slot
@@ -71,13 +97,44 @@ final class SlotMissing extends RouteOutcome {
   final VoiceIntent intent;
 
   /// The slot to ask about — `issueKey`, `transition`, `comment`, `title`,
-  /// `text` or `triggerAt`.
+  /// `text`, `triggerAt`, `taskRef` or `change`.
   ///
   /// **A slot name, not a question.** The wording is a UI string and must
   /// come from the ARB resources in all three languages (BR-11); a router
   /// that returned "Which ticket?" would be an English literal in the
   /// application layer.
   final String slot;
+}
+
+/// Nothing ran, and nothing was changed: no task's title contains the phrase
+/// the user said (`docs/architecture.md` §6.3.1, case 3).
+final class TaskNotFound extends RouteOutcome {
+  const TaskNotFound({required this.intent, required this.reference});
+
+  final VoiceIntent intent;
+
+  /// The phrase that matched nothing, so the app can say which one it was.
+  final String reference;
+}
+
+/// Nothing ran. Several tasks match the phrase and the app asks which
+/// (§6.3.1, case 2).
+///
+/// **It does not guess.** Two tasks called "Ligar para Samara" and "Ligar para
+/// Samara de novo" are a question, not a coin toss — and the destructive case
+/// is why: a wrong row deleted is not recoverable in v1.0.
+final class TaskAmbiguous extends RouteOutcome {
+  const TaskAmbiguous({
+    required this.intent,
+    required this.reference,
+    required this.candidates,
+  });
+
+  final VoiceIntent intent;
+  final String reference;
+
+  /// Every task the phrase matched, in list order. Always two or more.
+  final List<Task> candidates;
 }
 
 /// Nothing ran, and nothing will: the utterance was not understood.
@@ -95,14 +152,24 @@ final class IntentNotUnderstood extends RouteOutcome {
 /// that talked to Jira itself would be a second implementation of the offline
 /// queue, discovered the first time a user spoke a command on the underground.
 ///
+/// **The local intents cannot reach Jira at all** (BR-01). `commentTask` holds
+/// [CommentTask], which holds a task repository and nothing else, so there is
+/// no code path from a spoken note to a linked issue — S05a-UT-06 asserts the
+/// outbox stays empty, and the structure is what makes that true rather than a
+/// rule someone has to remember.
+///
 /// **The order of the guards is the safety.** Understood, then complete, then
-/// permitted, then executed — and each guard returns without touching a use
-/// case. That is why S05-UT-03 can assert the spy was never called rather than
-/// asserting on a value it returned.
+/// *resolved*, then permitted, then executed — and each guard returns without
+/// touching a use case. Resolution sits before permission on purpose: a
+/// confirmation sheet that cannot name the row it is about is not a
+/// confirmation.
 class IntentRouter {
   const IntentRouter({
     required this.tasks,
     required this.createTask,
+    required this.updateTask,
+    required this.deleteTask,
+    required this.commentTask,
     required this.createReminder,
     required this.updateJiraStatus,
     required this.addJiraComment,
@@ -112,6 +179,9 @@ class IntentRouter {
 
   final TaskRepository tasks;
   final CreateTask createTask;
+  final UpdateTask updateTask;
+  final DeleteTask deleteTask;
+  final CommentTask commentTask;
   final CreateReminder createReminder;
   final UpdateJiraStatus updateJiraStatus;
   final AddJiraComment addJiraComment;
@@ -132,9 +202,14 @@ class IntentRouter {
   /// router returned earlier. It skips the confirmation guards and **only**
   /// those: an unknown intent stays unknown and a missing slot stays missing,
   /// because neither is something a confirmation could supply.
+  ///
+  /// [taskId] is the user having answered a [TaskAmbiguous] by naming one of
+  /// the candidates. It replaces the `taskRef` lookup rather than refining it,
+  /// so answering the question cannot re-open it.
   Future<Result<RouteOutcome>> route(
     VoiceIntent intent, {
     bool confirmed = false,
+    String? taskId,
   }) async {
     if (intent.type == IntentType.unknown) {
       return const Ok<RouteOutcome>(IntentNotUnderstood());
@@ -145,17 +220,29 @@ class IntentRouter {
       return Ok<RouteOutcome>(SlotMissing(intent: intent, slot: missing.first));
     }
 
+    Task? target;
+    if (intent.type.needsTaskRef) {
+      final (Task?, RouteOutcome?) resolution = await _resolve(intent, taskId);
+      if (resolution.$2 case final RouteOutcome unresolved) {
+        return Ok<RouteOutcome>(unresolved);
+      }
+      target = resolution.$1;
+    }
+
     if (!confirmed) {
       final ConfirmationReason? reason = await _confirmationFor(intent);
       if (reason != null) {
         return Ok<RouteOutcome>(
-          ConfirmationRequired(intent: intent, reason: reason),
+          ConfirmationRequired(intent: intent, reason: reason, task: target),
         );
       }
     }
 
     return switch (intent.type) {
       IntentType.createTask => _createTask(intent),
+      IntentType.updateTask => _updateTask(intent, target!),
+      IntentType.deleteTask => _deleteTask(intent, target!),
+      IntentType.commentTask => _commentTask(intent, target!),
       IntentType.createReminder => _createReminder(intent),
       IntentType.updateJira => _updateJira(intent),
       IntentType.addComment => _addComment(intent),
@@ -166,11 +253,15 @@ class IntentRouter {
 
   /// Why [intent] needs a yes, or `null` when it may simply run.
   Future<ConfirmationReason?> _confirmationFor(VoiceIntent intent) async {
+    // Deletion is checked first because it is the only unconditional one: it
+    // asks at 0.99 as readily as at 0.40, and reporting `lowConfidence` for a
+    // confident deletion would tell the user the parse was doubtful when the
+    // irreversibility is the whole reason.
+    if (intent.type.isDestructive) return ConfirmationReason.deletion;
     if (intent.type.writesToJira) {
       final VoiceSettings preferences = await settings.read();
-      // The Jira rule is checked first because it is the stricter one: a write
-      // at 0.99 with the setting on still asks, and reporting `lowConfidence`
-      // for it would tell the user the parse was doubtful when it was not.
+      // The Jira rule is checked before the confidence one for the same
+      // reason: a write at 0.99 with the setting on still asks.
       if (preferences.alwaysConfirmJiraWrites) {
         return ConfirmationReason.jiraWrite;
       }
@@ -179,15 +270,71 @@ class IntentRouter {
     return null;
   }
 
-  // --- the five intents ---------------------------------------------------
+  // --- the local task intents ---------------------------------------------
 
   Future<Result<RouteOutcome>> _createTask(VoiceIntent intent) async {
     final Result<Task> created = await createTask(
       title: intent.slotText('title')!,
-      priority: _priorityFrom(intent.slots['priority']),
+      description: intent.slotText('description'),
+      // The vocabularies of §6.3.2, and the use case's own defaults when the
+      // utterance carried neither — `CreateTask` already says what a task with
+      // nothing said about it is.
+      status: statusFrom(intent.slots['status']) ?? TaskStatus.todo,
+      priority: priorityFrom(intent.slots['priority']) ?? Priority.medium,
       dueDate: _dateFrom(intent.slots['dueDate']),
     );
     return switch (created) {
+      Ok<Task>(:final Task value) => Ok<RouteOutcome>(
+        IntentExecuted(intent: intent, task: value),
+      ),
+      Err<Task>(:final Failure failure) => Err<RouteOutcome>(failure),
+    };
+  }
+
+  Future<Result<RouteOutcome>> _updateTask(
+    VoiceIntent intent,
+    Task target,
+  ) async {
+    final String? description = intent.slotText('description');
+    final DateTime? dueDate = _dateFrom(intent.slots['dueDate']);
+    final Result<Task> updated = await updateTask(
+      id: target.id,
+      title: intent.slotText('title'),
+      description: description == null ? null : Patch<String?>(description),
+      status: statusFrom(intent.slots['status']),
+      priority: priorityFrom(intent.slots['priority']),
+      dueDate: dueDate == null ? null : Patch<DateTime?>(dueDate),
+    );
+    return switch (updated) {
+      Ok<Task>(:final Task value) => Ok<RouteOutcome>(
+        IntentExecuted(intent: intent, task: value),
+      ),
+      Err<Task>(:final Failure failure) => Err<RouteOutcome>(failure),
+    };
+  }
+
+  Future<Result<RouteOutcome>> _deleteTask(
+    VoiceIntent intent,
+    Task target,
+  ) async {
+    final Result<void> removed = await deleteTask(target.id);
+    return switch (removed) {
+      Ok<void>() => Ok<RouteOutcome>(
+        IntentExecuted(intent: intent, deletedTitle: target.title),
+      ),
+      Err<void>(:final Failure failure) => Err<RouteOutcome>(failure),
+    };
+  }
+
+  Future<Result<RouteOutcome>> _commentTask(
+    VoiceIntent intent,
+    Task target,
+  ) async {
+    final Result<Task> commented = await commentTask(
+      id: target.id,
+      body: intent.slotText('comment')!,
+    );
+    return switch (commented) {
       Ok<Task>(:final Task value) => Ok<RouteOutcome>(
         IntentExecuted(intent: intent, task: value),
       ),
@@ -207,6 +354,8 @@ class IntentRouter {
       Err<Reminder>(:final Failure failure) => Err<RouteOutcome>(failure),
     };
   }
+
+  // --- the Jira intents ----------------------------------------------------
 
   Future<Result<RouteOutcome>> _updateJira(VoiceIntent intent) async {
     final String key = intent.slotText('issueKey')!;
@@ -266,6 +415,61 @@ class IntentRouter {
 
   // --- helpers ------------------------------------------------------------
 
+  /// Resolves `taskRef` (§6.3.1) into either the one task it named or the
+  /// outcome that says why it named none.
+  ///
+  /// Exactly one half of the pair is ever non-null. A record rather than a
+  /// sealed type because the alternative would be two more classes used in one
+  /// place, and rather than a field because a router that remembered anything
+  /// between calls would be a router two concurrent commands could confuse.
+  Future<(Task?, RouteOutcome?)> _resolve(
+    VoiceIntent intent,
+    String? taskId,
+  ) async {
+    final String reference = intent.slotText('taskRef')!;
+    final List<Task> all = await tasks.listAll();
+
+    if (taskId != null) {
+      // The user has already answered the question. A chosen id that no longer
+      // names a row is a task deleted between the question and the answer, and
+      // it reads as "no such task" rather than re-opening the choice.
+      for (final Task task in all) {
+        if (task.id == taskId) return (task, null);
+      }
+      return (null, TaskNotFound(intent: intent, reference: reference));
+    }
+
+    final List<Task> matches = <Task>[
+      for (final Task task in all)
+        if (TextMatch.contains(task.title, reference)) task,
+    ];
+
+    if (matches.isEmpty) {
+      return (null, TaskNotFound(intent: intent, reference: reference));
+    }
+    if (matches.length == 1) return (matches.single, null);
+
+    // One more chance before asking: a title that *is* the phrase, folded,
+    // beats every task that merely contains it. Without this, "Ligar para
+    // Samara" could never be acted on while "Ligar para Samara de novo"
+    // existed — the more specific row would hold the shorter one hostage.
+    final String wanted = TextMatch.fold(reference);
+    final List<Task> exact = <Task>[
+      for (final Task task in matches)
+        if (TextMatch.fold(task.title) == wanted) task,
+    ];
+    if (exact.length == 1) return (exact.single, null);
+
+    return (
+      null,
+      TaskAmbiguous(
+        intent: intent,
+        reference: reference,
+        candidates: List<Task>.unmodifiable(matches),
+      ),
+    );
+  }
+
   /// The local task linked to [issueKey], case-insensitively, or `null`.
   ///
   /// Case-insensitive because the key arrives from a transcript: a service
@@ -283,15 +487,31 @@ class IntentRouter {
   Failure _notLinked(String issueKey) =>
       NotLinkedFailure('no local task is linked to $issueKey');
 
-  Priority _priorityFrom(Object? value) => switch (value) {
-    'low' => Priority.low,
-    'high' => Priority.high,
-    'urgent' => Priority.urgent,
-    _ => Priority.medium,
-  };
-
   DateTime? _dateFrom(Object? value) => switch (value) {
     final String text => DateTime.tryParse(text)?.toUtc(),
     _ => null,
   };
 }
+
+/// The `status` vocabulary of §6.3.2, or `null` for anything else.
+///
+/// **An unrecognised value is absent, not a default.** A model that answered
+/// `"status": "quase pronto"` has not said `todo`, and silently writing one
+/// would be the app inventing a change the user never asked for (S05a-UT-02).
+TaskStatus? statusFrom(Object? value) => switch (value) {
+  final String name =>
+    TaskStatus.values
+        .where((TaskStatus status) => status.name == name)
+        .firstOrNull,
+  _ => null,
+};
+
+/// The `priority` vocabulary of §6.3.2, or `null` for anything else. Absent
+/// rather than defaulted, for the same reason as [statusFrom].
+Priority? priorityFrom(Object? value) => switch (value) {
+  final String name =>
+    Priority.values
+        .where((Priority priority) => priority.name == name)
+        .firstOrNull,
+  _ => null,
+};

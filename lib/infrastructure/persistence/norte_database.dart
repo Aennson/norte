@@ -57,6 +57,48 @@ class TaskRows extends Table {
   Set<Column<Object>> get primaryKey => <Column<Object>>{id};
 }
 
+/// Storage for the local notes kept on a task (`docs/architecture.md` §3.2).
+///
+/// A child table rather than a JSON column on `tasks`, unlike `tags`: a
+/// comment has three fields of its own and the list grows without bound, and
+/// a blob would make "the comments of this task" a string parse rather than a
+/// query.
+///
+/// **Note what is not here — no Jira column, and no outbox reference.** A
+/// comment on this table has no representation that could reach a linked
+/// issue (BR-01, §3.2). Pushing a comment to Jira is `addComment`, which
+/// writes to `outbox` and never to this table.
+class TaskCommentRows extends Table {
+  @override
+  String get tableName => 'task_comments';
+
+  /// UUID v4 from the use case, unique across every task.
+  TextColumn get id => text()();
+
+  /// Owning task. Not declared as a foreign key: SQLite enforces those only
+  /// with `PRAGMA foreign_keys = ON`, which this database does not set, so a
+  /// declaration here would read as a guarantee nothing implements.
+  /// `DriftTaskRepository.delete` removes the comments itself.
+  TextColumn get taskId => text().named('task_id')();
+
+  /// What the user wrote, already trimmed by the use case.
+  TextColumn get body => text()();
+
+  /// Milliseconds since epoch, UTC (as in `tasks`).
+  IntColumn get createdAtMs => integer().named('created_at_ms')();
+
+  /// Position within the task's list, from zero.
+  ///
+  /// Ordering by [createdAtMs] would be *nearly* right and wrong exactly where
+  /// it matters: two comments written in the same millisecond — which is every
+  /// pair of them under a pinned test clock — would come back in whatever
+  /// order SQLite chose. Insertion order is data, so it is stored.
+  IntColumn get position => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
 /// Storage for the queue of Jira writes waiting to be dispatched (BR-05).
 ///
 /// The queue is durable on purpose: an action taken with no network is still
@@ -241,6 +283,7 @@ class SettingsRows extends Table {
 @DriftDatabase(
   tables: <Type>[
     TaskRows,
+    TaskCommentRows,
     OutboxRows,
     MeetingRows,
     MeetingTemplateRows,
@@ -252,7 +295,7 @@ class NorteDatabase extends _$NorteDatabase {
   NorteDatabase(super.executor);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   /// Every upgrade is additive, and deliberately so: a user who has been
   /// running Norte since Sprint 01 keeps every task, link and queued
@@ -262,6 +305,7 @@ class NorteDatabase extends _$NorteDatabase {
   /// * 2 → 3 adds meetings and templates, and the tasks table gains the
   ///   back-reference to the meeting an action item came from.
   /// * 3 → 4 adds reminders and the preferences table.
+  /// * 4 → 5 adds the local task comments (`sprint-05a`).
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (Migrator m) => m.createAll(),
@@ -276,6 +320,7 @@ class NorteDatabase extends _$NorteDatabase {
         await m.createTable(reminderRows);
         await m.createTable(settingsRows);
       }
+      if (from < 5) await m.createTable(taskCommentRows);
     },
   );
 }

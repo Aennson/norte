@@ -60,7 +60,7 @@ class VoiceHost extends ConsumerWidget {
       final VoiceIntent intent = confirming.intent;
       return ConfirmSheet(
         title: l10n.voiceConfirmTitle,
-        action: intentDescription(l10n, intent),
+        action: intentDescription(l10n, intent, task: confirming.task),
         reason: confirmationReasonText(l10n, confirming.reason),
         confidence: intent.confidence,
         confidenceLabel: l10n.voiceConfidenceLabel(
@@ -114,6 +114,13 @@ class VoiceHost extends ConsumerWidget {
     if (session.notUnderstood) return l10n.voiceNotUnderstood;
     final asking = session.askingFor;
     if (asking != null) return slotQuestion(l10n, asking.slot);
+    // Both of these outrank an outcome for the same reason a failure does: an
+    // earlier command's "Task created" showing under a question the app is
+    // asking right now would read as the answer to it.
+    final choosing = session.choosing;
+    if (choosing != null) return taskAmbiguousText(l10n, choosing);
+    final notFound = session.notFound;
+    if (notFound != null) return taskNotFoundText(l10n, notFound);
     final executed = session.executed;
     if (executed != null) return executedText(l10n, executed);
 

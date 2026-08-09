@@ -1,10 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:norte/application/usecases/add_jira_comment.dart';
+import 'package:norte/application/usecases/comment_task.dart';
 import 'package:norte/application/usecases/create_reminder.dart';
 import 'package:norte/application/usecases/create_task.dart';
+import 'package:norte/application/usecases/delete_task.dart';
 import 'package:norte/application/usecases/refresh_jira_status.dart';
 import 'package:norte/application/usecases/update_jira_status.dart';
+import 'package:norte/application/usecases/update_task.dart';
 import 'package:norte/application/voice/intent_router.dart';
 import 'package:norte/domain/entities/jira_link.dart';
 import 'package:norte/domain/entities/outbox_operation.dart';
@@ -19,6 +22,12 @@ import 'package:norte/domain/ports/task_repository.dart';
 import '../fakes/fake_voice_settings_store.dart';
 
 class _SpyCreateTask extends Mock implements CreateTask {}
+
+class _SpyUpdateTask extends Mock implements UpdateTask {}
+
+class _SpyDeleteTask extends Mock implements DeleteTask {}
+
+class _SpyCommentTask extends Mock implements CommentTask {}
 
 class _SpyCreateReminder extends Mock implements CreateReminder {}
 
@@ -56,6 +65,9 @@ final OutboxOperation queuedOperation = OutboxOperation(
 /// S05-UT-03, S05-UT-04 and S05-UT-05 — the intent router.
 void main() {
   late _SpyCreateTask createTask;
+  late _SpyUpdateTask updateTask;
+  late _SpyDeleteTask deleteTask;
+  late _SpyCommentTask commentTask;
   late _SpyCreateReminder createReminder;
   late _SpyUpdateJiraStatus updateJiraStatus;
   late _SpyAddJiraComment addJiraComment;
@@ -65,10 +77,14 @@ void main() {
   setUpAll(() {
     registerFallbackValue(linkedTask);
     registerFallbackValue(Priority.medium);
+    registerFallbackValue(TaskStatus.todo);
   });
 
   setUp(() {
     createTask = _SpyCreateTask();
+    updateTask = _SpyUpdateTask();
+    deleteTask = _SpyDeleteTask();
+    commentTask = _SpyCommentTask();
     createReminder = _SpyCreateReminder();
     updateJiraStatus = _SpyUpdateJiraStatus();
     addJiraComment = _SpyAddJiraComment();
@@ -79,6 +95,8 @@ void main() {
     when(
       () => createTask(
         title: any(named: 'title'),
+        description: any(named: 'description'),
+        status: any(named: 'status'),
         priority: any(named: 'priority'),
         dueDate: any(named: 'dueDate'),
       ),
@@ -125,6 +143,9 @@ void main() {
       IntentRouter(
         tasks: tasks,
         createTask: createTask,
+        updateTask: updateTask,
+        deleteTask: deleteTask,
+        commentTask: commentTask,
         createReminder: createReminder,
         updateJiraStatus: updateJiraStatus,
         addJiraComment: addJiraComment,
@@ -163,6 +184,8 @@ void main() {
         verifyNever(
           () => createTask(
             title: any(named: 'title'),
+            description: any(named: 'description'),
+            status: any(named: 'status'),
             priority: any(named: 'priority'),
             dueDate: any(named: 'dueDate'),
           ),
@@ -180,6 +203,8 @@ void main() {
       verify(
         () => createTask(
           title: 'revisar PR do conector',
+          description: null,
+          status: TaskStatus.todo,
           priority: Priority.medium,
           dueDate: null,
         ),
@@ -205,6 +230,8 @@ void main() {
       verify(
         () => createTask(
           title: any(named: 'title'),
+          description: any(named: 'description'),
+          status: any(named: 'status'),
           priority: any(named: 'priority'),
           dueDate: any(named: 'dueDate'),
         ),

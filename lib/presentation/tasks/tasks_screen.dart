@@ -19,6 +19,7 @@ import 'widgets/delete_task_dialog.dart';
 import 'widgets/task_card.dart';
 import 'widgets/task_editor_sheet.dart';
 import 'widgets/task_filter_bar.dart';
+import 'widgets/task_search_field.dart';
 
 /// Tasks destination — the full local CRUD (`sprint-01`).
 ///
@@ -52,10 +53,20 @@ class TasksScreen extends ConsumerWidget {
         children: <Widget>[
           TaskFilterBar(
             query: query,
-            onStatusSelected: (TaskStatus? status) =>
-                ref.read(taskQueryProvider.notifier).filterByStatus(status),
+            onStatusToggled: (TaskStatus status) =>
+                ref.read(taskQueryProvider.notifier).toggleStatus(status),
+            onAllSelected: () =>
+                ref.read(taskQueryProvider.notifier).clearStatuses(),
             onSortSelected: (TaskSort sort) =>
                 ref.read(taskQueryProvider.notifier).sortBy(sort),
+          ),
+          const SizedBox(height: NorteSpacing.md),
+          // Below the chips: the chips choose which statuses, the box narrows
+          // whatever they left (S05a-UT-08).
+          TaskSearchField(
+            value: query.searchTerm,
+            onChanged: (String term) =>
+                ref.read(taskQueryProvider.notifier).search(term),
           ),
           const SizedBox(height: NorteSpacing.lg),
           // Above the list, because what is waiting to sync is context for
@@ -73,11 +84,18 @@ class TasksScreen extends ConsumerWidget {
               data: (List<Task> data) => data.isEmpty
                   ? EmptyState(
                       icon: LucideIcons.listChecks,
-                      // An empty database and a filter that matched nothing
-                      // are different situations and read differently.
-                      message: query.isUnfiltered
-                          ? l10n.tasksEmptyMessage
-                          : l10n.tasksFilteredEmptyMessage,
+                      // Three situations, three sentences. An empty database
+                      // needs a first task; a filter that matched nothing
+                      // needs a different filter; a search that matched
+                      // nothing needs a different word — and naming the word
+                      // back is what tells the user the app heard it
+                      // (`docs/design-system.md` §4).
+                      message: switch ((query.isUnfiltered, query.searchTerm)) {
+                        (true, _) => l10n.tasksEmptyMessage,
+                        (false, final String term) =>
+                          l10n.tasksSearchEmptyMessage(term),
+                        (false, null) => l10n.tasksFilteredEmptyMessage,
+                      },
                       actionLabel: query.isUnfiltered
                           ? l10n.tasksNewTask
                           : null,

@@ -12,18 +12,28 @@ import '../task_labels.dart';
 ///
 /// "All" plus one chip per [TaskStatus]; the ordering chips sit on the same
 /// scrolling row on narrow viewports.
+///
+/// **The status chips are multi-select** (`sprint-05a`). Tapping a second one
+/// adds it rather than replacing the first, so `{todo, blocked}` shows the
+/// union — the list a developer wants when they are looking for what is not
+/// moving. "All" is not a fifth status but the absence of the other four, and
+/// it lights up exactly when none of them is active.
 class TaskFilterBar extends StatelessWidget {
   const TaskFilterBar({
     required this.query,
-    required this.onStatusSelected,
+    required this.onStatusToggled,
+    required this.onAllSelected,
     required this.onSortSelected,
     super.key,
   });
 
   final TaskQuery query;
 
-  /// `null` clears the status filter.
-  final ValueChanged<TaskStatus?> onStatusSelected;
+  /// Adds the status to the filter, or removes it when it is already active.
+  final ValueChanged<TaskStatus> onStatusToggled;
+
+  /// Clears the status filter — the "All" chip.
+  final VoidCallback onAllSelected;
 
   final ValueChanged<TaskSort> onSortSelected;
 
@@ -31,9 +41,6 @@ class TaskFilterBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context);
     final NorteColors colors = NorteColors.of(context);
-    final TaskStatus? selected = query.statuses.isEmpty
-        ? null
-        : query.statuses.first;
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -42,17 +49,17 @@ class TaskFilterBar extends StatelessWidget {
           NorteChip(
             key: const Key('filter-all'),
             label: l10n.tasksFilterAll,
-            isSelected: selected == null,
-            onSelected: () => onStatusSelected(null),
+            isSelected: query.statuses.isEmpty,
+            onSelected: onAllSelected,
           ),
           for (final TaskStatus status in TaskStatus.values) ...<Widget>[
             const SizedBox(width: NorteSpacing.sm),
             NorteChip(
               key: Key('filter-${status.name}'),
               label: status.label(l10n),
-              isSelected: selected == status,
+              isSelected: query.statuses.contains(status),
               dotColor: status.dotColor(colors),
-              onSelected: () => onStatusSelected(status),
+              onSelected: () => onStatusToggled(status),
             ),
           ],
           // Ordering chips sit after a wider gap — same row, different job.

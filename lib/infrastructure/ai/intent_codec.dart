@@ -64,42 +64,26 @@ class IntentCodec {
   static const Map<String, Object?> schema = <String, Object?>{
     'type': 'object',
     'properties': <String, Object?>{
-      'intent': <String, Object?>{
-        'type': 'string',
-        'enum': <String>[
-          'updateJira',
-          'addComment',
-          'createTask',
-          'createReminder',
-          'queryStatus',
-          'unknown',
-        ],
-      },
+      'intent': <String, Object?>{'type': 'string', 'enum': _intents},
       'slots': <String, Object?>{
         'type': 'object',
         'properties': <String, Object?>{
-          'issueKey': _nullableString,
-          'transition': _nullableString,
-          'comment': _nullableString,
+          'taskRef': _nullableString,
           'title': _nullableString,
-          'text': _nullableString,
-          'triggerAt': _nullableString,
+          'description': _nullableString,
+          'status': _nullableString,
           'priority': _nullableString,
           'dueDate': _nullableString,
+          'comment': _nullableString,
+          'issueKey': _nullableString,
+          'transition': _nullableString,
+          'text': _nullableString,
+          'triggerAt': _nullableString,
         },
         // Strict structured output requires every declared property to be
-        // required; nullability is what lets an intent leave the seven that
-        // are not its own empty.
-        'required': <String>[
-          'issueKey',
-          'transition',
-          'comment',
-          'title',
-          'text',
-          'triggerAt',
-          'priority',
-          'dueDate',
-        ],
+        // required; nullability is what lets an intent leave the ones that are
+        // not its own empty.
+        'required': _slots,
         'additionalProperties': false,
       },
       'confidence': <String, Object?>{'type': 'number'},
@@ -112,6 +96,47 @@ class IntentCodec {
     'type': <String>['string', 'null'],
   };
 
+  /// The wire names of every intent, in the order §6.3 introduces them.
+  ///
+  /// Written out rather than derived from `IntentType.values`: the schema is
+  /// the cached prefix, and deriving it would make a stray enum value
+  /// reordering the cache key of every request in flight.
+  static const List<String> _intents = <String>[
+    'createTask',
+    'updateTask',
+    'deleteTask',
+    'commentTask',
+    'updateJira',
+    'addComment',
+    'queryStatus',
+    'createReminder',
+    'unknown',
+  ];
+
+  /// Every slot any intent can carry, in the same order as `properties` above
+  /// — the two lists are written out separately because a `const` map cannot
+  /// be built from a `for` element, and they must not drift apart.
+  ///
+  /// **Eleven required nullable slots is a measured cost, not an oversight.**
+  /// An intent that fills two of them still emits the other nine as `null`,
+  /// which is most of an 85-token answer generated one token at a time. It is
+  /// kept because strict structured output requires every declared property to
+  /// be required, and the alternative — an open `{"type": "object"}` — is
+  /// untested against this API (`sprint-05` report §7.3).
+  static const List<String> _slots = <String>[
+    'taskRef',
+    'title',
+    'description',
+    'status',
+    'priority',
+    'dueDate',
+    'comment',
+    'issueKey',
+    'transition',
+    'text',
+    'triggerAt',
+  ];
+
   /// The system message.
   ///
   /// **This is the cached prefix** (`docs/architecture.md` §7.2), so it takes
@@ -122,15 +147,33 @@ class IntentCodec {
 You convert a spoken utterance from a developer into a single structured
 intent. Answer with JSON only — no prose, no code fence.
 
-Intents and their slots:
+The user's own task list (local — none of these touches Jira):
+- createTask    {"title": "…", "description": "…" (optional),
+                 "status": one of the status values below (optional),
+                 "priority": one of the priority values below (optional),
+                 "dueDate": ISO 8601 date (optional)}
+- updateTask    {"taskRef": "…", plus at least one of "status", "priority",
+                 "title", "description", "dueDate"}
+- deleteTask    {"taskRef": "…"}
+- commentTask   {"taskRef": "…", "comment": "…"}
+
+Jira — only when an issue key or the word Jira is spoken:
 - updateJira    {"issueKey": "PROJ-123", "transition": "Done"}
 - addComment    {"issueKey": "PROJ-123", "comment": "…"}
-- createTask    {"title": "…", "priority": "low"|"medium"|"high" (optional),
-                 "dueDate": ISO 8601 date (optional)}
+- queryStatus   {"issueKey": "PROJ-123"}
+
+Reminders:
 - createReminder {"text": "…", "triggerAt": "+20m" | "+1h" | "today 15:00" |
                  "tomorrow 09:00" | "friday 15:00"}
-- queryStatus   {"issueKey": "PROJ-123"}
+
 - unknown       {}
+
+Slot vocabularies — return the value below, never a translation of it:
+- "status":   "todo" | "inProgress" | "done" | "blocked"
+- "priority": "low" | "medium" | "high" | "urgent"
+"a fazer", "pendente" and "to do" are all `todo`; "em progresso", "fazendo"
+and "in progress" are all `inProgress`; "crítica", "critical" and "urgente"
+are all `urgent`. Omit the slot entirely when the utterance did not say.
 
 Rules:
 - **A "task" is this app's own, never a Jira issue.** "cria tarefa…",
@@ -138,8 +181,18 @@ Rules:
 - **Jira must be asked for explicitly.** Choose `updateJira`, `addComment` or
   `queryStatus` only when the utterance names an issue key (`PROJ-123`) or
   says Jira outright. Without one of those, an utterance about work is about a
-  local task. When in doubt, prefer the local intent: a wrong local task is a
-  row the user deletes, a wrong Jira write is a change their team saw.
+  local task: "marca a tarefa X como concluída" is `updateTask`, "apaga a
+  tarefa X" is `deleteTask`, "comenta na tarefa X: …" is `commentTask`. When
+  in doubt, prefer the local intent: a wrong local task is a row the user
+  deletes, a wrong Jira write is a change their team saw.
+- `taskRef` is **the part of the task's title the user said**, and nothing
+  else. Strip the verb and the article — "apaga a tarefa Ligar para Samara"
+  gives `"taskRef": "Ligar para Samara"`. Never invent a fuller title than was
+  spoken: the app matches it against the list and asks when several fit, so a
+  short reference is safe and an embellished one is wrong.
+- A comment on a *task* is `commentTask` and stays on the user's own row. Only
+  an issue key or the word Jira makes it `addComment`, which their whole team
+  will read.
 - Issue keys are uppercase, `LETTERS-NUMBER`, exactly as the project writes
   them. Correct an obvious mishearing against the keys given as context, but
   never invent a key that was not spoken.

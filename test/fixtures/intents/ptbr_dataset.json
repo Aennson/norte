@@ -5,314 +5,723 @@
     {
       "id": "ptbr-001",
       "utterance": "muda o PROJ-123 pra concluído",
-      "expected": { "intent": "updateJira", "slots": { "issueKey": "PROJ-123", "transition": "Done" } },
+      "expected": {
+        "intent": "updateJira",
+        "slots": {
+          "issueKey": "PROJ-123",
+          "transition": "Done"
+        }
+      },
       "response": "{\"intent\":\"updateJira\",\"slots\":{\"issueKey\":\"PROJ-123\",\"transition\":\"Done\"},\"confidence\":0.94}"
     },
     {
       "id": "ptbr-002",
       "utterance": "move o NORTE-45 para em andamento",
-      "expected": { "intent": "updateJira", "slots": { "issueKey": "NORTE-45", "transition": "In Progress" } },
+      "expected": {
+        "intent": "updateJira",
+        "slots": {
+          "issueKey": "NORTE-45",
+          "transition": "In Progress"
+        }
+      },
       "response": "```json\n{\"intent\":\"updateJira\",\"slots\":{\"issueKey\":\"NORTE-45\",\"transition\":\"In Progress\"},\"confidence\":0.91}\n```"
     },
     {
       "id": "ptbr-003",
       "utterance": "coloca o API-7 como bloqueado",
-      "expected": { "intent": "updateJira", "slots": { "issueKey": "API-7", "transition": "Blocked" } },
+      "expected": {
+        "intent": "updateJira",
+        "slots": {
+          "issueKey": "API-7",
+          "transition": "Blocked"
+        }
+      },
       "response": "{\"intent\":\"updateJira\",\"slots\":{\"issueKey\":\"API-7\",\"transition\":\"Blocked\"},\"confidence\":0.89}"
     },
     {
       "id": "ptbr-004",
       "utterance": "passa o PROJ-88 pra revisão",
-      "expected": { "intent": "updateJira", "slots": { "issueKey": "PROJ-88", "transition": "In Review" } },
+      "expected": {
+        "intent": "updateJira",
+        "slots": {
+          "issueKey": "PROJ-88",
+          "transition": "In Review"
+        }
+      },
       "response": "{\"intent\":\"updateJira\",\"slots\":{\"issueKey\":\"PROJ-88\",\"transition\":\"Revisão\"},\"confidence\":0.77}"
     },
     {
       "id": "ptbr-005",
       "utterance": "marca o INFRA-12 como concluído",
-      "expected": { "intent": "updateJira", "slots": { "issueKey": "INFRA-12", "transition": "Done" } },
+      "expected": {
+        "intent": "updateJira",
+        "slots": {
+          "issueKey": "INFRA-12",
+          "transition": "Done"
+        }
+      },
       "response": "{\"intent\":\"updateJira\",\"slots\":{\"issueKey\":\"INFRA-12\",\"transition\":\"Done\"},\"confidence\":0.93}"
     },
     {
       "id": "ptbr-006",
       "utterance": "muda o status do WEB-301 pra a fazer",
-      "expected": { "intent": "updateJira", "slots": { "issueKey": "WEB-301", "transition": "To Do" } },
+      "expected": {
+        "intent": "updateJira",
+        "slots": {
+          "issueKey": "WEB-301",
+          "transition": "To Do"
+        }
+      },
       "response": "{\"intent\":\"updateJira\",\"slots\":{\"issueKey\":\"WEB-301\",\"transition\":\"To Do\"},\"confidence\":0.88}"
     },
     {
       "id": "ptbr-007",
       "utterance": "fecha o PROJ-15",
-      "expected": { "intent": "updateJira", "slots": { "issueKey": "PROJ-15", "transition": "Done" } },
+      "expected": {
+        "intent": "updateJira",
+        "slots": {
+          "issueKey": "PROJ-15",
+          "transition": "Done"
+        }
+      },
       "response": "{\"intent\":\"updateJira\",\"slots\":{\"issueKey\":\"PROJ-15\",\"transition\":\"Done\"},\"confidence\":0.82}"
     },
     {
       "id": "ptbr-008",
       "utterance": "reabre o NORTE-2",
-      "expected": { "intent": "updateJira", "slots": { "issueKey": "NORTE-2", "transition": "To Do" } },
+      "expected": {
+        "intent": "updateJira",
+        "slots": {
+          "issueKey": "NORTE-2",
+          "transition": "To Do"
+        }
+      },
       "response": "{\"intent\":\"updateJira\",\"slots\":{\"issueKey\":\"NORTE-2\",\"transition\":\"To Do\"},\"confidence\":0.79}"
     },
     {
       "id": "ptbr-009",
       "utterance": "põe o DATA-56 em andamento",
-      "expected": { "intent": "updateJira", "slots": { "issueKey": "DATA-56", "transition": "In Progress" } },
+      "expected": {
+        "intent": "updateJira",
+        "slots": {
+          "issueKey": "DATA-56",
+          "transition": "In Progress"
+        }
+      },
       "response": "{\"intent\":\"updateJira\",\"slots\":{\"issueKey\":\"DATA-56\",\"transition\":\"In Progress\"},\"confidence\":0.9}"
     },
     {
       "id": "ptbr-010",
       "utterance": "transiciona o PROJ-404 para concluído",
-      "expected": { "intent": "updateJira", "slots": { "issueKey": "PROJ-404", "transition": "Done" } },
+      "expected": {
+        "intent": "updateJira",
+        "slots": {
+          "issueKey": "PROJ-404",
+          "transition": "Done"
+        }
+      },
       "response": "{\"intent\":\"updateJira\",\"slots\":{\"issueKey\":\"PROJ-404\",\"transition\":\"Done\"},\"confidence\":0.95}"
     },
     {
       "id": "ptbr-011",
       "utterance": "comenta no PROJ-45: subiu pra staging",
-      "expected": { "intent": "addComment", "slots": { "issueKey": "PROJ-45", "comment": "subiu pra staging" } },
+      "expected": {
+        "intent": "addComment",
+        "slots": {
+          "issueKey": "PROJ-45",
+          "comment": "subiu pra staging"
+        }
+      },
       "response": "{\"intent\":\"addComment\",\"slots\":{\"issueKey\":\"PROJ-45\",\"comment\":\"subiu pra staging\"},\"confidence\":0.93}"
     },
     {
       "id": "ptbr-012",
       "utterance": "adiciona um comentário no NORTE-9 dizendo que o deploy foi feito",
-      "expected": { "intent": "addComment", "slots": { "issueKey": "NORTE-9", "comment": "o deploy foi feito" } },
+      "expected": {
+        "intent": "addComment",
+        "slots": {
+          "issueKey": "NORTE-9",
+          "comment": "o deploy foi feito"
+        }
+      },
       "response": "{\"intent\":\"addComment\",\"slots\":{\"issueKey\":\"NORTE-9\",\"comment\":\"o deploy foi feito\"},\"confidence\":0.9}"
     },
     {
       "id": "ptbr-013",
       "utterance": "comenta no API-3 que falta aprovação do time de segurança",
-      "expected": { "intent": "addComment", "slots": { "issueKey": "API-3", "comment": "falta aprovação do time de segurança" } },
+      "expected": {
+        "intent": "addComment",
+        "slots": {
+          "issueKey": "API-3",
+          "comment": "falta aprovação do time de segurança"
+        }
+      },
       "response": "{\"intent\":\"addComment\",\"slots\":{\"issueKey\":\"API-3\",\"comment\":\"falta aprovação\"},\"confidence\":0.71}"
     },
     {
       "id": "ptbr-014",
       "utterance": "escreve no WEB-77: aguardando retorno do cliente",
-      "expected": { "intent": "addComment", "slots": { "issueKey": "WEB-77", "comment": "aguardando retorno do cliente" } },
+      "expected": {
+        "intent": "addComment",
+        "slots": {
+          "issueKey": "WEB-77",
+          "comment": "aguardando retorno do cliente"
+        }
+      },
       "response": "{\"intent\":\"addComment\",\"slots\":{\"issueKey\":\"WEB-77\",\"comment\":\"aguardando retorno do cliente\"},\"confidence\":0.87}"
     },
     {
       "id": "ptbr-015",
       "utterance": "comenta no INFRA-21: rollback feito às 3 da manhã",
-      "expected": { "intent": "addComment", "slots": { "issueKey": "INFRA-21", "comment": "rollback feito às 3 da manhã" } },
+      "expected": {
+        "intent": "addComment",
+        "slots": {
+          "issueKey": "INFRA-21",
+          "comment": "rollback feito às 3 da manhã"
+        }
+      },
       "response": "{\"intent\":\"addComment\",\"slots\":{\"issueKey\":\"INFRA-21\",\"comment\":\"rollback feito às 3 da manhã\"},\"confidence\":0.92}"
     },
     {
       "id": "ptbr-016",
       "utterance": "comenta no PROJ-123 que o bug não reproduz mais",
-      "expected": { "intent": "addComment", "slots": { "issueKey": "PROJ-123", "comment": "o bug não reproduz mais" } },
+      "expected": {
+        "intent": "addComment",
+        "slots": {
+          "issueKey": "PROJ-123",
+          "comment": "o bug não reproduz mais"
+        }
+      },
       "response": "{\"intent\":\"addComment\",\"slots\":{\"issueKey\":\"PROJ-123\",\"comment\":\"o bug não reproduz mais\"},\"confidence\":0.88}"
     },
     {
       "id": "ptbr-017",
       "utterance": "põe um comentário no DATA-8: query otimizada, caiu de 4s pra 200ms",
-      "expected": { "intent": "addComment", "slots": { "issueKey": "DATA-8", "comment": "query otimizada, caiu de 4s pra 200ms" } },
+      "expected": {
+        "intent": "addComment",
+        "slots": {
+          "issueKey": "DATA-8",
+          "comment": "query otimizada, caiu de 4s pra 200ms"
+        }
+      },
       "response": "{\"intent\":\"addComment\",\"slots\":{\"issueKey\":\"DATA-8\",\"comment\":\"query otimizada, caiu de 4s pra 200ms\"},\"confidence\":0.86}"
     },
     {
       "id": "ptbr-018",
       "utterance": "comenta no NORTE-30 pedindo revisão do Rafael",
-      "expected": { "intent": "addComment", "slots": { "issueKey": "NORTE-30", "comment": "pedindo revisão do Rafael" } },
+      "expected": {
+        "intent": "addComment",
+        "slots": {
+          "issueKey": "NORTE-30",
+          "comment": "pedindo revisão do Rafael"
+        }
+      },
       "response": "{\"intent\":\"createTask\",\"slots\":{\"title\":\"pedir revisão do Rafael\"},\"confidence\":0.63}"
     },
     {
       "id": "ptbr-019",
       "utterance": "cria tarefa revisar PR do conector",
-      "expected": { "intent": "createTask", "slots": { "title": "revisar PR do conector" } },
+      "expected": {
+        "intent": "createTask",
+        "slots": {
+          "title": "revisar PR do conector"
+        }
+      },
       "response": "{\"intent\":\"createTask\",\"slots\":{\"title\":\"revisar PR do conector\"},\"confidence\":0.95}"
     },
     {
       "id": "ptbr-020",
       "utterance": "cria uma tarefa pra atualizar a documentação",
-      "expected": { "intent": "createTask", "slots": { "title": "atualizar a documentação" } },
+      "expected": {
+        "intent": "createTask",
+        "slots": {
+          "title": "atualizar a documentação"
+        }
+      },
       "response": "Entendi o pedido. Segue o JSON:\n{\"intent\":\"createTask\",\"slots\":{\"title\":\"atualizar a documentação\"},\"confidence\":0.92}"
     },
     {
       "id": "ptbr-021",
       "utterance": "anota uma tarefa: renovar o certificado TLS",
-      "expected": { "intent": "createTask", "slots": { "title": "renovar o certificado TLS" } },
+      "expected": {
+        "intent": "createTask",
+        "slots": {
+          "title": "renovar o certificado TLS"
+        }
+      },
       "response": "{\"intent\":\"createTask\",\"slots\":{\"title\":\"renovar o certificado TLS\"},\"confidence\":0.94}"
     },
     {
       "id": "ptbr-022",
       "utterance": "nova tarefa investigar o vazamento de memória",
-      "expected": { "intent": "createTask", "slots": { "title": "investigar o vazamento de memória" } },
+      "expected": {
+        "intent": "createTask",
+        "slots": {
+          "title": "investigar o vazamento de memória"
+        }
+      },
       "response": "{\"intent\":\"createTask\",\"slots\":{\"title\":\"investigar o vazamento de memória\"},\"confidence\":0.91}"
     },
     {
       "id": "ptbr-023",
       "utterance": "adiciona tarefa preparar a demo de sexta",
-      "expected": { "intent": "createTask", "slots": { "title": "preparar a demo de sexta" } },
+      "expected": {
+        "intent": "createTask",
+        "slots": {
+          "title": "preparar a demo de sexta"
+        }
+      },
       "response": "{\"intent\":\"createTask\",\"slots\":{\"title\":\"preparar a demo de sexta\"},\"confidence\":0.9}"
     },
     {
       "id": "ptbr-024",
       "utterance": "cria tarefa urgente corrigir o login quebrado",
-      "expected": { "intent": "createTask", "slots": { "title": "corrigir o login quebrado", "priority": "high" } },
+      "expected": {
+        "intent": "createTask",
+        "slots": {
+          "title": "corrigir o login quebrado",
+          "priority": "high"
+        }
+      },
       "response": "{\"intent\":\"createTask\",\"slots\":{\"title\":\"corrigir o login quebrado\"},\"confidence\":0.84}"
     },
     {
       "id": "ptbr-025",
       "utterance": "cria uma tarefa pra migrar o banco pro Postgres 17",
-      "expected": { "intent": "createTask", "slots": { "title": "migrar o banco pro Postgres 17" } },
+      "expected": {
+        "intent": "createTask",
+        "slots": {
+          "title": "migrar o banco pro Postgres 17"
+        }
+      },
       "response": "{\"intent\":\"createTask\",\"slots\":{\"title\":\"migrar o banco pro Postgres 17\"},\"confidence\":0.93}"
     },
     {
       "id": "ptbr-026",
       "utterance": "abre uma tarefa de escrever os testes de contrato",
-      "expected": { "intent": "createTask", "slots": { "title": "escrever os testes de contrato" } },
+      "expected": {
+        "intent": "createTask",
+        "slots": {
+          "title": "escrever os testes de contrato"
+        }
+      },
       "response": "{\"intent\":\"createTask\",\"slots\":{\"title\":\"escrever os testes de contrato\"},\"confidence\":0.89}"
     },
     {
       "id": "ptbr-027",
       "utterance": "cria tarefa responder o e-mail do jurídico",
-      "expected": { "intent": "createTask", "slots": { "title": "responder o e-mail do jurídico" } },
+      "expected": {
+        "intent": "createTask",
+        "slots": {
+          "title": "responder o e-mail do jurídico"
+        }
+      },
       "response": "{\"intent\":\"createTask\",\"slots\":{\"title\":\"responder o e-mail do jurídico\"},\"confidence\":0.9}"
     },
     {
       "id": "ptbr-028",
       "utterance": "tarefa nova: limpar as branches antigas",
-      "expected": { "intent": "createTask", "slots": { "title": "limpar as branches antigas" } },
+      "expected": {
+        "intent": "createTask",
+        "slots": {
+          "title": "limpar as branches antigas"
+        }
+      },
       "response": "{\"intent\":\"createTask\",\"slots\":{\"title\":\"limpar as branches antigas\"},\"confidence\":0.88}"
     },
     {
       "id": "ptbr-029",
       "utterance": "me lembra às 15h de responder o e-mail",
-      "expected": { "intent": "createReminder", "slots": { "text": "responder o e-mail", "triggerAt": "today 15:00" } },
+      "expected": {
+        "intent": "createReminder",
+        "slots": {
+          "text": "responder o e-mail",
+          "triggerAt": "today 15:00"
+        }
+      },
       "response": "{\"intent\":\"createReminder\",\"slots\":{\"text\":\"responder o e-mail\",\"triggerAt\":\"today 15:00\"},\"confidence\":0.93}"
     },
     {
       "id": "ptbr-030",
       "utterance": "me lembra em 20 minutos de olhar o build",
-      "expected": { "intent": "createReminder", "slots": { "text": "olhar o build", "triggerAt": "+20m" } },
+      "expected": {
+        "intent": "createReminder",
+        "slots": {
+          "text": "olhar o build",
+          "triggerAt": "+20m"
+        }
+      },
       "response": "{\"intent\":\"createReminder\",\"slots\":{\"text\":\"olhar o build\",\"triggerAt\":\"+20m\"},\"confidence\":0.94}"
     },
     {
       "id": "ptbr-031",
       "utterance": "lembrete pra amanhã às 9 revisar o orçamento",
-      "expected": { "intent": "createReminder", "slots": { "text": "revisar o orçamento", "triggerAt": "tomorrow 09:00" } },
+      "expected": {
+        "intent": "createReminder",
+        "slots": {
+          "text": "revisar o orçamento",
+          "triggerAt": "tomorrow 09:00"
+        }
+      },
       "response": "{\"intent\":\"createReminder\",\"slots\":{\"text\":\"revisar o orçamento\",\"triggerAt\":\"tomorrow 09:00\"},\"confidence\":0.91}"
     },
     {
       "id": "ptbr-032",
       "utterance": "me lembra daqui a uma hora de tomar água",
-      "expected": { "intent": "createReminder", "slots": { "text": "tomar água", "triggerAt": "+1h" } },
+      "expected": {
+        "intent": "createReminder",
+        "slots": {
+          "text": "tomar água",
+          "triggerAt": "+1h"
+        }
+      },
       "response": "{\"intent\":\"createReminder\",\"slots\":{\"text\":\"tomar água\",\"triggerAt\":\"+1h\"},\"confidence\":0.9}"
     },
     {
       "id": "ptbr-033",
       "utterance": "me lembra sexta às 15h da retro",
-      "expected": { "intent": "createReminder", "slots": { "text": "a retro", "triggerAt": "friday 15:00" } },
+      "expected": {
+        "intent": "createReminder",
+        "slots": {
+          "text": "a retro",
+          "triggerAt": "friday 15:00"
+        }
+      },
       "response": "{\"intent\":\"createReminder\",\"slots\":{\"text\":\"a retro\",\"triggerAt\":\"15:00\"},\"confidence\":0.68}"
     },
     {
       "id": "ptbr-034",
       "utterance": "cria um lembrete pra daqui a 5 minutos: reiniciar o serviço",
-      "expected": { "intent": "createReminder", "slots": { "text": "reiniciar o serviço", "triggerAt": "+5m" } },
+      "expected": {
+        "intent": "createReminder",
+        "slots": {
+          "text": "reiniciar o serviço",
+          "triggerAt": "+5m"
+        }
+      },
       "response": "{\"intent\":\"createReminder\",\"slots\":{\"text\":\"reiniciar o serviço\",\"triggerAt\":\"+5m\"},\"confidence\":0.92}"
     },
     {
       "id": "ptbr-035",
       "utterance": "me lembra hoje às 18h de fechar o ponto",
-      "expected": { "intent": "createReminder", "slots": { "text": "fechar o ponto", "triggerAt": "today 18:00" } },
+      "expected": {
+        "intent": "createReminder",
+        "slots": {
+          "text": "fechar o ponto",
+          "triggerAt": "today 18:00"
+        }
+      },
       "response": "{\"intent\":\"createReminder\",\"slots\":{\"text\":\"fechar o ponto\",\"triggerAt\":\"today 18:00\"},\"confidence\":0.89}"
     },
     {
       "id": "ptbr-036",
       "utterance": "como tá o PROJ-99?",
-      "expected": { "intent": "queryStatus", "slots": { "issueKey": "PROJ-99" } },
+      "expected": {
+        "intent": "queryStatus",
+        "slots": {
+          "issueKey": "PROJ-99"
+        }
+      },
       "response": "{\"intent\":\"queryStatus\",\"slots\":{\"issueKey\":\"PROJ-99\"},\"confidence\":0.96}"
     },
     {
       "id": "ptbr-037",
       "utterance": "qual o status do NORTE-1?",
-      "expected": { "intent": "queryStatus", "slots": { "issueKey": "NORTE-1" } },
+      "expected": {
+        "intent": "queryStatus",
+        "slots": {
+          "issueKey": "NORTE-1"
+        }
+      },
       "response": "{\"intent\":\"queryStatus\",\"slots\":{\"issueKey\":\"NORTE-1\"},\"confidence\":0.95}"
     },
     {
       "id": "ptbr-038",
       "utterance": "me fala como está o API-42",
-      "expected": { "intent": "queryStatus", "slots": { "issueKey": "API-42" } },
+      "expected": {
+        "intent": "queryStatus",
+        "slots": {
+          "issueKey": "API-42"
+        }
+      },
       "response": "{\"intent\":\"queryStatus\",\"slots\":{\"issueKey\":\"API-42\"},\"confidence\":0.92}"
     },
     {
       "id": "ptbr-039",
       "utterance": "o WEB-5 já foi concluído?",
-      "expected": { "intent": "queryStatus", "slots": { "issueKey": "WEB-5" } },
+      "expected": {
+        "intent": "queryStatus",
+        "slots": {
+          "issueKey": "WEB-5"
+        }
+      },
       "response": "{\"intent\":\"updateJira\",\"slots\":{\"issueKey\":\"WEB-5\",\"transition\":\"Done\"},\"confidence\":0.58}"
     },
     {
       "id": "ptbr-040",
       "utterance": "status do INFRA-33",
-      "expected": { "intent": "queryStatus", "slots": { "issueKey": "INFRA-33" } },
+      "expected": {
+        "intent": "queryStatus",
+        "slots": {
+          "issueKey": "INFRA-33"
+        }
+      },
       "response": "{\"intent\":\"queryStatus\",\"slots\":{\"issueKey\":\"INFRA-33\"},\"confidence\":0.94}"
     },
     {
       "id": "ptbr-041",
       "utterance": "em que pé está o DATA-77?",
-      "expected": { "intent": "queryStatus", "slots": { "issueKey": "DATA-77" } },
+      "expected": {
+        "intent": "queryStatus",
+        "slots": {
+          "issueKey": "DATA-77"
+        }
+      },
       "response": "{\"intent\":\"queryStatus\",\"slots\":{\"issueKey\":\"DATA-77\"},\"confidence\":0.87}"
     },
     {
       "id": "ptbr-042",
       "utterance": "checa o PROJ-250 pra mim",
-      "expected": { "intent": "queryStatus", "slots": { "issueKey": "PROJ-250" } },
+      "expected": {
+        "intent": "queryStatus",
+        "slots": {
+          "issueKey": "PROJ-250"
+        }
+      },
       "response": "{\"intent\":\"queryStatus\",\"slots\":{\"issueKey\":\"PROJ-250\"},\"confidence\":0.85}"
     },
     {
       "id": "ptbr-043",
       "utterance": "faz aquilo lá que combinamos",
-      "expected": { "intent": "unknown", "slots": {} },
+      "expected": {
+        "intent": "unknown",
+        "slots": {}
+      },
       "response": "{\"intent\":\"unknown\",\"slots\":{},\"confidence\":0.21}"
     },
     {
       "id": "ptbr-044",
       "utterance": "resolve isso aí",
-      "expected": { "intent": "unknown", "slots": {} },
+      "expected": {
+        "intent": "unknown",
+        "slots": {}
+      },
       "response": "{\"intent\":\"unknown\",\"slots\":{},\"confidence\":0.18}"
     },
     {
       "id": "ptbr-045",
       "utterance": "sabe o que eu falei ontem?",
-      "expected": { "intent": "unknown", "slots": {} },
+      "expected": {
+        "intent": "unknown",
+        "slots": {}
+      },
       "response": "{\"intent\":\"unknown\",\"slots\":{},\"confidence\":0.15}"
     },
     {
       "id": "ptbr-046",
       "utterance": "bom dia",
-      "expected": { "intent": "unknown", "slots": {} },
+      "expected": {
+        "intent": "unknown",
+        "slots": {}
+      },
       "response": "Desculpe, não identifiquei nenhum comando nessa frase."
     },
     {
       "id": "ptbr-047",
       "utterance": "manda ver",
-      "expected": { "intent": "unknown", "slots": {} },
+      "expected": {
+        "intent": "unknown",
+        "slots": {}
+      },
       "response": "{\"intent\":\"unknown\",\"slots\":{},\"confidence\":0.12}"
     },
     {
       "id": "ptbr-048",
       "utterance": "e aí, tudo certo?",
-      "expected": { "intent": "unknown", "slots": {} },
+      "expected": {
+        "intent": "unknown",
+        "slots": {}
+      },
       "response": "{\"intent\":\"unknown\",\"slots\":{},\"confidence\":0.09}"
     },
     {
       "id": "ptbr-049",
       "utterance": "aquele negócio do cliente",
-      "expected": { "intent": "unknown", "slots": {} },
+      "expected": {
+        "intent": "unknown",
+        "slots": {}
+      },
       "response": "{\"intent\":\"doStuff\",\"slots\":{\"what\":\"negócio do cliente\"},\"confidence\":0.44}"
     },
     {
       "id": "ptbr-050",
       "utterance": "depois a gente vê isso",
-      "expected": { "intent": "unknown", "slots": {} },
+      "expected": {
+        "intent": "unknown",
+        "slots": {}
+      },
       "response": "{\"intent\":\"unknown\",\"slots\":{},\"confidence\":0.2}"
     },
     {
       "id": "ptbr-051",
       "utterance": "toca o barco",
-      "expected": { "intent": "unknown", "slots": {} },
+      "expected": {
+        "intent": "unknown",
+        "slots": {}
+      },
       "response": "{\"slots\":{},\"confidence\":0.3}"
     },
     {
       "id": "ptbr-052",
       "utterance": "hmm deixa pra lá",
-      "expected": { "intent": "unknown", "slots": {} },
+      "expected": {
+        "intent": "unknown",
+        "slots": {}
+      },
       "response": "{\"intent\":\"unknown\",\"slots\":{},\"confidence\":0.11}"
+    },
+    {
+      "id": "ptbr-053",
+      "utterance": "marca a tarefa Ligar para Samara como concluída",
+      "expected": {
+        "intent": "updateTask",
+        "slots": {
+          "taskRef": "Ligar para Samara",
+          "status": "done"
+        }
+      },
+      "response": "{\"intent\": \"updateTask\", \"slots\": {\"taskRef\": \"Ligar para Samara\", \"status\": \"done\"}, \"confidence\": 0.93}"
+    },
+    {
+      "id": "ptbr-054",
+      "utterance": "muda a prioridade de Ligar para Samara para baixa",
+      "expected": {
+        "intent": "updateTask",
+        "slots": {
+          "taskRef": "Ligar para Samara",
+          "priority": "low"
+        }
+      },
+      "response": "{\"intent\": \"updateTask\", \"slots\": {\"taskRef\": \"Ligar para Samara\", \"priority\": \"low\"}, \"confidence\": 0.9}"
+    },
+    {
+      "id": "ptbr-055",
+      "utterance": "põe a tarefa revisar o conector em progresso",
+      "expected": {
+        "intent": "updateTask",
+        "slots": {
+          "taskRef": "revisar o conector",
+          "status": "inProgress"
+        }
+      },
+      "response": "{\"intent\": \"updateTask\", \"slots\": {\"taskRef\": \"revisar o conector\", \"status\": \"inProgress\"}, \"confidence\": 0.91}"
+    },
+    {
+      "id": "ptbr-056",
+      "utterance": "coloca a atividade preparar a demo como bloqueada",
+      "expected": {
+        "intent": "updateTask",
+        "slots": {
+          "taskRef": "preparar a demo",
+          "status": "blocked"
+        }
+      },
+      "response": "{\"intent\": \"updateTask\", \"slots\": {\"taskRef\": \"preparar a demo\", \"status\": \"bloqueada\"}, \"confidence\": 0.86}"
+    },
+    {
+      "id": "ptbr-057",
+      "utterance": "apaga a tarefa Ligar para Samara",
+      "expected": {
+        "intent": "deleteTask",
+        "slots": {
+          "taskRef": "Ligar para Samara"
+        }
+      },
+      "response": "{\"intent\": \"deleteTask\", \"slots\": {\"taskRef\": \"Ligar para Samara\"}, \"confidence\": 0.95}"
+    },
+    {
+      "id": "ptbr-058",
+      "utterance": "remove a atividade comprar café",
+      "expected": {
+        "intent": "deleteTask",
+        "slots": {
+          "taskRef": "comprar café"
+        }
+      },
+      "response": "{\"intent\": \"deleteTask\", \"slots\": {\"taskRef\": \"comprar café\"}, \"confidence\": 0.92}"
+    },
+    {
+      "id": "ptbr-059",
+      "utterance": "exclui a tarefa revisar o conector",
+      "expected": {
+        "intent": "deleteTask",
+        "slots": {
+          "taskRef": "revisar o conector"
+        }
+      },
+      "response": "{\"intent\": \"deleteTask\", \"slots\": {\"taskRef\": \"revisar o conector\"}, \"confidence\": 0.94}"
+    },
+    {
+      "id": "ptbr-060",
+      "utterance": "comenta na tarefa Ligar para Samara: cliente retornou",
+      "expected": {
+        "intent": "commentTask",
+        "slots": {
+          "taskRef": "Ligar para Samara",
+          "comment": "cliente retornou"
+        }
+      },
+      "response": "{\"intent\": \"commentTask\", \"slots\": {\"taskRef\": \"Ligar para Samara\", \"comment\": \"cliente retornou\"}, \"confidence\": 0.91}"
+    },
+    {
+      "id": "ptbr-061",
+      "utterance": "anota na atividade preparar a demo que o projetor chegou",
+      "expected": {
+        "intent": "commentTask",
+        "slots": {
+          "taskRef": "preparar a demo",
+          "comment": "o projetor chegou"
+        }
+      },
+      "response": "{\"intent\": \"commentTask\", \"slots\": {\"taskRef\": \"preparar a demo\", \"comment\": \"o projetor chegou\"}, \"confidence\": 0.84}"
+    },
+    {
+      "id": "ptbr-062",
+      "utterance": "deixa uma observação na tarefa revisar o conector: falta o teste",
+      "expected": {
+        "intent": "commentTask",
+        "slots": {
+          "taskRef": "revisar o conector",
+          "comment": "falta o teste"
+        }
+      },
+      "response": "{\"intent\": \"createTask\", \"slots\": {\"title\": \"falta o teste\"}, \"confidence\": 0.7}"
+    },
+    {
+      "id": "ptbr-063",
+      "utterance": "cria a atividade Ligar para Samara, com a descrição confirmar o orçamento, em status em progresso, de prioridade crítica",
+      "expected": {
+        "intent": "createTask",
+        "slots": {
+          "title": "Ligar para Samara",
+          "description": "confirmar o orçamento",
+          "status": "inProgress",
+          "priority": "urgent"
+        }
+      },
+      "response": "{\"intent\": \"createTask\", \"slots\": {\"title\": \"Ligar para Samara\", \"description\": \"confirmar o orçamento\", \"status\": \"inProgress\", \"priority\": \"urgent\"}, \"confidence\": 0.95}"
+    },
+    {
+      "id": "ptbr-064",
+      "utterance": "nova tarefa preparar a demo com a descrição levar o adaptador",
+      "expected": {
+        "intent": "createTask",
+        "slots": {
+          "title": "preparar a demo",
+          "description": "levar o adaptador"
+        }
+      },
+      "response": "{\"intent\": \"createTask\", \"slots\": {\"title\": \"preparar a demo\", \"description\": \"levar o adaptador\"}, \"confidence\": 0.9}"
     }
   ]
 }

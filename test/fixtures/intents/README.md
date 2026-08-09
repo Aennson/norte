@@ -35,9 +35,30 @@ untranslated transition name — plus answers in the shapes a model actually
 emits: fenced JSON, JSON behind a sentence of prose, prose with no JSON at all,
 JSON missing `intent`, and an `intent` outside the enum.
 
-Current PT-BR headroom: 50/52 intents (96.2%) and 46/52 exact slot sets
-(88.5%), against thresholds of 90% and 85%. Both are deliberately close enough
+Current PT-BR headroom: 61/64 intents (95.3%) and 56/64 exact slot sets
+(87.5%), against thresholds of 90% and 85%. Both are deliberately close enough
 that a regression in the codec moves them below the line.
+
+## Sprint 05a — the local task intents
+
+Twelve PT-BR rows and three each in EN and IT cover `updateTask`, `deleteTask`,
+`commentTask` and the rich `createTask` of §6.3. Two of the twelve are wrong on
+purpose, and both are the local mirror of a mistake the Jira rows already
+record:
+
+* **`ptbr-056`** returns `"status": "bloqueada"` — the speaker's word instead of
+  the enum name §6.3.2 asks for, exactly as `ptbr-004` does for an untranslated
+  Jira transition. Intent right, slots wrong.
+* **`ptbr-062`** reads a note on an existing task as a new task, as `ptbr-018`
+  reads a Jira comment as one. The confusion is between *creating* and
+  *annotating*, and it survives the move from Jira to the local list.
+
+Adding perfect rows only would have raised the headroom and made the thresholds
+easier to hit, which is the opposite of what they are for.
+
+**None of these utterances names an issue key or says Jira**, which is what
+S05a-UT-07 checks: it re-parses every row whose utterance carries neither and
+fails if any of them produced `updateJira`, `addComment` or `queryStatus`.
 
 ## The `triggerAt` convention
 

@@ -1,4 +1,5 @@
 import '../../application/voice/intent_router.dart';
+import '../../domain/entities/task.dart';
 import '../../domain/entities/voice_intent.dart';
 import '../../domain/failures/failure.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -17,6 +18,8 @@ String slotQuestion(AppLocalizations l10n, String slot) => switch (slot) {
   'title' => l10n.voiceAskTitle,
   'text' => l10n.voiceAskText,
   'triggerAt' => l10n.voiceAskTriggerAt,
+  'taskRef' => l10n.voiceAskTaskRef,
+  VoiceIntent.changeSlot => l10n.voiceAskChange,
   // Every slot in `IntentType.requiredSlots` is covered above. A new one
   // reaching here would be a missing translation, and showing the raw name is
   // more use to whoever has to fix it than an empty sheet.
@@ -28,28 +31,45 @@ String slotQuestion(AppLocalizations l10n, String slot) => switch (slot) {
 /// Rendered in `mono` (`docs/design-system.md` §4): it is the interpreted
 /// command, and the user is being asked to check it the way they would check a
 /// command line.
-String intentDescription(AppLocalizations l10n, VoiceIntent intent) =>
-    switch (intent.type) {
-      IntentType.updateJira => l10n.voiceActionUpdateJira(
-        intent.slotText('issueKey') ?? '',
-        intent.slotText('transition') ?? '',
-      ),
-      IntentType.addComment => l10n.voiceActionAddComment(
-        intent.slotText('issueKey') ?? '',
-        intent.slotText('comment') ?? '',
-      ),
-      IntentType.createTask => l10n.voiceActionCreateTask(
-        intent.slotText('title') ?? '',
-      ),
-      IntentType.createReminder => l10n.voiceActionCreateReminder(
-        intent.slotText('text') ?? '',
-        intent.slotText('triggerAt') ?? '',
-      ),
-      IntentType.queryStatus => l10n.voiceActionQueryStatus(
-        intent.slotText('issueKey') ?? '',
-      ),
-      IntentType.unknown => l10n.voiceNotUnderstood,
-    };
+///
+/// [task] is the row a local intent resolved to, when it has resolved. It
+/// wins over the spoken `taskRef` on purpose: the user is being asked to
+/// approve a deletion, and the title of the row that will actually go is a
+/// better thing to check than the three words they happened to say.
+String intentDescription(
+  AppLocalizations l10n,
+  VoiceIntent intent, {
+  Task? task,
+}) {
+  final String reference = task?.title ?? intent.slotText('taskRef') ?? '';
+  return switch (intent.type) {
+    IntentType.updateJira => l10n.voiceActionUpdateJira(
+      intent.slotText('issueKey') ?? '',
+      intent.slotText('transition') ?? '',
+    ),
+    IntentType.addComment => l10n.voiceActionAddComment(
+      intent.slotText('issueKey') ?? '',
+      intent.slotText('comment') ?? '',
+    ),
+    IntentType.createTask => l10n.voiceActionCreateTask(
+      intent.slotText('title') ?? '',
+    ),
+    IntentType.updateTask => l10n.voiceActionUpdateTask(reference),
+    IntentType.deleteTask => l10n.voiceActionDeleteTask(reference),
+    IntentType.commentTask => l10n.voiceActionCommentTask(
+      reference,
+      intent.slotText('comment') ?? '',
+    ),
+    IntentType.createReminder => l10n.voiceActionCreateReminder(
+      intent.slotText('text') ?? '',
+      intent.slotText('triggerAt') ?? '',
+    ),
+    IntentType.queryStatus => l10n.voiceActionQueryStatus(
+      intent.slotText('issueKey') ?? '',
+    ),
+    IntentType.unknown => l10n.voiceNotUnderstood,
+  };
+}
 
 /// Why the app is asking before it acts.
 String confirmationReasonText(
@@ -57,6 +77,7 @@ String confirmationReasonText(
   ConfirmationReason reason,
 ) => switch (reason) {
   ConfirmationReason.jiraWrite => l10n.voiceReasonJiraWrite,
+  ConfirmationReason.deletion => l10n.voiceReasonDeletion,
   ConfirmationReason.lowConfidence => l10n.voiceReasonLowConfidence,
 };
 
@@ -64,6 +85,14 @@ String confirmationReasonText(
 String executedText(AppLocalizations l10n, IntentExecuted executed) =>
     switch (executed.intent.type) {
       IntentType.createTask => l10n.voiceDoneTask,
+      IntentType.updateTask => l10n.voiceDoneTaskUpdated,
+      IntentType.deleteTask => l10n.voiceDoneTaskDeleted(
+        executed.deletedTitle ?? '',
+      ),
+      // Says where the note went. The same sentence with an issue key in it
+      // would have reached the user's whole team, and the difference is the
+      // one thing worth reporting back (BR-01, §3.2).
+      IntentType.commentTask => l10n.voiceDoneTaskCommented,
       IntentType.createReminder => l10n.voiceDoneReminder,
       // BR-05 in one sentence: the write is queued, not sent. Saying "done"
       // would promise something the outbox has not delivered yet.
@@ -74,6 +103,23 @@ String executedText(AppLocalizations l10n, IntentExecuted executed) =>
       ),
       IntentType.unknown => l10n.voiceNotUnderstood,
     };
+
+/// What the user is told when a spoken `taskRef` resolved to nothing
+/// (`docs/architecture.md` §6.3.1, case 3).
+///
+/// It names the phrase back. "No such task" alone leaves the user unable to
+/// tell a task they do not have from a word the service misheard.
+String taskNotFoundText(AppLocalizations l10n, TaskNotFound outcome) =>
+    l10n.voiceTaskNotFound(outcome.reference);
+
+/// The question asked when several tasks match (§6.3.1, case 2).
+///
+/// Every candidate is listed, because the user cannot choose between options
+/// they cannot see — and the app is deliberately not choosing for them.
+String taskAmbiguousText(AppLocalizations l10n, TaskAmbiguous outcome) =>
+    l10n.voiceTaskAmbiguous(
+      outcome.candidates.map((Task task) => task.title).join(', '),
+    );
 
 /// What the user is told when a voice command fails.
 ///

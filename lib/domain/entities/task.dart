@@ -1,6 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import 'jira_link.dart';
+import 'task_comment.dart';
 
 part 'task.freezed.dart';
 
@@ -71,6 +72,12 @@ abstract class Task with _$Task {
 
     /// User labels, kept in the order the user entered them.
     @Default(<String>[]) List<String> tags,
+
+    /// Local notes, oldest first — the order they were written in
+    /// (`sprint-05a`, S05a-IT-01).
+    ///
+    /// **None of these ever reaches Jira** (§3.2, BR-01). See [TaskComment].
+    @Default(<TaskComment>[]) List<TaskComment> comments,
 
     /// Id of the meeting whose action item produced this task, when one did
     /// and that meeting was saved (`sprint-03` validation rules).
