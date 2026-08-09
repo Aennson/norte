@@ -96,6 +96,15 @@ class FakeAiEngine implements AiEngine {
   /// When `true`, calls never complete — used to exercise timeout handling.
   bool hang = false;
 
+  /// Run at the start of every [parseIntent], before the answer is produced.
+  ///
+  /// [latency] delays with a real timer, which a `FakeClock` cannot see — so a
+  /// test that needs the *measured* clock to move during the call moves it
+  /// here. That is the only way to assert which side of the pipeline a
+  /// duration was charged to: with a frozen clock every stage is zero and the
+  /// split would pass while measuring nothing.
+  void Function()? onParseIntent;
+
   /// Raw intent answers to give, in order, ahead of the fixture map.
   final List<String> scriptedIntents = <String>[];
 
@@ -159,6 +168,7 @@ class FakeAiEngine implements AiEngine {
     IntentContext context,
   ) async {
     intentCalls.add(IntentCall(utterance: utterance, context: context));
+    onParseIntent?.call();
 
     if (hang) return Completer<VoiceIntent>().future;
     if (latency > Duration.zero) await Future<void>.delayed(latency);
@@ -200,5 +210,6 @@ class FakeAiEngine implements AiEngine {
     failWith = null;
     latency = Duration.zero;
     hang = false;
+    onParseIntent = null;
   }
 }

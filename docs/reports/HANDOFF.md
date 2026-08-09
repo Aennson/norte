@@ -53,15 +53,40 @@ manual pass found, §7.2 the latency, §7.3 how the wire format was settled.
 
 ## 3. What Sprint 05a should do first — and it is not code
 
-**Split the latency measurement.** `VoiceLatencyLog` records only
-committed-speech → intent-ready as one number, so of the 3973 ms nobody knows
-how much is Scribe's commit and how much is Claude's answer. Optimising the
-wrong half is the obvious way to spend a day for nothing.
+**Split the latency measurement.** ✅ **Done** — branch
+`claude/scribe-claude-latency-split-a53827`. `VoiceLatencySample` now carries
+three fields and `VoiceLatencyLog` a percentile for each:
 
-Instrument the two separately, measure once, *then* decide. The candidate lever
-if Claude dominates is the length of the cached system prompt in
-`IntentCodec.systemPrompt`; `effort: 'low'` and the 512-token ceiling are
-already in place.
+| Stage | Whose | Measured from |
+|---|---|---|
+| `transcription` | **Scribe** | last partial → committed segment |
+| `grounding` | ours | commit → parse request sent (the issue-key read) |
+| `parse` | **Claude** | request → intent in hand |
+
+Reading the code to instrument it corrected the premise above, and the
+correction matters more than the instrument:
+
+> **The 3973 ms never contained Scribe at all.** `_committedAt` was stamped
+> when the *commit event arrived*, so the number that missed the target was
+> already post-commit — grounding plus Claude, and grounding is a local
+> database read. The two halves were not indistinguishable; one of them was
+> simply absent. The real wait after the user's last word is 3973 ms **plus**
+> Scribe's silence window, still unmeasured against the real service.
+
+So the answer the split was meant to produce is mostly known before the first
+manual run: **Claude dominates the number we already have**, and the candidate
+lever — shortening the cached system prompt in `IntentCodec.systemPrompt` — is
+the right one. `effort: 'low'` and the 512-token ceiling are already in place.
+What the manual run now adds is Scribe's share, which is new information and
+may be the larger number of the two.
+
+**The anchor is a proxy, deliberately.** Nothing this side of the socket knows
+when the user stopped speaking; the last partial is the closest observable, and
+it trails the speech slightly, so `transcription` under-reports. That is the
+safe direction for a number used to blame a service.
+
+Next: one manual pass with the real engine, read the three p95s off the
+console, *then* decide which half to attack.
 
 Then execute `docs/sprints/sprint-05a-task-commands.md` in order. Its entry
 criteria require Sprint 05 merged.
@@ -113,7 +138,9 @@ Three habits came out of it, and they are worth keeping:
 
 ## 6. Open, and deliberately not closed
 
-- **p95 above target** — §3 above.
+- **p95 above target** — §3 above. Now instrumented per stage, but **not yet
+  re-measured against the real Scribe and the real Claude**: every number in
+  the sprint-05 report predates the split, and none of them includes Scribe.
 - **iOS never built or tested**, no `macos/` golden set (DEC-020). Sprint 08
   has to decide a two- or three-platform v1.0.
 - **The name of a transcript frame** is matched by substring rather than
