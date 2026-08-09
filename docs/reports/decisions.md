@@ -1117,3 +1117,76 @@ to have none.
 **Impact.** `lib/domain/services/text_match.dart` (new);
 `lib/application/usecases/list_tasks.dart`;
 `lib/application/voice/intent_router.dart`.
+
+---
+
+## DEC-035 — `taskRef` resolves approximately, but digits do not (Sprint 05b)
+
+**Status:** accepted.
+
+**Context.** A task titled `HEROBRAZIL-762`. The Developer said "coloca a
+atividade Hero Brazil-762 para o status de pronto" and the app answered "No
+task called 'Hero Brazil-762'". Nothing was misheard and nothing was misparsed:
+`fold` normalises case and accents, so the comparison was
+`herobrazil-762`.contains(`hero brazil-762`), and **one space** is the whole
+failure. People spell identifiers out loud with spaces a tracker does not
+write.
+
+§6.3.1 as written says `taskRef` never guesses. Taken as "never approximate",
+that rule makes every task whose title is an identifier unreachable by voice —
+which is most of a developer's list.
+
+**Decision.** A four-tier ladder (§6.3.1): exact, containment, **squashed**,
+**approximate**. Each tier is exhausted before the next, so an exact match is
+never beaten by a better-scoring approximate one, and a tie inside any tier is
+still the question it is today.
+
+Tier 3 is the one that fixes the reported case and it is **deterministic** —
+squashing drops every non-alphanumeric rune, so `Hero Brazil-762` and
+`HEROBRAZIL-762` are simply equal and no threshold is consulted. Tier 4,
+normalised Damerau–Levenshtein over the squashed strings, exists for the harder
+class: a Brazilian speaker's "Hero Brasil" against a title written
+`HEROBRAZIL`.
+
+**And digits are excluded from both approximate tiers.** If the phrase and a
+candidate both carry digit runs and the sets differ, the candidate is dropped
+before scoring:
+
+```
+herobrazil762  vs  herobrasil762   → 0.923   same chamado, spelled differently
+herobrazil762  vs  herobrazil763   → 0.923   a different chamado
+```
+
+The scores are identical. No edit-distance metric distinguishes them, because
+`s→z` and `2→3` cost the same to a metric and nothing at all to a metric's
+author. Letters can be misheard and the error is audible; a number either
+matches or the app asks. This is the rule that keeps "never guesses" true in
+the sense that matters — never *act on the wrong row* — while dropping the
+sense that was only ever an implementation detail.
+
+**Rejected alternatives.**
+
+- *Pass the task titles to the model as context*, the way `IntentContext`
+  already carries `knownIssueKeys`, and let it do the matching. It fits the
+  architecture without effort and rides after the cache breakpoint, so it costs
+  no cache invalidation. Rejected on three counts: it moves a matching decision
+  into a non-deterministic component whose failure mode is *inventing* a title
+  rather than missing by a little; the token cost grows with the size of the
+  list, and §15's p95 is already above target; and it sends the title of every
+  task the user has to an external API on every command, which is a privacy
+  expansion nobody asked for and which no business rule currently permits.
+- *Phonetic matching (Soundex, Metaphone).* Built for English surnames. On a
+  list mixing PT-BR, English and issue keys it collapses distinctions the user
+  relies on, and there is no PT-BR implementation in the stack.
+- *Match against the description and tags too.* Widens what a destructive
+  command can hit, to solve a problem nobody has reported.
+- *Lower the bar and let tier 4 always return its best candidate.* Turns
+  `TaskNotFound` into a state that never occurs, which means the user is never
+  told the app did not understand — they are told it did, about the wrong row.
+- *Keep §6.3.1 literal and ask the user to rename their tasks.* The app exists
+  to fit the way the Developer already works.
+
+**Impact.** `docs/sprints/sprint-05b-task-ref-matching.md` (new);
+`docs/architecture.md` §6.3.1, §14; `lib/domain/services/text_match.dart`;
+`lib/application/voice/intent_router.dart`;
+`lib/presentation/voice/voice_labels.dart` and the three ARB files.

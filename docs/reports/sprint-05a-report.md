@@ -146,6 +146,24 @@ undo, any change to the Jira intents — was touched.
 
 ## 7. Open, and carried forward
 
+**One defect, found in manual use after the gates were green.** A task titled
+`HEROBRAZIL-762`; the Developer said "coloca a atividade Hero Brazil-762 para o
+status de pronto"; the app answered "No task called 'Hero Brazil-762'". The
+parse was correct and nothing was misheard — `fold` normalises case and accents
+but not spacing, so the comparison was `herobrazil-762`.contains(`hero
+brazil-762`), and **one space** is the whole failure.
+
+It is worth naming what the suite could not see. S05a-UT-03 asserts that a
+reference "differing in case and accent" still finds the task, and it passes;
+the fixture titles are prose ("Ligar para Samara"), so the space that breaks an
+identifier never appears in one. The test was written from what the code
+handles rather than from what a tracker's titles look like — the same shape of
+gap Sprint 05 §5 recorded, in a suite written by the person who recorded it.
+
+Specified as `docs/sprints/sprint-05b-task-ref-matching.md` and decided in
+DEC-035, with the reported case as S05b-UT-01. Not fixed here: §5.6 wants the
+regression test before the fix, and this sprint's scope is closed.
+
 **The p95 from Sprint 05 is still above target and is not addressed here.**
 Warm totals run 3185–3853 ms against the 3 s target of `architecture.md` §15.
 Sprint 05's handoff lists the two remaining levers — trimming the required
