@@ -85,6 +85,8 @@ Implemented in `presentation/shared/` in Sprint 00 and reused across the app:
 | `DivergenceBanner` | `warning` background at 15% opacity, 3px left border in `warning`, text explaining local vs. Jira status + two decision buttons (BR-02) |
 | `VoiceOverlay` | Bottom panel styled like a terminal prompt: `surface` background, `❯` prefix in `accent`, partial transcript in `mono` `textSecondary`, committed in `textPrimary` |
 | `ConfirmSheet` | Bottom sheet used for intent confirmation (BR-04): shows the interpreted action in `mono`, confidence as a bar, Confirm (`accent`) / Cancel buttons |
+| `TaskFilterBar` | Row of status chips that are **multi-select**: each toggles independently and several may be active at once, with an "All" chip that clears them. An active chip is `accentSubtle` background with `accent` text; inactive is a 1px `border` outline. Selecting nothing and selecting everything look different and mean the same thing, so "All" is the only cleared state the bar ever shows |
+| `TaskSearchField` | `NorteTextField` with a 16px `search` icon and a clear affordance once it has text. Filters on **title and description** as the user types, debounced 200ms. Its empty result uses `EmptyState` with the "nothing matched" wording, never the "no tasks yet" one — an empty database and an unmatched search are different facts and send the user to different places |
 | `EmptyState` | 32px `textMuted` icon + short sentence + optional primary action |
 
 ## 5. Layout and navigation

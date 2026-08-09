@@ -919,3 +919,97 @@ surfaces as `AuthFailure` rather than as a generic network problem.
 **Impact.** `lib/infrastructure/transcription/realtime_socket.dart`;
 `test/support/fake_realtime_server.dart`;
 `test/infrastructure/realtime_socket_test.dart`.
+
+---
+
+## DEC-030 — A lettered sprint for the task commands (Sprint 05a)
+
+**Status:** accepted.
+
+**Context.** The Developer asked for the app's own tasks to be fully operable
+by voice — change status, comment, delete under confirmation, create with every
+attribute — plus multi-status filtering and a description search. None of it is
+in Sprint 05's documented scope, and `docs/project-rules.md` §8 forbids
+implementing a future sprint's work while a sprint is open.
+
+The numbering had no room. Sprints 00–08 deliver v1.0 and are all specified;
+09 opens v1.1. Inserting a number would renumber documents that other files,
+test IDs and reports already reference by name.
+
+**Decision.** `docs/sprints/sprint-05a-task-commands.md`, executed after 05 and
+before 06, with test IDs prefixed `S05a-`. Roadmap item 5a in
+`docs/architecture.md` §14 records the position.
+
+**Rejected alternatives.**
+
+- *Extend Sprint 05* — its PR is green and complete against its own scope, and
+  a sprint that grows while it is being closed is a sprint with no Definition
+  of Done.
+- *Fold it into Sprint 06* — Sprint 06 is reminders and notifications across
+  three platforms. Two unrelated subjects in one sprint means one DoD that
+  cannot fail cleanly.
+
+**Impact.** `docs/sprints/sprint-05a-task-commands.md` (new);
+`docs/architecture.md` §14.
+
+---
+
+## DEC-031 — Continuous listening, and what a session survives (Sprint 05)
+
+**Status:** accepted, on the Developer's instruction after the first real run.
+
+**Context.** Sprint 05 shipped a session that closed the microphone the moment
+a segment committed, executed one command, and ended — including when the
+command merely failed to be understood. In use that turned out to be wrong on
+both counts: every command needed its own press of the button, and a
+misunderstanding cost the user the session as well as the command.
+
+**Decision.** The microphone stays open until the user stops it, and commands
+execute as they are spoken. A failure ends the session only when it takes the
+pipeline down — no key, a rejected key, no microphone. Everything else leaves
+the session listening, because the fix for a misunderstanding is saying it
+again.
+
+Three guards keep "continuous" from meaning "twice":
+
+- A segment arriving while the previous one is still being parsed is the same
+  sentence. VAD segments on silence, and a real run produced 14 characters
+  followed by 5 from one command; routing both executed it twice.
+- Anything said while a confirmation sheet is up is the user reading, not a
+  new command.
+- A segment that is **only** hesitation never reaches the parser (DEC-032).
+
+**Impact.** `lib/presentation/voice/voice_providers.dart`;
+`docs/sprints/sprint-05-realtime-voice.md`'s implicit one-command-per-session
+assumption, which was never written down and is now contradicted here.
+
+---
+
+## DEC-032 — Hesitation is filtered twice, and asymmetrically (Sprint 05)
+
+**Status:** accepted.
+
+**Context.** "eeeh", "hmmm" and "aaah" commit as segments like any other. Each
+one costs an API call, a second of the user's time, and an answer of `unknown`
+that reads on screen as the app failing to understand — when nothing was said.
+
+The Developer expected `zefa-ia` to solve this and asked me to copy it. It does
+not: there is no disfluency handling anywhere in its STT or audio layers. What
+looks like filtering there is the model tidying up on its own. Recorded because
+"the other project already does it" was the premise, and it was not true.
+
+**Decision.** Two filters, and the asymmetry is the design.
+
+1. `no_verbatim` is requested of the service — it appears among the settings
+   the endpoint echoes on `session_started`, so it is the cheapest place to
+   drop hesitation, before it is ever transcribed.
+2. `SpeechFiller` catches what gets through, and rejects a segment **only when
+   it is entirely filler**. "eh, cria tarefa" is a command with a stumble in
+   front of it; dropping it to save an API call would lose a command the user
+   actually gave.
+
+Matching collapses repeated letters, so `eeeeh` and `eh` are one word and the
+list stays short.
+
+**Impact.** `lib/infrastructure/transcription/scribe_realtime_engine.dart`;
+`lib/presentation/voice/speech_filler.dart`.

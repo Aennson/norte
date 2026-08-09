@@ -75,7 +75,14 @@ class Task {
   final DateTime? dueDate;
   final JiraLink? jiraLink;     // OPTIONAL — a link, not a mirror
   final List<String> tags;
+  final List<TaskComment> comments;  // local notes; never sent to Jira
   final DateTime createdAt, updatedAt;
+}
+
+class TaskComment {
+  final String id;
+  final String body;
+  final DateTime createdAt;
 }
 
 class JiraLink {
@@ -115,9 +122,12 @@ class Reminder {
 }
 
 class VoiceIntent {
-  final IntentType type;        // updateJira | addComment | createTask |
-                                // createReminder | queryStatus | unknown
-  final Map<String, dynamic> slots; // e.g.: {issueKey, newStatus, comment}
+  final IntentType type;        // local:  createTask | updateTask |
+                                //         deleteTask | commentTask
+                                // Jira:   updateJira | addComment |
+                                //         queryStatus
+                                // other:  createReminder | unknown
+  final Map<String, dynamic> slots; // e.g.: {taskRef, status, priority}
   final double confidence;
 }
 ```
@@ -125,6 +135,7 @@ class VoiceIntent {
 ### 3.2 Essential business rules
 
 - `Task` exists independently of Jira; `JiraLink` can be added/removed at any time.
+- **A `TaskComment` is local and stays local.** It is a note the user keeps on their own row, and it is never pushed to a linked issue — pushing a comment to Jira is `addComment`, a separate, explicit, confirmed action (BR-05). Conflating them would mean a private note appearing where the whole team can read it.
 - Status conflict (local ≠ Jira): the app **never overwrites automatically** — it shows the divergence and asks for a decision.
 - `Meeting.rawTranscript` with `retention = ephemeral` lives only in memory; leaving the screen → it is discarded (only the `summary` remains, if the user saved it).
 - `VoiceIntent` with `confidence < 0.75` requires explicit confirmation before executing mutating actions (especially Jira writes).
@@ -141,7 +152,12 @@ The app is an **external layer**: it reads and writes via the Jira Cloud REST AP
 Task (local, Drift) ──optional──> JiraLink ──REST──> Jira Cloud
 ```
 
-**Operations supported in v1.0:**
+**Local task management in v1.0:** create, edit, change status, delete,
+comment, and list with **several status filters at once** plus a free-text
+search over title and description. The list is the app's own; none of it
+touches Jira (§6.3).
+
+**Jira operations supported in v1.0:**
 | Operation | Endpoint | Direction |
 |---|---|---|
 | Link ticket | `GET /issue/{key}` (validation) | read |
@@ -226,15 +242,73 @@ The `AiEngine` receives a short, cacheable prompt that defines the output schema
 
 ### 6.3 v1.0 intents
 
-Voice commands are spoken in PT-BR (the product's target language):
+Voice commands are spoken in PT-BR (the product's target language).
+
+**Local first, Jira on request.** The five original intents split the world by
+verb; that turned out to be the wrong seam. A user who says "muda a tarefa X
+para concluído" means *their* task, and the parser has to choose Jira only when
+Jira is named — by an issue key (`PROJ-123`) or by the word itself. When in
+doubt it prefers the local intent: a wrong local task is a row the user
+deletes, a wrong Jira write is a change their whole team saw.
+
+**Local tasks**
+
+| Intent | Example utterance (PT-BR) | Action |
+|---|---|---|
+| `createTask` | "cria a atividade Ligar para Samara, com a descrição confirmar o orçamento, em status em progresso, de prioridade crítica" | Local task, with every attribute the utterance carried |
+| `updateTask` | "marca a tarefa Ligar para Samara como concluída" · "muda a prioridade de Ligar para Samara para baixa" | Changes status, priority, title, description or due date |
+| `deleteTask` | "apaga a tarefa Ligar para Samara" | **Always confirmed**, whatever the confidence |
+| `commentTask` | "comenta na tarefa Ligar para Samara: cliente retornou" | Appends a local `TaskComment` |
+
+**Jira** — reached only when an issue key or the word "Jira" is spoken
 
 | Intent | Example utterance (PT-BR) | Action |
 |---|---|---|
 | `updateJira` | "muda o PROJ-123 pra concluído" | Transition via outbox |
 | `addComment` | "comenta no PROJ-45: subiu pra staging" | Comment via outbox |
-| `createTask` | "cria tarefa revisar PR do conector" | Local task |
-| `createReminder` | "me lembra às 15h de responder o e-mail" | Reminder + notification |
 | `queryStatus` | "como tá o PROJ-99?" | GET status + optional TTS |
+
+**Reminders**
+
+| Intent | Example utterance (PT-BR) | Action |
+|---|---|---|
+| `createReminder` | "me lembra às 15h de responder o e-mail" | Reminder + notification |
+
+#### 6.3.1 Naming a task out loud
+
+Jira intents identify their target by an issue key, which is unambiguous.
+A local task has no such handle: the user says part of its title.
+
+`taskRef` is therefore matched against titles, case- and accent-insensitively,
+and resolved in this order:
+
+1. **Exactly one task contains the phrase** → that task.
+2. **Several do** → the app asks which, listing them, exactly as a missing slot
+   is asked for. It does not guess: two tasks called "Ligar para Samara" and
+   "Ligar para Samara de novo" are a question, not a coin toss.
+3. **None does** → the app says so and changes nothing.
+
+The same rule governs `updateTask`, `deleteTask` and `commentTask`. A
+destructive action on the wrong row is the failure this ordering exists to
+prevent, which is why `deleteTask` also confirms unconditionally — the
+confidence threshold of BR-04 is a floor here, not a gate.
+
+#### 6.3.2 Slot vocabularies
+
+`status` and `priority` are spoken in the user's language and stored as the
+domain's enums, so the parser returns the **enum name** and never a
+translation:
+
+| Slot | Values |
+|---|---|
+| `status` | `todo` · `inProgress` · `done` · `blocked` |
+| `priority` | `low` · `medium` · `high` · `urgent` |
+
+"crítica", "critical" and "urgente" all mean `urgent`; "em progresso",
+"fazendo" and "in progress" all mean `inProgress`. Keeping the mapping in the
+prompt rather than in the app is deliberate: it is the one part that has to
+know a hundred ways of saying four things, and that is what a language model
+is for.
 
 ---
 
@@ -406,6 +480,9 @@ lib/
 3. **Meetings (pasted):** templates + `ClaudeApiEngine.summarize` + ActionItems→Tasks.
 4. **Whisper batch:** recording + upload + same summarization pipeline.
 5. **Realtime voice:** Scribe adapter + IntentParser + 5 intents + confirmation.
+5a. **Task commands:** the local-task half of §6.3 — `updateTask`,
+   `deleteTask`, `commentTask`, `createTask` with full attributes — plus
+   multi-status filtering and search on the Tasks screen.
 6. **Voice reminders** + notifications on all 3 platforms.
 7. **CopilotCliEngine** (Windows) + fallback + engine settings.
 8. **Hardening:** PII redactor, wipe, intent evals in CI.
