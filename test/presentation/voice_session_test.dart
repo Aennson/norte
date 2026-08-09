@@ -160,6 +160,58 @@ void main() {
       expect(container.read(voiceSessionProvider).phase, VoicePhase.connecting);
     });
 
+    testWidgets('one utterance is one command, however VAD splits it', (
+      WidgetTester tester,
+    ) async {
+      // VAD segments on silence, so a single spoken sentence arrives as
+      // several committed segments — a real run produced 14 characters and
+      // then 5 from one command. Each used to start its own parse and could
+      // route its own action, so a pause mid-sentence executed twice. For a
+      // mutating intent that is not cosmetic.
+      ai.alwaysParseAs(
+        '{"intent":"createTask","slots":{"title":"algo"},"confidence":0.95}',
+      );
+      useDesktopViewport(tester);
+      await tester.pumpWidget(host());
+      await tester.pumpAndSettle();
+
+      final ProviderContainer container = ProviderScope.containerOf(
+        tester.element(find.byType(VoiceHost)),
+      );
+      await container.read(voiceSessionProvider.notifier).start();
+      await tester.pumpAndSettle();
+
+      realtime.emitCommitted('cria tarefa algo');
+      await tester.pumpAndSettle();
+      realtime.emitCommitted('e mais isso');
+      await tester.pumpAndSettle();
+
+      expect(ai.intentCalls, hasLength(1), reason: 'the tail is not a command');
+    });
+
+    testWidgets('an empty committed segment is not an utterance', (
+      WidgetTester tester,
+    ) async {
+      // The service sends one when the session closes. Parsing it started a
+      // race the real segment could lose — and did: `unknown` in three
+      // milliseconds while the real parse was still in flight.
+      useDesktopViewport(tester);
+      await tester.pumpWidget(host());
+      await tester.pumpAndSettle();
+
+      final ProviderContainer container = ProviderScope.containerOf(
+        tester.element(find.byType(VoiceHost)),
+      );
+      await container.read(voiceSessionProvider.notifier).start();
+      await tester.pumpAndSettle();
+
+      realtime.emitCommitted('   ');
+      await tester.pumpAndSettle();
+
+      expect(ai.intentCalls, isEmpty);
+      expect(container.read(voiceSessionProvider).notUnderstood, isFalse);
+    });
+
     testWidgets('the level comes from the audio, not from a timer', (
       WidgetTester tester,
     ) async {

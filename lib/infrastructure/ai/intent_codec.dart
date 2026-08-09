@@ -37,20 +37,30 @@ class IntentCodec {
   ///
   /// Constant, which is what makes it part of the cached prefix.
   ///
-  /// **Every slot is declared, and every one is required-and-nullable.** The
-  /// first version left `slots` as an open `{"type": "object"}`, reasoning
-  /// that the five intents do not share a slot set and that a union would
-  /// invite the model to fill in fields belonging to some other intent. The
-  /// reasoning was fine and the API disagreed: structured output rejects an
-  /// unconstrained object, and every request came back **HTTP 400** — so the
-  /// voice pipeline reached a real transcript and then failed on the parse,
-  /// every time.
+  /// **`confidence` carries no `minimum` or `maximum`.** Structured output
+  /// rejects them outright:
   ///
-  /// The original worry is handled where it always was: [_slotsFrom] drops
-  /// nulls and blanks, and `IntentType.requiredSlots` decides what an intent
-  /// actually needs. A slot the model filled in for the wrong intent is
-  /// ignored downstream rather than prevented upstream, which is the weaker
-  /// guarantee — and the only one on offer.
+  /// ```
+  /// output_config.format.schema:
+  /// For 'number' type, properties maximum, minimum are not supported
+  /// ```
+  ///
+  /// Every parse request came back HTTP 400 because of those two words, so the
+  /// pipeline reached a real transcript and then failed, every time. The range
+  /// is enforced in [_confidenceFrom] instead, which clamps — and which had to
+  /// exist anyway, because a schema is a request and not a guarantee.
+  ///
+  /// **Every slot is declared, required and nullable.** This one is *not*
+  /// known to have been necessary: it was changed on a hypothesis about the
+  /// 400 that the API's message then contradicted, and the API reports one
+  /// error at a time, so whether an open `{"type": "object"}` would also have
+  /// been refused is untested. It is kept because it is stricter and valid —
+  /// but the honest label is "unverified", not "required".
+  ///
+  /// The worry that argued for the open object — that a union invites the
+  /// model to fill in slots belonging to some other intent — is handled where
+  /// it always was: [_slotsFrom] drops nulls and blanks, and
+  /// `IntentType.requiredSlots` decides what an intent actually needs.
   static const Map<String, Object?> schema = <String, Object?>{
     'type': 'object',
     'properties': <String, Object?>{
@@ -92,11 +102,7 @@ class IntentCodec {
         ],
         'additionalProperties': false,
       },
-      'confidence': <String, Object?>{
-        'type': 'number',
-        'minimum': 0,
-        'maximum': 1,
-      },
+      'confidence': <String, Object?>{'type': 'number'},
     },
     'required': <String>['intent', 'slots', 'confidence'],
     'additionalProperties': false,

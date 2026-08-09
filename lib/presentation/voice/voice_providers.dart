@@ -248,6 +248,15 @@ class VoiceSession extends Notifier<VoiceSessionState> {
   /// When the last committed segment arrived, for the latency measurement.
   DateTime? _committedAt;
 
+  /// `true` once a segment has been taken as *the* command for this session.
+  ///
+  /// VAD segments on silence, so one spoken sentence can arrive as several
+  /// committed segments — a real run produced "14 chars" and then "5 chars"
+  /// from a single command. Each one used to start its own parse and could
+  /// route its own action, so a pause mid-sentence would have executed twice.
+  /// For a mutating intent that is not a cosmetic bug.
+  bool _tookCommand = false;
+
   /// `true` once the container is gone, so an in-flight [stop] does not try to
   /// read providers that no longer exist.
   ///
@@ -273,6 +282,7 @@ class VoiceSession extends Notifier<VoiceSessionState> {
       isActive: true,
       phase: VoicePhase.connecting,
     );
+    _tookCommand = false;
 
     final Microphone microphone = ref.read(microphoneProvider);
     final RealtimeTranscription engine = ref.read(
@@ -400,6 +410,17 @@ class VoiceSession extends Notifier<VoiceSessionState> {
       _log('committed segment: empty — session closing, not an utterance');
       return;
     }
+
+    // The microphone is closed the moment the first segment commits, so
+    // anything after it is the tail of audio already sent — not a new command.
+    if (_tookCommand) {
+      _log(
+        'committed segment: ${event.text.length} chars — ignored, this '
+        'session already has its command',
+      );
+      return;
+    }
+    _tookCommand = true;
 
     _committedAt = ref.read(clockProvider).now();
     _log('committed segment: ${event.text.length} chars');
