@@ -1426,11 +1426,11 @@ abstract class AppLocalizations {
   /// **'Deleting a task cannot be undone, so this always asks.'**
   String get voiceReasonDeletion;
 
-  /// Feedback after a spoken updateTask.
+  /// Feedback after a spoken updateTask. Names the row it acted on, so a taskRef that resolved to something the user did not expect is visible the moment it happens rather than the next time they read the list (Sprint 05b, §6.3.1).
   ///
   /// In en, this message translates to:
-  /// **'Task updated'**
-  String get voiceDoneTaskUpdated;
+  /// **'Task updated: {title}'**
+  String voiceDoneTaskUpdated(String title);
 
   /// Feedback after a spoken deleteTask. Names the task: the row is gone, so this is the user's only chance to check it was the right one.
   ///
@@ -1438,11 +1438,11 @@ abstract class AppLocalizations {
   /// **'Deleted {title}'**
   String voiceDoneTaskDeleted(String title);
 
-  /// Feedback after a spoken commentTask. Says where the note went, because the same sentence spoken with an issue key would have reached the whole team (BR-01).
+  /// Feedback after a spoken commentTask. Names the row and says where the note went, because the same sentence spoken with an issue key would have reached the whole team (BR-01).
   ///
   /// In en, this message translates to:
-  /// **'Note added — it stays on your list'**
-  String get voiceDoneTaskCommented;
+  /// **'Note added to {title} — it stays on your list'**
+  String voiceDoneTaskCommented(String title);
 
   /// Outcome when a spoken taskRef matched no task. Nothing was changed.
   ///

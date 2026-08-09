@@ -764,7 +764,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Deleting a task cannot be undone, so this always asks.';
 
   @override
-  String get voiceDoneTaskUpdated => 'Task updated';
+  String voiceDoneTaskUpdated(String title) {
+    return 'Task updated: $title';
+  }
 
   @override
   String voiceDoneTaskDeleted(String title) {
@@ -772,7 +774,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get voiceDoneTaskCommented => 'Note added — it stays on your list';
+  String voiceDoneTaskCommented(String title) {
+    return 'Note added to $title — it stays on your list';
+  }
 
   @override
   String voiceTaskNotFound(String reference) {

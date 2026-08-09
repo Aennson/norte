@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:norte/application/voice/intent_router.dart';
+import 'package:norte/domain/entities/task.dart';
 import 'package:norte/domain/entities/voice_intent.dart';
 import 'package:norte/l10n/generated/app_localizations.dart';
 import 'package:norte/presentation/shared/theme/norte_theme.dart';
@@ -41,6 +42,26 @@ void main() {
     type: IntentType.updateJira,
     slots: <String, dynamic>{'issueKey': 'PROJ-123', 'transition': 'Done'},
     confidence: 0.68,
+  );
+
+  /// S05b-GT-01 — an `updateTask` that reached its row through tier 4 of
+  /// §6.3.1: the user said "Hero Brasil-762" and `HEROBRAZIL-762` is what
+  /// changed.
+  final IntentExecuted approximateUpdate = IntentExecuted(
+    intent: const VoiceIntent(
+      type: IntentType.updateTask,
+      slots: <String, dynamic>{'taskRef': 'Hero Brasil-762', 'status': 'done'},
+      confidence: 0.95,
+    ),
+    task: Task(
+      id: 't1',
+      title: 'HEROBRAZIL-762',
+      status: TaskStatus.done,
+      priority: Priority.medium,
+      createdAt: DateTime.utc(2026, 8, 9, 10),
+      updatedAt: DateTime.utc(2026, 8, 9, 10),
+    ),
+    resolvedApproximately: true,
   );
 
   Future<void> pump(
@@ -142,6 +163,40 @@ void main() {
       await expectLater(
         find.byType(VoiceOverlay),
         matchesGoldenFile('images/voice_overlay_asking_$name.png'),
+      );
+    });
+
+    testWidgets('S05b-GT-01: VoiceOverlay naming the row it updated ($name)', (
+      WidgetTester tester,
+    ) async {
+      await pump(
+        tester,
+        theme,
+        Builder(
+          builder: (BuildContext context) {
+            final AppLocalizations l10n = AppLocalizations.of(context);
+            return VoiceOverlay(
+              phase: VoicePhase.understanding,
+              statusLabel: l10n.voiceUnderstanding,
+              stopLabel: l10n.voiceStop,
+              meterLabel: l10n.voiceMeterLabel,
+              onStop: () {},
+              committed: 'coloca a atividade Hero Brasil-762 pra pronto',
+              // The line the sprint exists to make possible: the phrase that
+              // was spoken and the title that was acted on are two different
+              // strings, and only the picture shows the user both at once.
+              // "Task updated" alone would leave an approximate resolution
+              // invisible until the next time they read the list.
+              message: executedText(l10n, approximateUpdate),
+            );
+          },
+        ),
+        size: const Size(420, 260),
+      );
+
+      await expectLater(
+        find.byType(VoiceOverlay),
+        matchesGoldenFile('images/voice_overlay_updated_named_$name.png'),
       );
     });
 

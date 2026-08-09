@@ -766,7 +766,9 @@ class AppLocalizationsPt extends AppLocalizations {
       'Apagar uma tarefa não tem volta, então sempre perguntamos.';
 
   @override
-  String get voiceDoneTaskUpdated => 'Tarefa atualizada';
+  String voiceDoneTaskUpdated(String title) {
+    return 'Tarefa atualizada: $title';
+  }
 
   @override
   String voiceDoneTaskDeleted(String title) {
@@ -774,7 +776,9 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get voiceDoneTaskCommented => 'Nota adicionada — fica na sua lista';
+  String voiceDoneTaskCommented(String title) {
+    return 'Nota adicionada em $title — fica na sua lista';
+  }
 
   @override
   String voiceTaskNotFound(String reference) {
