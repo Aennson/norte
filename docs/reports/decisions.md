@@ -1013,3 +1013,66 @@ list stays short.
 
 **Impact.** `lib/infrastructure/transcription/scribe_realtime_engine.dart`;
 `lib/presentation/voice/speech_filler.dart`.
+
+---
+
+## DEC-033 — The audit log records actions, and the wipe survives itself (Sprint 10)
+
+**Status:** accepted.
+
+**Context.** The Developer asked for a log of everything the app does, for
+audit purposes, delivered after every other sprint so the evolutionary cycle is
+not disturbed.
+
+Two things had to be decided before it could be specified, because both change
+guarantees the project already made.
+
+**Decision 1 — an audit entry is a fact about an action, never its content
+(BR-12).** "Everything that occurs" read literally would mean writing
+transcripts, utterances, task titles, Jira payloads and credential activity to
+disk. BR-03, BR-06, BR-07 and BR-08 each forbid part of that, and together they
+forbid all of it: the app's privacy posture rests on those things *not* being
+written down. An audit trail that wrote them would undo four rules at once and
+would be, in substance, a second copy of the data it audits.
+
+So an entry carries the entity type and id, the actor, the action, the outcome,
+and scalars — counts, lengths, durations, enum values, confidences. It never
+carries a string a person or a model authored. The codebase already practises
+exactly this in its diagnostics (`committed segment: 98 chars`, never the
+segment; token counts, never the prompt); BR-12 promotes the habit to a rule
+and `tool/check_audit.dart` makes it a build failure rather than a review note.
+
+**Decision 2 — "delete everything" wipes the audit log and then records that it
+did.** This is a genuine conflict with no clean answer: auditability wants the
+log to outlive a wipe, and the right to erasure (`architecture.md` §10) wants
+nothing to survive it. Keeping the log through a wipe would mean the one
+operation whose purpose is to leave nothing behind leaves behind a detailed
+account of everything that came before — the erasure would be a lie. Wiping it
+silently means the user cannot afterwards tell whether the wipe ran at all,
+which was one of the three questions that motivated the sprint.
+
+The resolution keeps erasure honest and answers the question: the wipe clears
+every entry and writes exactly one new one — `security/dataWiped`, with the
+number of entries removed. The count is a fact about the app's behaviour; it
+identifies nothing. The hash chain restarts from that entry.
+
+**Rejected alternatives.**
+
+- *Log content and encrypt it at rest.* Moves the problem to key custody on a
+  device the user already controls, and BR-08 keeps the only secure store for
+  credentials. It would also make "the log contains no transcripts" — the
+  sentence that makes this feature safe to ship — untrue but hard to disprove.
+- *Keep the audit log across a wipe.* Rejected above: it makes the erasure
+  guarantee false.
+- *Wipe silently, recording nothing.* Cheapest, and it deletes the evidence
+  that the feature works.
+- *A separate append-only file outside Drift.* No integrity gain on a machine
+  the user owns (see the sprint's "What the hash chain does and does not
+  prove"), and it would escape the wipe by accident rather than by decision.
+- *Run the sprint earlier, e.g. after 05a.* Instrumenting use cases that later
+  sprints then rewrite means doing the work twice and reviewing it twice. The
+  Developer's instruction — last, so the cycle is not broken — is also the
+  cheaper order.
+
+**Impact.** `docs/sprints/sprint-10-audit-log.md` (new); `docs/project-rules.md`
+§4 (BR-12); `docs/architecture.md` §10, §14.1.

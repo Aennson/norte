@@ -419,9 +419,10 @@ Routing is **fixed per use case** (not a user choice) — it avoids misconfigura
 | PII before external APIs | Redaction of CPF, phone, e-mail (BR regex) — can be disabled when `AiEngine.isLocal` |
 | Secrets (Jira token, Claude key) | Native secure storage; never in Drift/logs |
 | Logs | Structured, with automatic payload redaction |
+| Audit log (v1.1) | Durable record of **actions**, never their content (BR-12): entity ids, actor, outcome, scalars. Local only, never uploaded. Retained 180 days / 50 000 entries |
 | Voice audio | Discarded post-transcription; never written to disk in realtime flows |
 | Network | TLS 1.2+; certificate pinning on AI and Jira hosts (v1.1) |
-| Right to erasure | "Delete everything" in settings: wipe Drift + secure storage |
+| Right to erasure | "Delete everything" in settings: wipe Drift + secure storage — including the audit log, which is then left holding exactly one entry recording that the wipe ran (DEC-033) |
 
 ---
 
@@ -489,9 +490,10 @@ lib/
 
 **Out of scope for v1.0:** Jira OAuth, system audio capture (loopback), automatic bidirectional sync, multi-user, TTS responses.
 
-### 14.1 v1.1 — first item
+### 14.1 v1.1
 
 9. **Gateway access:** proxy support, and a browser session held by the app, for a Jira that a corporate network control stands in front of (`docs/sprints/sprint-09-gateway-access.md`). Scheduled after v1.0 closes: nothing in Sprints 03–08 depends on it, and it is the only sprint whose acceptance needs a particular corporate network to demonstrate.
+10. **Audit log:** a durable, queryable, exportable record of every action the app takes on the user's data — actions only, never their content (BR-12, DEC-033) — plus the Audit screen and `tool/check_audit.dart` (`docs/sprints/sprint-10-audit-log.md`). **Scheduled last of all.** It instruments code every other sprint wrote, so running it earlier would mean instrumenting a moving target and redoing the work after each sprint. Nothing depends on it and it changes no existing behaviour.
 
 ---
 
