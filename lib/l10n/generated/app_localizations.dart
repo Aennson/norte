@@ -262,6 +262,24 @@ abstract class AppLocalizations {
   /// **'All'**
   String get tasksFilterAll;
 
+  /// Placeholder of the task search field.
+  ///
+  /// In en, this message translates to:
+  /// **'Search title and description'**
+  String get tasksSearchHint;
+
+  /// Tooltip of the button that empties the task search field.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get tasksSearchClear;
+
+  /// Empty state shown when a search matched no task. Deliberately different from the filter-only wording: the fix is a different word, not a different filter.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing matches “{term}”.'**
+  String tasksSearchEmptyMessage(String term);
+
   /// Label of the task title input.
   ///
   /// In en, this message translates to:
@@ -1371,6 +1389,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No task here is linked to {issueKey}.'**
   String voiceErrorNotLinked(String issueKey);
+
+  /// Question asked when a local task command named no task.
+  ///
+  /// In en, this message translates to:
+  /// **'Which task?'**
+  String get voiceAskTaskRef;
+
+  /// Question asked when an updateTask named a task but no change.
+  ///
+  /// In en, this message translates to:
+  /// **'Change it to what?'**
+  String get voiceAskChange;
+
+  /// Confirmation line for a spoken updateTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Change {taskRef}'**
+  String voiceActionUpdateTask(String taskRef);
+
+  /// Confirmation line for a spoken deleteTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {taskRef}'**
+  String voiceActionDeleteTask(String taskRef);
+
+  /// Confirmation line for a spoken commentTask. Says 'note', not 'comment': the word has to distinguish it from the Jira comment the whole team reads.
+  ///
+  /// In en, this message translates to:
+  /// **'Note on {taskRef}: {comment}'**
+  String voiceActionCommentTask(String taskRef, String comment);
+
+  /// Why a spoken deleteTask always confirms, at any confidence.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting a task cannot be undone, so this always asks.'**
+  String get voiceReasonDeletion;
+
+  /// Feedback after a spoken updateTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Task updated'**
+  String get voiceDoneTaskUpdated;
+
+  /// Feedback after a spoken deleteTask. Names the task: the row is gone, so this is the user's only chance to check it was the right one.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted {title}'**
+  String voiceDoneTaskDeleted(String title);
+
+  /// Feedback after a spoken commentTask. Says where the note went, because the same sentence spoken with an issue key would have reached the whole team (BR-01).
+  ///
+  /// In en, this message translates to:
+  /// **'Note added — it stays on your list'**
+  String get voiceDoneTaskCommented;
+
+  /// Outcome when a spoken taskRef matched no task. Nothing was changed.
+  ///
+  /// In en, this message translates to:
+  /// **'No task called “{reference}”.'**
+  String voiceTaskNotFound(String reference);
+
+  /// Question listing every task a spoken reference matched. The app asks rather than guessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Which one — {candidates}?'**
+  String voiceTaskAmbiguous(String candidates);
 
   /// Title of the voice settings section.
   ///

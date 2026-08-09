@@ -866,6 +866,386 @@ class TaskRowsCompanion extends UpdateCompanion<TaskRow> {
   }
 }
 
+class $TaskCommentRowsTable extends TaskCommentRows
+    with TableInfo<$TaskCommentRowsTable, TaskCommentRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TaskCommentRowsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _taskIdMeta = const VerificationMeta('taskId');
+  @override
+  late final GeneratedColumn<String> taskId = GeneratedColumn<String>(
+    'task_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+    'body',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMsMeta = const VerificationMeta(
+    'createdAtMs',
+  );
+  @override
+  late final GeneratedColumn<int> createdAtMs = GeneratedColumn<int>(
+    'created_at_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _positionMeta = const VerificationMeta(
+    'position',
+  );
+  @override
+  late final GeneratedColumn<int> position = GeneratedColumn<int>(
+    'position',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    taskId,
+    body,
+    createdAtMs,
+    position,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'task_comments';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TaskCommentRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('task_id')) {
+      context.handle(
+        _taskIdMeta,
+        taskId.isAcceptableOrUnknown(data['task_id']!, _taskIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_taskIdMeta);
+    }
+    if (data.containsKey('body')) {
+      context.handle(
+        _bodyMeta,
+        body.isAcceptableOrUnknown(data['body']!, _bodyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bodyMeta);
+    }
+    if (data.containsKey('created_at_ms')) {
+      context.handle(
+        _createdAtMsMeta,
+        createdAtMs.isAcceptableOrUnknown(
+          data['created_at_ms']!,
+          _createdAtMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMsMeta);
+    }
+    if (data.containsKey('position')) {
+      context.handle(
+        _positionMeta,
+        position.isAcceptableOrUnknown(data['position']!, _positionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_positionMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TaskCommentRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TaskCommentRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      taskId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}task_id'],
+      )!,
+      body: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}body'],
+      )!,
+      createdAtMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at_ms'],
+      )!,
+      position: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}position'],
+      )!,
+    );
+  }
+
+  @override
+  $TaskCommentRowsTable createAlias(String alias) {
+    return $TaskCommentRowsTable(attachedDatabase, alias);
+  }
+}
+
+class TaskCommentRow extends DataClass implements Insertable<TaskCommentRow> {
+  /// UUID v4 from the use case, unique across every task.
+  final String id;
+
+  /// Owning task. Not declared as a foreign key: SQLite enforces those only
+  /// with `PRAGMA foreign_keys = ON`, which this database does not set, so a
+  /// declaration here would read as a guarantee nothing implements.
+  /// `DriftTaskRepository.delete` removes the comments itself.
+  final String taskId;
+
+  /// What the user wrote, already trimmed by the use case.
+  final String body;
+
+  /// Milliseconds since epoch, UTC (as in `tasks`).
+  final int createdAtMs;
+
+  /// Position within the task's list, from zero.
+  ///
+  /// Ordering by [createdAtMs] would be *nearly* right and wrong exactly where
+  /// it matters: two comments written in the same millisecond — which is every
+  /// pair of them under a pinned test clock — would come back in whatever
+  /// order SQLite chose. Insertion order is data, so it is stored.
+  final int position;
+  const TaskCommentRow({
+    required this.id,
+    required this.taskId,
+    required this.body,
+    required this.createdAtMs,
+    required this.position,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['task_id'] = Variable<String>(taskId);
+    map['body'] = Variable<String>(body);
+    map['created_at_ms'] = Variable<int>(createdAtMs);
+    map['position'] = Variable<int>(position);
+    return map;
+  }
+
+  TaskCommentRowsCompanion toCompanion(bool nullToAbsent) {
+    return TaskCommentRowsCompanion(
+      id: Value(id),
+      taskId: Value(taskId),
+      body: Value(body),
+      createdAtMs: Value(createdAtMs),
+      position: Value(position),
+    );
+  }
+
+  factory TaskCommentRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TaskCommentRow(
+      id: serializer.fromJson<String>(json['id']),
+      taskId: serializer.fromJson<String>(json['taskId']),
+      body: serializer.fromJson<String>(json['body']),
+      createdAtMs: serializer.fromJson<int>(json['createdAtMs']),
+      position: serializer.fromJson<int>(json['position']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'taskId': serializer.toJson<String>(taskId),
+      'body': serializer.toJson<String>(body),
+      'createdAtMs': serializer.toJson<int>(createdAtMs),
+      'position': serializer.toJson<int>(position),
+    };
+  }
+
+  TaskCommentRow copyWith({
+    String? id,
+    String? taskId,
+    String? body,
+    int? createdAtMs,
+    int? position,
+  }) => TaskCommentRow(
+    id: id ?? this.id,
+    taskId: taskId ?? this.taskId,
+    body: body ?? this.body,
+    createdAtMs: createdAtMs ?? this.createdAtMs,
+    position: position ?? this.position,
+  );
+  TaskCommentRow copyWithCompanion(TaskCommentRowsCompanion data) {
+    return TaskCommentRow(
+      id: data.id.present ? data.id.value : this.id,
+      taskId: data.taskId.present ? data.taskId.value : this.taskId,
+      body: data.body.present ? data.body.value : this.body,
+      createdAtMs: data.createdAtMs.present
+          ? data.createdAtMs.value
+          : this.createdAtMs,
+      position: data.position.present ? data.position.value : this.position,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TaskCommentRow(')
+          ..write('id: $id, ')
+          ..write('taskId: $taskId, ')
+          ..write('body: $body, ')
+          ..write('createdAtMs: $createdAtMs, ')
+          ..write('position: $position')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, taskId, body, createdAtMs, position);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TaskCommentRow &&
+          other.id == this.id &&
+          other.taskId == this.taskId &&
+          other.body == this.body &&
+          other.createdAtMs == this.createdAtMs &&
+          other.position == this.position);
+}
+
+class TaskCommentRowsCompanion extends UpdateCompanion<TaskCommentRow> {
+  final Value<String> id;
+  final Value<String> taskId;
+  final Value<String> body;
+  final Value<int> createdAtMs;
+  final Value<int> position;
+  final Value<int> rowid;
+  const TaskCommentRowsCompanion({
+    this.id = const Value.absent(),
+    this.taskId = const Value.absent(),
+    this.body = const Value.absent(),
+    this.createdAtMs = const Value.absent(),
+    this.position = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TaskCommentRowsCompanion.insert({
+    required String id,
+    required String taskId,
+    required String body,
+    required int createdAtMs,
+    required int position,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       taskId = Value(taskId),
+       body = Value(body),
+       createdAtMs = Value(createdAtMs),
+       position = Value(position);
+  static Insertable<TaskCommentRow> custom({
+    Expression<String>? id,
+    Expression<String>? taskId,
+    Expression<String>? body,
+    Expression<int>? createdAtMs,
+    Expression<int>? position,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (taskId != null) 'task_id': taskId,
+      if (body != null) 'body': body,
+      if (createdAtMs != null) 'created_at_ms': createdAtMs,
+      if (position != null) 'position': position,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TaskCommentRowsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? taskId,
+    Value<String>? body,
+    Value<int>? createdAtMs,
+    Value<int>? position,
+    Value<int>? rowid,
+  }) {
+    return TaskCommentRowsCompanion(
+      id: id ?? this.id,
+      taskId: taskId ?? this.taskId,
+      body: body ?? this.body,
+      createdAtMs: createdAtMs ?? this.createdAtMs,
+      position: position ?? this.position,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (taskId.present) {
+      map['task_id'] = Variable<String>(taskId.value);
+    }
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (createdAtMs.present) {
+      map['created_at_ms'] = Variable<int>(createdAtMs.value);
+    }
+    if (position.present) {
+      map['position'] = Variable<int>(position.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TaskCommentRowsCompanion(')
+          ..write('id: $id, ')
+          ..write('taskId: $taskId, ')
+          ..write('body: $body, ')
+          ..write('createdAtMs: $createdAtMs, ')
+          ..write('position: $position, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $OutboxRowsTable extends OutboxRows
     with TableInfo<$OutboxRowsTable, OutboxRow> {
   @override
@@ -3020,6 +3400,9 @@ abstract class _$NorteDatabase extends GeneratedDatabase {
   _$NorteDatabase(QueryExecutor e) : super(e);
   $NorteDatabaseManager get managers => $NorteDatabaseManager(this);
   late final $TaskRowsTable taskRows = $TaskRowsTable(this);
+  late final $TaskCommentRowsTable taskCommentRows = $TaskCommentRowsTable(
+    this,
+  );
   late final $OutboxRowsTable outboxRows = $OutboxRowsTable(this);
   late final $MeetingRowsTable meetingRows = $MeetingRowsTable(this);
   late final $MeetingTemplateRowsTable meetingTemplateRows =
@@ -3032,6 +3415,7 @@ abstract class _$NorteDatabase extends GeneratedDatabase {
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     taskRows,
+    taskCommentRows,
     outboxRows,
     meetingRows,
     meetingTemplateRows,
@@ -3419,6 +3803,214 @@ typedef $$TaskRowsTableProcessedTableManager =
       $$TaskRowsTableUpdateCompanionBuilder,
       (TaskRow, BaseReferences<_$NorteDatabase, $TaskRowsTable, TaskRow>),
       TaskRow,
+      PrefetchHooks Function()
+    >;
+typedef $$TaskCommentRowsTableCreateCompanionBuilder =
+    TaskCommentRowsCompanion Function({
+      required String id,
+      required String taskId,
+      required String body,
+      required int createdAtMs,
+      required int position,
+      Value<int> rowid,
+    });
+typedef $$TaskCommentRowsTableUpdateCompanionBuilder =
+    TaskCommentRowsCompanion Function({
+      Value<String> id,
+      Value<String> taskId,
+      Value<String> body,
+      Value<int> createdAtMs,
+      Value<int> position,
+      Value<int> rowid,
+    });
+
+class $$TaskCommentRowsTableFilterComposer
+    extends Composer<_$NorteDatabase, $TaskCommentRowsTable> {
+  $$TaskCommentRowsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get taskId => $composableBuilder(
+    column: $table.taskId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$TaskCommentRowsTableOrderingComposer
+    extends Composer<_$NorteDatabase, $TaskCommentRowsTable> {
+  $$TaskCommentRowsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get taskId => $composableBuilder(
+    column: $table.taskId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TaskCommentRowsTableAnnotationComposer
+    extends Composer<_$NorteDatabase, $TaskCommentRowsTable> {
+  $$TaskCommentRowsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get taskId =>
+      $composableBuilder(column: $table.taskId, builder: (column) => column);
+
+  GeneratedColumn<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get position =>
+      $composableBuilder(column: $table.position, builder: (column) => column);
+}
+
+class $$TaskCommentRowsTableTableManager
+    extends
+        RootTableManager<
+          _$NorteDatabase,
+          $TaskCommentRowsTable,
+          TaskCommentRow,
+          $$TaskCommentRowsTableFilterComposer,
+          $$TaskCommentRowsTableOrderingComposer,
+          $$TaskCommentRowsTableAnnotationComposer,
+          $$TaskCommentRowsTableCreateCompanionBuilder,
+          $$TaskCommentRowsTableUpdateCompanionBuilder,
+          (
+            TaskCommentRow,
+            BaseReferences<
+              _$NorteDatabase,
+              $TaskCommentRowsTable,
+              TaskCommentRow
+            >,
+          ),
+          TaskCommentRow,
+          PrefetchHooks Function()
+        > {
+  $$TaskCommentRowsTableTableManager(
+    _$NorteDatabase db,
+    $TaskCommentRowsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TaskCommentRowsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TaskCommentRowsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TaskCommentRowsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> taskId = const Value.absent(),
+                Value<String> body = const Value.absent(),
+                Value<int> createdAtMs = const Value.absent(),
+                Value<int> position = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TaskCommentRowsCompanion(
+                id: id,
+                taskId: taskId,
+                body: body,
+                createdAtMs: createdAtMs,
+                position: position,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String taskId,
+                required String body,
+                required int createdAtMs,
+                required int position,
+                Value<int> rowid = const Value.absent(),
+              }) => TaskCommentRowsCompanion.insert(
+                id: id,
+                taskId: taskId,
+                body: body,
+                createdAtMs: createdAtMs,
+                position: position,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$TaskCommentRowsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$NorteDatabase,
+      $TaskCommentRowsTable,
+      TaskCommentRow,
+      $$TaskCommentRowsTableFilterComposer,
+      $$TaskCommentRowsTableOrderingComposer,
+      $$TaskCommentRowsTableAnnotationComposer,
+      $$TaskCommentRowsTableCreateCompanionBuilder,
+      $$TaskCommentRowsTableUpdateCompanionBuilder,
+      (
+        TaskCommentRow,
+        BaseReferences<_$NorteDatabase, $TaskCommentRowsTable, TaskCommentRow>,
+      ),
+      TaskCommentRow,
       PrefetchHooks Function()
     >;
 typedef $$OutboxRowsTableCreateCompanionBuilder =
@@ -4543,6 +5135,8 @@ class $NorteDatabaseManager {
   $NorteDatabaseManager(this._db);
   $$TaskRowsTableTableManager get taskRows =>
       $$TaskRowsTableTableManager(_db, _db.taskRows);
+  $$TaskCommentRowsTableTableManager get taskCommentRows =>
+      $$TaskCommentRowsTableTableManager(_db, _db.taskCommentRows);
   $$OutboxRowsTableTableManager get outboxRows =>
       $$OutboxRowsTableTableManager(_db, _db.outboxRows);
   $$MeetingRowsTableTableManager get meetingRows =>

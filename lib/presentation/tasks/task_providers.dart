@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../application/usecases/comment_task.dart';
 import '../../application/usecases/create_task.dart';
 import '../../application/usecases/delete_task.dart';
 import '../../application/usecases/list_tasks.dart';
@@ -32,7 +33,7 @@ final Provider<IdGenerator> idGeneratorProvider = Provider<IdGenerator>(
   (Ref ref) => UuidV4Generator(),
 );
 
-/// The four task use cases, each assembled from the ports above.
+/// The task use cases, each assembled from the ports above.
 final Provider<CreateTask> createTaskProvider = Provider<CreateTask>(
   (Ref ref) => CreateTask(
     repository: ref.watch(taskRepositoryProvider),
@@ -52,28 +53,49 @@ final Provider<DeleteTask> deleteTaskProvider = Provider<DeleteTask>(
   (Ref ref) => DeleteTask(repository: ref.watch(taskRepositoryProvider)),
 );
 
+final Provider<CommentTask> commentTaskProvider = Provider<CommentTask>(
+  (Ref ref) => CommentTask(
+    repository: ref.watch(taskRepositoryProvider),
+    clock: ref.watch(clockProvider),
+    idGenerator: ref.watch(idGeneratorProvider),
+  ),
+);
+
 final Provider<ListTasks> listTasksProvider = Provider<ListTasks>(
   (Ref ref) => ListTasks(repository: ref.watch(taskRepositoryProvider)),
 );
 
-/// The filter and ordering the user has chosen on the tasks screen.
+/// The filter, search and ordering the user has chosen on the tasks screen.
 class TaskQueryNotifier extends Notifier<TaskQuery> {
   @override
   TaskQuery build() => const TaskQuery();
 
-  /// Narrows the list to [status], or clears the filter when [status] is
-  /// `null` (the "All" chip).
-  void filterByStatus(TaskStatus? status) {
-    state = TaskQuery(
-      statuses: status == null ? const <TaskStatus>{} : <TaskStatus>{status},
-      tag: state.tag,
-      sort: state.sort,
-    );
+  /// Adds [status] to the filter, or removes it when it is already there.
+  ///
+  /// Multi-select: two active chips show the **union** of both statuses, which
+  /// is what "to do or blocked" means to the person reading the list. Removing
+  /// the last one leaves the set empty, which is the same as "All".
+  void toggleStatus(TaskStatus status) {
+    final Set<TaskStatus> next = <TaskStatus>{...state.statuses};
+    if (!next.remove(status)) next.add(status);
+    state = state.copyWith(statuses: Set<TaskStatus>.unmodifiable(next));
   }
 
-  /// Changes the ordering, keeping the filter.
+  /// Clears the status filter — the "All" chip.
+  void clearStatuses() {
+    state = state.copyWith(statuses: const <TaskStatus>{});
+  }
+
+  /// Narrows by free text over the title and description. Blank clears it.
+  void search(String term) {
+    state = term.trim().isEmpty
+        ? state.copyWith(clearSearch: true)
+        : state.copyWith(search: term);
+  }
+
+  /// Changes the ordering, keeping the filter and the search.
   void sortBy(TaskSort sort) {
-    state = TaskQuery(statuses: state.statuses, tag: state.tag, sort: sort);
+    state = state.copyWith(sort: sort);
   }
 }
 

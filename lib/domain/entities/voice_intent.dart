@@ -2,8 +2,12 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'voice_intent.freezed.dart';
 
-/// The five v1.0 voice intents plus the catch-all
-/// (`docs/architecture.md` §6.3).
+/// The v1.0 voice intents plus the catch-all (`docs/architecture.md` §6.3).
+///
+/// **Local first, Jira on request.** The four local-task intents are the ones
+/// an utterance about work reaches by default; the three Jira ones are reached
+/// only when an issue key or the word "Jira" is spoken. A wrong local task is a
+/// row the user deletes, a wrong Jira write is a change their whole team saw.
 enum IntentType {
   /// Transition a Jira issue — a mutation, always confirmed.
   updateJira,
@@ -13,6 +17,16 @@ enum IntentType {
 
   /// Create a local task.
   createTask,
+
+  /// Change a local task's status, priority, title, description or due date.
+  updateTask,
+
+  /// Delete a local task. **Always confirmed**, whatever the confidence
+  /// (§6.3.1) — there is no undo in v1.0.
+  deleteTask,
+
+  /// Append a local [TaskComment]. Never reaches Jira (§3.2).
+  commentTask,
 
   /// Create a reminder plus its notification.
   createReminder,
@@ -31,9 +45,29 @@ enum IntentType {
     IntentType.updateJira ||
     IntentType.addComment ||
     IntentType.createTask ||
+    IntentType.updateTask ||
+    IntentType.deleteTask ||
+    IntentType.commentTask ||
     IntentType.createReminder => true,
     IntentType.queryStatus || IntentType.unknown => false,
   };
+
+  /// `true` when the intent names its target by part of a task title rather
+  /// than by an unambiguous handle (§6.3.1).
+  ///
+  /// The three that do share one resolution rule, and it is the rule that
+  /// never guesses: one match acts, several ask, none changes nothing.
+  bool get needsTaskRef =>
+      this == IntentType.updateTask ||
+      this == IntentType.deleteTask ||
+      this == IntentType.commentTask;
+
+  /// `true` when acting on the intent destroys data the user cannot get back.
+  ///
+  /// The confidence threshold of BR-04 is a **floor** for this one, not a
+  /// gate: `deleteTask` confirms at 0.99 as readily as at 0.40, because a
+  /// deletion the user did not mean has no undo in v1.0.
+  bool get isDestructive => this == IntentType.deleteTask;
 
   /// `true` when acting on the intent reaches Jira.
   ///
@@ -54,6 +88,13 @@ enum IntentType {
     IntentType.updateJira => const <String>['issueKey', 'transition'],
     IntentType.addComment => const <String>['issueKey', 'comment'],
     IntentType.createTask => const <String>['title'],
+    // `taskRef` alone. What an `updateTask` changes is whichever of the
+    // optional slots the utterance carried, and demanding a particular one
+    // would make "muda a prioridade de X para baixa" and "marca X como
+    // concluída" two different intents.
+    IntentType.updateTask => const <String>['taskRef'],
+    IntentType.deleteTask => const <String>['taskRef'],
+    IntentType.commentTask => const <String>['taskRef', 'comment'],
     IntentType.createReminder => const <String>['text', 'triggerAt'],
     IntentType.queryStatus => const <String>['issueKey'],
     IntentType.unknown => const <String>[],
@@ -107,7 +148,27 @@ abstract class VoiceIntent with _$VoiceIntent {
   List<String> get missingSlots => <String>[
     for (final String slot in type.requiredSlots)
       if (!_hasSlot(slot)) slot,
+    // An `updateTask` that names a task and no change is a sentence the model
+    // read as a command and the app cannot act on. Asked as a slot rather than
+    // refused as unknown, because the user did name a task: they said what,
+    // and the app only needs to know what to.
+    if (type == IntentType.updateTask && !_hasAnyChange) changeSlot,
   ];
+
+  /// The pseudo-slot [missingSlots] reports when an `updateTask` names nothing
+  /// to change. Not a value the model returns — a question the app asks.
+  static const String changeSlot = 'change';
+
+  /// The slots an `updateTask` can act on. One of them has to be present.
+  static const List<String> updatableSlots = <String>[
+    'status',
+    'priority',
+    'title',
+    'description',
+    'dueDate',
+  ];
+
+  bool get _hasAnyChange => updatableSlots.any(_hasSlot);
 
   /// `true` when every required slot is present.
   bool get isComplete => missingSlots.isEmpty;

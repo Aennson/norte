@@ -20,6 +20,7 @@ import '../../domain/ports/voice_settings_store.dart';
 import '../jira/jira_providers.dart';
 import '../meetings/meeting_providers.dart';
 import '../tasks/task_providers.dart';
+import '../../domain/services/text_match.dart';
 import 'audio_level.dart';
 import 'speech_filler.dart';
 import 'voice_latency_log.dart';
@@ -119,6 +120,9 @@ final Provider<IntentRouter> intentRouterProvider = Provider<IntentRouter>(
   (Ref ref) => IntentRouter(
     tasks: ref.watch(taskRepositoryProvider),
     createTask: ref.watch(createTaskProvider),
+    updateTask: ref.watch(updateTaskProvider),
+    deleteTask: ref.watch(deleteTaskProvider),
+    commentTask: ref.watch(commentTaskProvider),
     createReminder: ref.watch(createReminderProvider),
     updateJiraStatus: ref.watch(updateJiraStatusProvider),
     addJiraComment: ref.watch(addJiraCommentProvider),
@@ -139,6 +143,8 @@ class VoiceSessionState {
     this.intent,
     this.confirming,
     this.askingFor,
+    this.choosing,
+    this.notFound,
     this.executed,
     this.failure,
     this.notUnderstood = false,
@@ -166,6 +172,13 @@ class VoiceSessionState {
 
   /// Set while the app is waiting for one missing slot.
   final SlotMissing? askingFor;
+
+  /// Set while the app is waiting for the user to pick between tasks whose
+  /// titles all matched what they said (§6.3.1, case 2).
+  final TaskAmbiguous? choosing;
+
+  /// Set when a spoken `taskRef` matched no task. Nothing was changed.
+  final TaskNotFound? notFound;
 
   /// Set once a command ran.
   final IntentExecuted? executed;
@@ -205,6 +218,8 @@ class VoiceSessionState {
     VoiceIntent? intent,
     ConfirmationRequired? confirming,
     SlotMissing? askingFor,
+    TaskAmbiguous? choosing,
+    TaskNotFound? notFound,
     IntentExecuted? executed,
     Failure? failure,
     bool? notUnderstood,
@@ -214,6 +229,8 @@ class VoiceSessionState {
     bool clearPartial = false,
     bool clearConfirming = false,
     bool clearAsking = false,
+    bool clearChoosing = false,
+    bool clearNotFound = false,
     bool clearFailure = false,
   }) => VoiceSessionState(
     phase: phase ?? this.phase,
@@ -223,6 +240,8 @@ class VoiceSessionState {
     intent: intent ?? this.intent,
     confirming: clearConfirming ? null : confirming ?? this.confirming,
     askingFor: clearAsking ? null : askingFor ?? this.askingFor,
+    choosing: clearChoosing ? null : choosing ?? this.choosing,
+    notFound: clearNotFound ? null : notFound ?? this.notFound,
     executed: executed ?? this.executed,
     failure: clearFailure ? null : failure ?? this.failure,
     notUnderstood: notUnderstood ?? this.notUnderstood,
@@ -390,7 +409,10 @@ class VoiceSession extends Notifier<VoiceSessionState> {
     final ConfirmationRequired? pending = state.confirming;
     if (pending == null) return;
     state = state.copyWith(clearConfirming: true);
-    await _execute(pending.intent, confirmed: true);
+    // The id the sheet was about, not the phrase it came from. Re-resolving
+    // would ask the list a second question, and a task created between the
+    // sheet appearing and the user tapping yes could change the answer.
+    await _execute(pending.intent, confirmed: true, taskId: pending.task?.id);
   }
 
   /// The user said no. Nothing ran, so there is nothing to undo.
@@ -501,6 +523,13 @@ class VoiceSession extends Notifier<VoiceSessionState> {
         return;
       }
 
+      // Same reasoning for the "which of these two?" question: "de novo" is
+      // not a command, it is the answer to what the app just asked.
+      if (state.choosing != null) {
+        await chooseTask(utterance);
+        return;
+      }
+
       await _parseAndRoute(
         utterance,
         context: IntentContext(
@@ -542,10 +571,14 @@ class VoiceSession extends Notifier<VoiceSessionState> {
     }
   }
 
-  Future<void> _execute(VoiceIntent intent, {bool confirmed = false}) async {
+  Future<void> _execute(
+    VoiceIntent intent, {
+    bool confirmed = false,
+    String? taskId,
+  }) async {
     final Result<RouteOutcome> routed = await ref
         .read(intentRouterProvider)
-        .route(intent, confirmed: confirmed);
+        .route(intent, confirmed: confirmed, taskId: taskId);
 
     switch (routed) {
       case Err<RouteOutcome>(:final Failure failure):
@@ -556,9 +589,41 @@ class VoiceSession extends Notifier<VoiceSessionState> {
         state = state.copyWith(confirming: pending, phase: VoicePhase.asking);
       case Ok<RouteOutcome>(value: final SlotMissing asking):
         state = state.copyWith(askingFor: asking, phase: VoicePhase.asking);
+      case Ok<RouteOutcome>(value: final TaskAmbiguous ambiguous):
+        state = state.copyWith(choosing: ambiguous, phase: VoicePhase.asking);
+      case Ok<RouteOutcome>(value: final TaskNotFound missing):
+        // Not a failure. The pipeline worked perfectly and the answer is that
+        // there is no such task — which is information, not an error, and the
+        // session stays open so the user can simply say another name.
+        state = state.copyWith(notFound: missing, phase: VoicePhase.asking);
       case Ok<RouteOutcome>(value: IntentNotUnderstood()):
         state = state.copyWith(notUnderstood: true, phase: VoicePhase.asking);
     }
+  }
+
+  /// Answers a [TaskAmbiguous] by naming one of the candidates out loud.
+  ///
+  /// The spoken answer is matched against the candidates **only** — never
+  /// against the whole list — so a reply that fits none of them re-asks rather
+  /// than acting on some fourth task the user never mentioned. And it is
+  /// matched here rather than sent back to the model: the choice is between
+  /// rows the app is holding, which is a comparison, not an interpretation.
+  Future<void> chooseTask(String answer) async {
+    final TaskAmbiguous? choosing = state.choosing;
+    if (choosing == null) return;
+
+    final List<Task> matches = <Task>[
+      for (final Task task in choosing.candidates)
+        if (TextMatch.contains(task.title, answer)) task,
+    ];
+    // An answer that fits two of them has not chosen. The question stands.
+    if (matches.length != 1) return;
+
+    state = state.copyWith(
+      clearChoosing: true,
+      phase: VoicePhase.understanding,
+    );
+    await _execute(choosing.intent, taskId: matches.single.id);
   }
 
   void _log(String line) {

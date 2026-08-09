@@ -115,6 +115,24 @@
   "@tasksFilterAll": {
     "description": "Filter chip that clears the status filter."
   },
+  "tasksSearchHint": "Search title and description",
+  "@tasksSearchHint": {
+    "description": "Placeholder of the task search field."
+  },
+  "tasksSearchClear": "Clear search",
+  "@tasksSearchClear": {
+    "description": "Tooltip of the button that empties the task search field."
+  },
+  "tasksSearchEmptyMessage": "Nothing matches “{term}”.",
+  "@tasksSearchEmptyMessage": {
+    "description": "Empty state shown when a search matched no task. Deliberately different from the filter-only wording: the fix is a different word, not a different filter.",
+    "placeholders": {
+      "term": {
+        "type": "String",
+        "example": "orçamento"
+      }
+    }
+  },
   "taskFieldTitle": "Title",
   "@taskFieldTitle": {
     "description": "Label of the task title input."
@@ -984,6 +1002,84 @@
     "placeholders": {
       "issueKey": {
         "type": "String"
+      }
+    }
+  },
+  "voiceAskTaskRef": "Which task?",
+  "@voiceAskTaskRef": {
+    "description": "Question asked when a local task command named no task."
+  },
+  "voiceAskChange": "Change it to what?",
+  "@voiceAskChange": {
+    "description": "Question asked when an updateTask named a task but no change."
+  },
+  "voiceActionUpdateTask": "Change {taskRef}",
+  "@voiceActionUpdateTask": {
+    "description": "Confirmation line for a spoken updateTask.",
+    "placeholders": {
+      "taskRef": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceActionDeleteTask": "Delete {taskRef}",
+  "@voiceActionDeleteTask": {
+    "description": "Confirmation line for a spoken deleteTask.",
+    "placeholders": {
+      "taskRef": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceActionCommentTask": "Note on {taskRef}: {comment}",
+  "@voiceActionCommentTask": {
+    "description": "Confirmation line for a spoken commentTask. Says 'note', not 'comment': the word has to distinguish it from the Jira comment the whole team reads.",
+    "placeholders": {
+      "taskRef": {
+        "type": "String"
+      },
+      "comment": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceReasonDeletion": "Deleting a task cannot be undone, so this always asks.",
+  "@voiceReasonDeletion": {
+    "description": "Why a spoken deleteTask always confirms, at any confidence."
+  },
+  "voiceDoneTaskUpdated": "Task updated",
+  "@voiceDoneTaskUpdated": {
+    "description": "Feedback after a spoken updateTask."
+  },
+  "voiceDoneTaskDeleted": "Deleted {title}",
+  "@voiceDoneTaskDeleted": {
+    "description": "Feedback after a spoken deleteTask. Names the task: the row is gone, so this is the user's only chance to check it was the right one.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceDoneTaskCommented": "Note added — it stays on your list",
+  "@voiceDoneTaskCommented": {
+    "description": "Feedback after a spoken commentTask. Says where the note went, because the same sentence spoken with an issue key would have reached the whole team (BR-01)."
+  },
+  "voiceTaskNotFound": "No task called “{reference}”.",
+  "@voiceTaskNotFound": {
+    "description": "Outcome when a spoken taskRef matched no task. Nothing was changed.",
+    "placeholders": {
+      "reference": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceTaskAmbiguous": "Which one — {candidates}?",
+  "@voiceTaskAmbiguous": {
+    "description": "Question listing every task a spoken reference matched. The app asks rather than guessing.",
+    "placeholders": {
+      "candidates": {
+        "type": "String",
+        "example": "Ligar para Samara, Ligar para Samara de novo"
       }
     }
   },

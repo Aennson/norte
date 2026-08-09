@@ -12,9 +12,11 @@ import '../entities/task.dart';
 ///   `ListTasks` sorts.
 /// * [save] is an upsert keyed by [Task.id]: it inserts when the id is new and
 ///   replaces the row otherwise. It never stamps `createdAt`/`updatedAt` —
-///   the use case owns those.
+///   the use case owns those. `Task.comments` is part of the task: saving
+///   replaces the stored set with the one given, in the order given, and
+///   reading returns them in that order (S05a-IT-01).
 /// * [delete] is idempotent: deleting an unknown id succeeds and touches no
-///   other row.
+///   other row. It takes the task's comments with it and **only** its own.
 /// * A storage error surfaces as a thrown `StorageFailure`; nothing else
 ///   escapes the adapter.
 abstract interface class TaskRepository {

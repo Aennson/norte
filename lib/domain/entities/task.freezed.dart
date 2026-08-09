@@ -25,7 +25,11 @@ mixin _$Task {
  String? get description; TaskStatus get status; Priority get priority;/// Optional deadline. Tasks without one sort last.
  DateTime? get dueDate;/// Optional Jira reference (BR-01).
  JiraLink? get jiraLink;/// User labels, kept in the order the user entered them.
- List<String> get tags;/// Id of the meeting whose action item produced this task, when one did
+ List<String> get tags;/// Local notes, oldest first — the order they were written in
+/// (`sprint-05a`, S05a-IT-01).
+///
+/// **None of these ever reaches Jira** (§3.2, BR-01). See [TaskComment].
+ List<TaskComment> get comments;/// Id of the meeting whose action item produced this task, when one did
 /// and that meeting was saved (`sprint-03` validation rules).
 ///
 /// A back-reference for navigation and nothing more: the task is a task
@@ -41,16 +45,16 @@ $TaskCopyWith<Task> get copyWith => _$TaskCopyWithImpl<Task>(this as Task, _$ide
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Task&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.description, description) || other.description == description)&&(identical(other.status, status) || other.status == status)&&(identical(other.priority, priority) || other.priority == priority)&&(identical(other.dueDate, dueDate) || other.dueDate == dueDate)&&(identical(other.jiraLink, jiraLink) || other.jiraLink == jiraLink)&&const DeepCollectionEquality().equals(other.tags, tags)&&(identical(other.sourceMeetingId, sourceMeetingId) || other.sourceMeetingId == sourceMeetingId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Task&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.description, description) || other.description == description)&&(identical(other.status, status) || other.status == status)&&(identical(other.priority, priority) || other.priority == priority)&&(identical(other.dueDate, dueDate) || other.dueDate == dueDate)&&(identical(other.jiraLink, jiraLink) || other.jiraLink == jiraLink)&&const DeepCollectionEquality().equals(other.tags, tags)&&const DeepCollectionEquality().equals(other.comments, comments)&&(identical(other.sourceMeetingId, sourceMeetingId) || other.sourceMeetingId == sourceMeetingId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,title,createdAt,updatedAt,description,status,priority,dueDate,jiraLink,const DeepCollectionEquality().hash(tags),sourceMeetingId);
+int get hashCode => Object.hash(runtimeType,id,title,createdAt,updatedAt,description,status,priority,dueDate,jiraLink,const DeepCollectionEquality().hash(tags),const DeepCollectionEquality().hash(comments),sourceMeetingId);
 
 @override
 String toString() {
-  return 'Task(id: $id, title: $title, createdAt: $createdAt, updatedAt: $updatedAt, description: $description, status: $status, priority: $priority, dueDate: $dueDate, jiraLink: $jiraLink, tags: $tags, sourceMeetingId: $sourceMeetingId)';
+  return 'Task(id: $id, title: $title, createdAt: $createdAt, updatedAt: $updatedAt, description: $description, status: $status, priority: $priority, dueDate: $dueDate, jiraLink: $jiraLink, tags: $tags, comments: $comments, sourceMeetingId: $sourceMeetingId)';
 }
 
 
@@ -61,7 +65,7 @@ abstract mixin class $TaskCopyWith<$Res>  {
   factory $TaskCopyWith(Task value, $Res Function(Task) _then) = _$TaskCopyWithImpl;
 @useResult
 $Res call({
- String id, String title, DateTime createdAt, DateTime updatedAt, String? description, TaskStatus status, Priority priority, DateTime? dueDate, JiraLink? jiraLink, List<String> tags, String? sourceMeetingId
+ String id, String title, DateTime createdAt, DateTime updatedAt, String? description, TaskStatus status, Priority priority, DateTime? dueDate, JiraLink? jiraLink, List<String> tags, List<TaskComment> comments, String? sourceMeetingId
 });
 
 
@@ -78,7 +82,7 @@ class _$TaskCopyWithImpl<$Res>
 
 /// Create a copy of Task
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? createdAt = null,Object? updatedAt = null,Object? description = freezed,Object? status = null,Object? priority = null,Object? dueDate = freezed,Object? jiraLink = freezed,Object? tags = null,Object? sourceMeetingId = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? createdAt = null,Object? updatedAt = null,Object? description = freezed,Object? status = null,Object? priority = null,Object? dueDate = freezed,Object? jiraLink = freezed,Object? tags = null,Object? comments = null,Object? sourceMeetingId = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -90,7 +94,8 @@ as TaskStatus,priority: null == priority ? _self.priority : priority // ignore: 
 as Priority,dueDate: freezed == dueDate ? _self.dueDate : dueDate // ignore: cast_nullable_to_non_nullable
 as DateTime?,jiraLink: freezed == jiraLink ? _self.jiraLink : jiraLink // ignore: cast_nullable_to_non_nullable
 as JiraLink?,tags: null == tags ? _self.tags : tags // ignore: cast_nullable_to_non_nullable
-as List<String>,sourceMeetingId: freezed == sourceMeetingId ? _self.sourceMeetingId : sourceMeetingId // ignore: cast_nullable_to_non_nullable
+as List<String>,comments: null == comments ? _self.comments : comments // ignore: cast_nullable_to_non_nullable
+as List<TaskComment>,sourceMeetingId: freezed == sourceMeetingId ? _self.sourceMeetingId : sourceMeetingId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -188,10 +193,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  DateTime createdAt,  DateTime updatedAt,  String? description,  TaskStatus status,  Priority priority,  DateTime? dueDate,  JiraLink? jiraLink,  List<String> tags,  String? sourceMeetingId)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  DateTime createdAt,  DateTime updatedAt,  String? description,  TaskStatus status,  Priority priority,  DateTime? dueDate,  JiraLink? jiraLink,  List<String> tags,  List<TaskComment> comments,  String? sourceMeetingId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Task() when $default != null:
-return $default(_that.id,_that.title,_that.createdAt,_that.updatedAt,_that.description,_that.status,_that.priority,_that.dueDate,_that.jiraLink,_that.tags,_that.sourceMeetingId);case _:
+return $default(_that.id,_that.title,_that.createdAt,_that.updatedAt,_that.description,_that.status,_that.priority,_that.dueDate,_that.jiraLink,_that.tags,_that.comments,_that.sourceMeetingId);case _:
   return orElse();
 
 }
@@ -209,10 +214,10 @@ return $default(_that.id,_that.title,_that.createdAt,_that.updatedAt,_that.descr
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  DateTime createdAt,  DateTime updatedAt,  String? description,  TaskStatus status,  Priority priority,  DateTime? dueDate,  JiraLink? jiraLink,  List<String> tags,  String? sourceMeetingId)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  DateTime createdAt,  DateTime updatedAt,  String? description,  TaskStatus status,  Priority priority,  DateTime? dueDate,  JiraLink? jiraLink,  List<String> tags,  List<TaskComment> comments,  String? sourceMeetingId)  $default,) {final _that = this;
 switch (_that) {
 case _Task():
-return $default(_that.id,_that.title,_that.createdAt,_that.updatedAt,_that.description,_that.status,_that.priority,_that.dueDate,_that.jiraLink,_that.tags,_that.sourceMeetingId);case _:
+return $default(_that.id,_that.title,_that.createdAt,_that.updatedAt,_that.description,_that.status,_that.priority,_that.dueDate,_that.jiraLink,_that.tags,_that.comments,_that.sourceMeetingId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -229,10 +234,10 @@ return $default(_that.id,_that.title,_that.createdAt,_that.updatedAt,_that.descr
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  DateTime createdAt,  DateTime updatedAt,  String? description,  TaskStatus status,  Priority priority,  DateTime? dueDate,  JiraLink? jiraLink,  List<String> tags,  String? sourceMeetingId)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  DateTime createdAt,  DateTime updatedAt,  String? description,  TaskStatus status,  Priority priority,  DateTime? dueDate,  JiraLink? jiraLink,  List<String> tags,  List<TaskComment> comments,  String? sourceMeetingId)?  $default,) {final _that = this;
 switch (_that) {
 case _Task() when $default != null:
-return $default(_that.id,_that.title,_that.createdAt,_that.updatedAt,_that.description,_that.status,_that.priority,_that.dueDate,_that.jiraLink,_that.tags,_that.sourceMeetingId);case _:
+return $default(_that.id,_that.title,_that.createdAt,_that.updatedAt,_that.description,_that.status,_that.priority,_that.dueDate,_that.jiraLink,_that.tags,_that.comments,_that.sourceMeetingId);case _:
   return null;
 
 }
@@ -244,7 +249,7 @@ return $default(_that.id,_that.title,_that.createdAt,_that.updatedAt,_that.descr
 
 
 class _Task implements Task {
-  const _Task({required this.id, required this.title, required this.createdAt, required this.updatedAt, this.description, this.status = TaskStatus.todo, this.priority = Priority.medium, this.dueDate, this.jiraLink, final  List<String> tags = const <String>[], this.sourceMeetingId}): _tags = tags;
+  const _Task({required this.id, required this.title, required this.createdAt, required this.updatedAt, this.description, this.status = TaskStatus.todo, this.priority = Priority.medium, this.dueDate, this.jiraLink, final  List<String> tags = const <String>[], final  List<TaskComment> comments = const <TaskComment>[], this.sourceMeetingId}): _tags = tags,_comments = comments;
   
 
 /// Locally generated UUID v4. Stable for the life of the task, and
@@ -275,6 +280,21 @@ class _Task implements Task {
   return EqualUnmodifiableListView(_tags);
 }
 
+/// Local notes, oldest first — the order they were written in
+/// (`sprint-05a`, S05a-IT-01).
+///
+/// **None of these ever reaches Jira** (§3.2, BR-01). See [TaskComment].
+ final  List<TaskComment> _comments;
+/// Local notes, oldest first — the order they were written in
+/// (`sprint-05a`, S05a-IT-01).
+///
+/// **None of these ever reaches Jira** (§3.2, BR-01). See [TaskComment].
+@override@JsonKey() List<TaskComment> get comments {
+  if (_comments is EqualUnmodifiableListView) return _comments;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_comments);
+}
+
 /// Id of the meeting whose action item produced this task, when one did
 /// and that meeting was saved (`sprint-03` validation rules).
 ///
@@ -292,16 +312,16 @@ _$TaskCopyWith<_Task> get copyWith => __$TaskCopyWithImpl<_Task>(this, _$identit
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Task&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.description, description) || other.description == description)&&(identical(other.status, status) || other.status == status)&&(identical(other.priority, priority) || other.priority == priority)&&(identical(other.dueDate, dueDate) || other.dueDate == dueDate)&&(identical(other.jiraLink, jiraLink) || other.jiraLink == jiraLink)&&const DeepCollectionEquality().equals(other._tags, _tags)&&(identical(other.sourceMeetingId, sourceMeetingId) || other.sourceMeetingId == sourceMeetingId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Task&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.description, description) || other.description == description)&&(identical(other.status, status) || other.status == status)&&(identical(other.priority, priority) || other.priority == priority)&&(identical(other.dueDate, dueDate) || other.dueDate == dueDate)&&(identical(other.jiraLink, jiraLink) || other.jiraLink == jiraLink)&&const DeepCollectionEquality().equals(other._tags, _tags)&&const DeepCollectionEquality().equals(other._comments, _comments)&&(identical(other.sourceMeetingId, sourceMeetingId) || other.sourceMeetingId == sourceMeetingId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,title,createdAt,updatedAt,description,status,priority,dueDate,jiraLink,const DeepCollectionEquality().hash(_tags),sourceMeetingId);
+int get hashCode => Object.hash(runtimeType,id,title,createdAt,updatedAt,description,status,priority,dueDate,jiraLink,const DeepCollectionEquality().hash(_tags),const DeepCollectionEquality().hash(_comments),sourceMeetingId);
 
 @override
 String toString() {
-  return 'Task(id: $id, title: $title, createdAt: $createdAt, updatedAt: $updatedAt, description: $description, status: $status, priority: $priority, dueDate: $dueDate, jiraLink: $jiraLink, tags: $tags, sourceMeetingId: $sourceMeetingId)';
+  return 'Task(id: $id, title: $title, createdAt: $createdAt, updatedAt: $updatedAt, description: $description, status: $status, priority: $priority, dueDate: $dueDate, jiraLink: $jiraLink, tags: $tags, comments: $comments, sourceMeetingId: $sourceMeetingId)';
 }
 
 
@@ -312,7 +332,7 @@ abstract mixin class _$TaskCopyWith<$Res> implements $TaskCopyWith<$Res> {
   factory _$TaskCopyWith(_Task value, $Res Function(_Task) _then) = __$TaskCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String title, DateTime createdAt, DateTime updatedAt, String? description, TaskStatus status, Priority priority, DateTime? dueDate, JiraLink? jiraLink, List<String> tags, String? sourceMeetingId
+ String id, String title, DateTime createdAt, DateTime updatedAt, String? description, TaskStatus status, Priority priority, DateTime? dueDate, JiraLink? jiraLink, List<String> tags, List<TaskComment> comments, String? sourceMeetingId
 });
 
 
@@ -329,7 +349,7 @@ class __$TaskCopyWithImpl<$Res>
 
 /// Create a copy of Task
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? createdAt = null,Object? updatedAt = null,Object? description = freezed,Object? status = null,Object? priority = null,Object? dueDate = freezed,Object? jiraLink = freezed,Object? tags = null,Object? sourceMeetingId = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? createdAt = null,Object? updatedAt = null,Object? description = freezed,Object? status = null,Object? priority = null,Object? dueDate = freezed,Object? jiraLink = freezed,Object? tags = null,Object? comments = null,Object? sourceMeetingId = freezed,}) {
   return _then(_Task(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -341,7 +361,8 @@ as TaskStatus,priority: null == priority ? _self.priority : priority // ignore: 
 as Priority,dueDate: freezed == dueDate ? _self.dueDate : dueDate // ignore: cast_nullable_to_non_nullable
 as DateTime?,jiraLink: freezed == jiraLink ? _self.jiraLink : jiraLink // ignore: cast_nullable_to_non_nullable
 as JiraLink?,tags: null == tags ? _self._tags : tags // ignore: cast_nullable_to_non_nullable
-as List<String>,sourceMeetingId: freezed == sourceMeetingId ? _self.sourceMeetingId : sourceMeetingId // ignore: cast_nullable_to_non_nullable
+as List<String>,comments: null == comments ? _self._comments : comments // ignore: cast_nullable_to_non_nullable
+as List<TaskComment>,sourceMeetingId: freezed == sourceMeetingId ? _self.sourceMeetingId : sourceMeetingId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

@@ -90,6 +90,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tasksFilterAll => 'All';
 
   @override
+  String get tasksSearchHint => 'Search title and description';
+
+  @override
+  String get tasksSearchClear => 'Clear search';
+
+  @override
+  String tasksSearchEmptyMessage(String term) {
+    return 'Nothing matches “$term”.';
+  }
+
+  @override
   String get taskFieldTitle => 'Title';
 
   @override
@@ -725,6 +736,52 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String voiceErrorNotLinked(String issueKey) {
     return 'No task here is linked to $issueKey.';
+  }
+
+  @override
+  String get voiceAskTaskRef => 'Which task?';
+
+  @override
+  String get voiceAskChange => 'Change it to what?';
+
+  @override
+  String voiceActionUpdateTask(String taskRef) {
+    return 'Change $taskRef';
+  }
+
+  @override
+  String voiceActionDeleteTask(String taskRef) {
+    return 'Delete $taskRef';
+  }
+
+  @override
+  String voiceActionCommentTask(String taskRef, String comment) {
+    return 'Note on $taskRef: $comment';
+  }
+
+  @override
+  String get voiceReasonDeletion =>
+      'Deleting a task cannot be undone, so this always asks.';
+
+  @override
+  String get voiceDoneTaskUpdated => 'Task updated';
+
+  @override
+  String voiceDoneTaskDeleted(String title) {
+    return 'Deleted $title';
+  }
+
+  @override
+  String get voiceDoneTaskCommented => 'Note added — it stays on your list';
+
+  @override
+  String voiceTaskNotFound(String reference) {
+    return 'No task called “$reference”.';
+  }
+
+  @override
+  String voiceTaskAmbiguous(String candidates) {
+    return 'Which one — $candidates?';
   }
 
   @override

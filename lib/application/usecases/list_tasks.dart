@@ -1,5 +1,6 @@
 import '../../domain/entities/task.dart';
 import '../../domain/ports/task_repository.dart';
+import '../../domain/services/text_match.dart';
 
 /// How a task list is ordered.
 enum TaskSort {
@@ -12,11 +13,17 @@ enum TaskSort {
 
 /// Filter and ordering applied to the task list.
 ///
-/// A query with no [statuses] and no [tag] matches every task.
+/// A query with no [statuses], no [tag] and no [search] matches every task.
+///
+/// **The three filters compose, and each narrows what the others left.**
+/// Several statuses are a union — `{todo, blocked}` shows both — and the
+/// search then runs over that union rather than over the whole list
+/// (`sprint-05a` validation rules, S05a-UT-08).
 class TaskQuery {
   const TaskQuery({
     this.statuses = const <TaskStatus>{},
     this.tag,
+    this.search,
     this.sort = TaskSort.priority,
   });
 
@@ -26,11 +33,44 @@ class TaskQuery {
   /// Keeps only tasks carrying this tag. `null` means "any tag".
   final String? tag;
 
+  /// Free text matched against the **title and the description**, case- and
+  /// accent-insensitively (`docs/architecture.md` §4.1).
+  ///
+  /// `null` and blank both mean "no search": an empty box is not a filter, and
+  /// treating it as one would show the "nothing matched" state to a user who
+  /// had merely cleared the field.
+  final String? search;
+
   final TaskSort sort;
+
+  /// The search term, or `null` when there is nothing to search for.
+  String? get searchTerm => switch (search?.trim()) {
+    final String term when term.isNotEmpty => term,
+    _ => null,
+  };
 
   /// `true` when the query narrows nothing — used by the UI to tell an empty
   /// database apart from a filter that matched nothing.
-  bool get isUnfiltered => statuses.isEmpty && tag == null;
+  bool get isUnfiltered =>
+      statuses.isEmpty && tag == null && searchTerm == null;
+
+  /// This query with [statuses], [tag], [search] or [sort] replaced.
+  ///
+  /// `clearSearch` exists for the same reason `Patch` does in `UpdateTask`:
+  /// `null` already means "unchanged" here, so removing the search needs a
+  /// word of its own.
+  TaskQuery copyWith({
+    Set<TaskStatus>? statuses,
+    String? tag,
+    String? search,
+    TaskSort? sort,
+    bool clearSearch = false,
+  }) => TaskQuery(
+    statuses: statuses ?? this.statuses,
+    tag: tag ?? this.tag,
+    search: clearSearch ? null : search ?? this.search,
+    sort: sort ?? this.sort,
+  );
 }
 
 /// Lists tasks, filtered and sorted.
@@ -53,11 +93,20 @@ class ListTasks {
   /// Exposed so the rules can be exercised without a stream, and reused by any
   /// caller that already holds a list.
   static List<Task> apply(List<Task> tasks, TaskQuery query) {
+    final String? term = query.searchTerm;
     final List<Task> result = tasks.where((Task task) {
       if (query.statuses.isNotEmpty && !query.statuses.contains(task.status)) {
         return false;
       }
       if (query.tag != null && !task.tags.contains(query.tag)) return false;
+      // Title **or** description: a task the user described in detail and
+      // titled tersely is exactly the one a search has to be able to find
+      // (S05a-UT-09).
+      if (term != null &&
+          !TextMatch.contains(task.title, term) &&
+          !TextMatch.contains(task.description ?? '', term)) {
+        return false;
+      }
       return true;
     }).toList();
 
