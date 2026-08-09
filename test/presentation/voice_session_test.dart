@@ -455,6 +455,30 @@ void main() {
       expect(container.read(voiceLatencyLogProvider).count, 1);
     });
 
+    testWidgets('opening the microphone warms the intent cache', (
+      WidgetTester tester,
+    ) async {
+      // The first command of a session used to write the prompt cache rather
+      // than read it — 7406 ms against ~2900 ms warm — so the worst request
+      // the app makes landed on the command the user judges the feature by.
+      // The dialling and the drawing of breath are free seconds; spend them.
+      useDesktopViewport(tester);
+      await tester.pumpWidget(host());
+      await tester.pumpAndSettle();
+
+      final ProviderContainer container = ProviderScope.containerOf(
+        tester.element(find.byType(VoiceHost)),
+      );
+      expect(ai.primeCalls, 0, reason: 'not before the button is pressed');
+
+      await container.read(voiceSessionProvider.notifier).start();
+      await tester.pumpAndSettle();
+
+      expect(ai.primeCalls, 1);
+      // A warm-up is not a command: it must not look like one to the parser.
+      expect(ai.intentCalls, isEmpty);
+    });
+
     testWidgets('the wait is charged to Scribe and to Claude separately', (
       WidgetTester tester,
     ) async {

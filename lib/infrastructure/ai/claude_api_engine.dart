@@ -210,6 +210,53 @@ class ClaudeApiEngine implements AiEngine {
     return intentCodec.parse(raw, context: context);
   }
 
+  @override
+  Future<void> primeCache() async {
+    try {
+      final String key = await _apiKey();
+      await dio.post<void>(
+        '$baseUrl/v1/messages',
+        // Byte-identical `system` to the one [parseIntent] sends, because that
+        // is the entire cached prefix: nothing is rendered before it, and the
+        // breakpoint sits on it. What follows may differ freely.
+        data: <String, Object?>{
+          'model': model,
+          // The whole request. Prefill runs and writes the cache; nothing is
+          // generated, so nothing is billed as output.
+          'max_tokens': 0,
+          'system': <Object?>[
+            <String, Object?>{
+              'type': 'text',
+              'text': intentCodec.systemPrompt,
+              'cache_control': <String, Object?>{'type': 'ephemeral'},
+            },
+          ],
+          // Read during prefill, never answered. It sits after the breakpoint,
+          // so it is not part of what gets cached.
+          'messages': <Object?>[
+            <String, Object?>{'role': 'user', 'content': 'warmup'},
+          ],
+          // `max_tokens: 0` is refused alongside `stream` and
+          // `output_config.format`, so neither is sent. Both belong to
+          // generating an answer, and this request generates none.
+        },
+        options: Options(
+          headers: <String, Object?>{
+            'x-api-key': key,
+            'anthropic-version': apiVersion,
+            'content-type': 'application/json',
+          },
+          validateStatus: (int? status) => true,
+        ),
+      );
+    } catch (_) {
+      // Deliberately silent, and the contract says so. The worst outcome of a
+      // failed warm-up is the cold request the app would have made anyway;
+      // the worst outcome of letting this throw is a session that never
+      // starts because the cache could not be primed.
+    }
+  }
+
   /// The user's key, or [MissingApiKeyFailure].
   Future<String> _apiKey() async {
     final String? key = await credentialStore.read();

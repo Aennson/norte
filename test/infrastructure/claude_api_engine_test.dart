@@ -370,4 +370,56 @@ void main() {
       expect(lines.single, contains('cache read 0'));
     });
   });
+
+  group('priming the intent cache', () {
+    // The manual pass of 2026-08-09: the first command of a session wrote the
+    // cache (1509 tokens, `cache read 0`) and took 7406 ms; the four that read
+    // it took 2676–3160 ms. The warm-up moves that write off the user's first
+    // spoken command.
+
+    test('sends the same cached prefix, and generates nothing', () async {
+      await engineWith().primeCache();
+
+      final Map<String, Object?> body = server.bodies.last;
+      // The prefix has to match byte for byte or the real call writes its own
+      // entry and the warm-up bought nothing.
+      final Map<String, Object?> block =
+          (body['system']! as List<Object?>).single! as Map<String, Object?>;
+      expect(block['text'], const IntentCodec().systemPrompt);
+      expect(block['cache_control'], <String, Object?>{'type': 'ephemeral'});
+
+      expect(body['max_tokens'], 0);
+      // Both are refused alongside `max_tokens: 0`, and both belong to
+      // generating an answer this request does not generate.
+      expect(body.containsKey('stream'), isFalse);
+      expect(body.containsKey('output_config'), isFalse);
+    });
+
+    test('a warm-up costs nothing when there is no key', () async {
+      // The user has not been to Settings yet. Pressing the microphone must
+      // not spend a request, and must not raise.
+      await expectLater(engineWith(apiKey: null).primeCache(), completes);
+      expect(server.requests, isEmpty);
+    });
+
+    test('a refused warm-up is swallowed, not thrown', () async {
+      // Every failure mode lands here: a rejected key, a malformed body, a
+      // rate limit. The worst outcome allowed is the cold request the app
+      // would have made anyway — never a session that fails to start.
+      server.forceStatus = 429;
+
+      await expectLater(engineWith().primeCache(), completes);
+    });
+
+    test('an unreachable host is swallowed too', () async {
+      final ClaudeApiEngine engine = ClaudeApiEngine(
+        dio: Dio(),
+        credentialStore: _FakeAiCredentialStore('synthetic-key'),
+        clock: FakeClock(DateTime.utc(2026, 8, 8, 11)),
+        baseUrl: 'http://127.0.0.1:1',
+      );
+
+      await expectLater(engine.primeCache(), completes);
+    });
+  });
 }

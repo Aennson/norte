@@ -301,6 +301,13 @@ class VoiceSession extends Notifier<VoiceSessionState> {
     _lastPartialAt = null;
     _heardAt = null;
 
+    // Warm the intent cache while the socket dials and the user draws breath.
+    // The first command of a session used to write the cache rather than read
+    // it — 7406 ms against ~2900 ms warm — which put the worst request the app
+    // makes on the command the user judges the feature by. Unawaited on
+    // purpose: nothing here waits for it, and it cannot fail loudly.
+    unawaited(ref.read(intentParserProvider).primeCache());
+
     final Microphone microphone = ref.read(microphoneProvider);
     final RealtimeTranscription engine = ref.read(
       realtimeTranscriptionProvider,

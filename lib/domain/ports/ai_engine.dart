@@ -90,6 +90,26 @@ abstract interface class AiEngine {
   /// `IntentParser` is entitled to collapse them.
   Future<VoiceIntent> parseIntent(String utterance, IntentContext context);
 
+  /// Warms whatever the engine caches for [parseIntent], ahead of a real
+  /// command.
+  ///
+  /// **Why the port has this at all.** The intent prompt is cached, and the
+  /// first command of a session pays to *write* that cache: measured at
+  /// 7406 ms against 2676–3160 ms for the four that read it. The user speaks
+  /// their first command into the slowest request the app ever makes, and it
+  /// is the one they judge the feature by.
+  ///
+  /// **Contract**
+  /// * Best effort, and **never throws** — no key, no network, a rejected
+  ///   request, all end the same way: quietly. A warm-up that can break a
+  ///   session is worse than a cold cache (`sprint-05` report §7.4).
+  /// * Changes nothing a caller can observe. An engine that caches nothing —
+  ///   a local one, or `CopilotCliEngine` in Sprint 07 — satisfies this by
+  ///   doing nothing at all.
+  /// * Safe to call when one is already in flight, and safe to ignore the
+  ///   returned future.
+  Future<void> primeCache();
+
   /// What this engine supports. Constant for the life of the instance.
   AiCapabilities get capabilities;
 }

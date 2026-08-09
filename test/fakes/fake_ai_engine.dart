@@ -111,6 +111,9 @@ class FakeAiEngine implements AiEngine {
   /// Every `parseIntent` call received, in order.
   final List<IntentCall> intentCalls = <IntentCall>[];
 
+  /// How many times [primeCache] was called.
+  int primeCalls = 0;
+
   /// Convenience for the common case: always answer with [raw].
   // ignore: use_setters_to_change_properties
   void alwaysAnswer(String raw) {
@@ -162,6 +165,11 @@ class FakeAiEngine implements AiEngine {
     );
   }
 
+  /// Counted, and otherwise nothing — an engine that caches nothing honours
+  /// the contract by doing nothing, and it must never throw.
+  @override
+  Future<void> primeCache() async => primeCalls++;
+
   @override
   Future<VoiceIntent> parseIntent(
     String utterance,
@@ -211,5 +219,6 @@ class FakeAiEngine implements AiEngine {
     latency = Duration.zero;
     hang = false;
     onParseIntent = null;
+    primeCalls = 0;
   }
 }

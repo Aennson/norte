@@ -130,14 +130,61 @@ floor on this model is 512 tokens and `IntentCodec.systemPrompt` is roughly
 and lose caching altogether, making every command slower. The handoff's
 original candidate lever is the one that most needs a measurement first.
 
-Next: a manual pass to confirm the drop and read the cache line. If Claude is
-still over budget with thinking off, the remaining levers are the **model**
-(`ClaudeApiEngine.model` is a constructor argument; a six-way classification
-does not obviously need the largest one — the Developer's call, since the key
-is theirs and the eval thresholds would need re-running) and the **eight
-required nullable slots** in `IntentCodec.schema`, which force ~40 tokens of
-`null` into every answer and whose strictness the codec's own dartdoc labels
-unverified.
+### Second measurement — thinking off, 5 commands
+
+| # | Scribe | Claude | cache | out |
+|---|---|---|---|---|
+| 1 | 332 ms | **7406 ms** | written 1509, **read 0** | 85 |
+| 2 | 915 ms | 2908 ms | read 1509 | 85 |
+| 3 | 692 ms | 3160 ms | read 1509 | 84 |
+| 4 | 909 ms | 2822 ms | read 1509 | 84 |
+| 5 | 509 ms | 2676 ms | read 1509 | 87 |
+
+**Thinking off is worth roughly 800 ms.** Claude's warm median went 3661 →
+2865 ms, and its worst warm call (3160 ms) now beats its previous best
+(3292 ms). Nothing regressed: every command parsed, confidences 0.72–0.92.
+
+**The cold cache is now the single worst number in the log.** Writing 1509
+tokens cost 7406 ms against ~2900 ms warm — and it landed on the first command
+of the session, which is the one the user judges the feature by. That is what
+`primeCache()` addresses: the warm-up fires when the microphone opens, so the
+write happens during the dialling and the drawing of breath instead of during
+a command.
+
+**Two corrections to what §3 said above.** The prompt is **1509 tokens**, not
+the 450–500 estimated — three times the 512-token cacheable floor, so there is
+real room to shorten it without losing caching. But that also means shortening
+it is *not* the lever it was hoped to be: those tokens are read from cache on
+every command after the first, and cached reads are the cheap part. The
+measurement moved this from "the largest remaining variable" to "measured, and
+small".
+
+### What is left, and what it would take
+
+Warm totals now run 3185–3853 ms against the 3 s target — the gap is roughly
+850 ms at p95. Two levers remain, in order of how well they are understood:
+
+1. **The eight required nullable slots** in `IntentCodec.schema`. Every answer
+   is 84–87 output tokens, and an intent that fills one slot still emits the
+   other seven as `null` — close to half the output, generated one token at a
+   time. This is the biggest measured waste left. **It is not committed**,
+   because the codec's own dartdoc labels that strictness *unverified*: it was
+   adopted on a hypothesis about a 400 that the API's message then
+   contradicted, and this project has already spent a round on a schema guess
+   that made every parse fail. Try it behind one manual pass, and if the API
+   refuses it, the refusal message names the reason — read it rather than
+   guessing again.
+2. **The model.** `ClaudeApiEngine.model` is a constructor argument. A six-way
+   classification of one spoken sentence does not obviously need the largest
+   model available, and the smaller ones are several times faster. The
+   Developer's call: the key is theirs, and the eval thresholds (≥ 90% intent,
+   ≥ 85% slots) would have to be re-run against the new model before it could
+   ship.
+
+**Scribe deserves a second look before either.** Its median moved 353 → 692 ms
+and its p95 to 915 ms between the two passes — still not the bottleneck, but no
+longer negligible, and the two runs disagree enough that neither is yet a
+reliable number.
 
 Then execute `docs/sprints/sprint-05a-task-commands.md` in order. Its entry
 criteria require Sprint 05 merged.
@@ -189,11 +236,12 @@ Three habits came out of it, and they are worth keeping:
 
 ## 6. Open, and deliberately not closed
 
-- **p95 above target** — §3 above. Measured per stage on 2026-08-09: p95 total
-  5837 ms, of which Claude is 5700 ms. `thinking` is now disabled on the intent
-  request; **the effect is unverified** — it needs one manual pass, and it is
-  one line to revert. No automated test can validate it: the evals run against
-  `FakeAiEngine`, so they cannot see a change in the real model's behaviour.
+- **p95 above target, but closing** — §3 above. Thinking off took Claude's warm
+  median from 3661 to 2865 ms; warm totals now run 3185–3853 ms against a 3 s
+  target. The cold-cache first command (7406 ms) is addressed by `primeCache()`
+  and **that fix is unverified** — it needs one manual pass showing
+  `cache read 1509` on the *first* command instead of `written 1509`. No
+  automated test can confirm it: the evals run against `FakeAiEngine`.
 - **iOS never built or tested**, no `macos/` golden set (DEC-020). Sprint 08
   has to decide a two- or three-platform v1.0.
 - **The name of a transcript frame** is matched by substring rather than
