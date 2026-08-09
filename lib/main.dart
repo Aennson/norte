@@ -69,6 +69,9 @@ Future<void> main() async {
     dio: Dio(),
     credentialStore: aiCredentials,
     clock: const SystemClock(),
+    // A 4xx here is this app's bug, and the response says which. Run from a
+    // terminal to read it.
+    log: (String line) => debugPrint('[ai] $line'),
   );
 
   // Two stores, two slots. Batch is Whisper and realtime is Scribe: different

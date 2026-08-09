@@ -392,6 +392,15 @@ class VoiceSession extends Notifier<VoiceSessionState> {
       return;
     }
 
+    // An empty commit is the service closing the session, not a second
+    // utterance. Parsing it started a race the real segment could lose — and
+    // did: the empty one returned `unknown` in three milliseconds while the
+    // real one was still in flight, and overwrote it.
+    if (event.text.trim().isEmpty) {
+      _log('committed segment: empty — session closing, not an utterance');
+      return;
+    }
+
     _committedAt = ref.read(clockProvider).now();
     _log('committed segment: ${event.text.length} chars');
     state = state.copyWith(

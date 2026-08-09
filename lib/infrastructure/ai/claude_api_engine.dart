@@ -45,6 +45,7 @@ class ClaudeApiEngine implements AiEngine {
     this.maxTokens = defaultMaxTokens,
     this.codec = const MeetingSummaryCodec(),
     this.intentCodec = const IntentCodec(),
+    this.log,
   });
 
   final Dio dio;
@@ -57,6 +58,18 @@ class ClaudeApiEngine implements AiEngine {
   final int maxTokens;
   final MeetingSummaryCodec codec;
   final IntentCodec intentCodec;
+
+  /// Diagnostics sink for what the API said when it refused a request.
+  ///
+  /// A 4xx from this endpoint is **this app's bug, not the user's** — a
+  /// malformed body, a schema the validator rejects — and the response
+  /// explains which. Discarding it, as the first version did, turned "your
+  /// request is invalid because X" into `Claude answered 400` and left X
+  /// unknowable from outside the process.
+  ///
+  /// It carries the API's own error message, which describes the request's
+  /// shape rather than its content: no transcript, no utterance, no key.
+  final void Function(String line)? log;
 
   /// The default model.
   static const String defaultModel = 'claude-opus-5';
@@ -204,7 +217,13 @@ class ClaudeApiEngine implements AiEngine {
       );
 
       final int status = response.statusCode ?? 0;
-      if (status >= 400) throw _failureFor(status, response.headers);
+      if (status >= 400) {
+        // Read the body before throwing. It is the only place the API says
+        // *why*, and by the time the failure reaches a caller the stream is
+        // gone.
+        log?.call('HTTP $status — ${await _errorBody(response.data)}');
+        throw _failureFor(status, response.headers);
+      }
 
       final ResponseBody? stream = response.data;
       if (stream == null) {
@@ -264,6 +283,21 @@ class ClaudeApiEngine implements AiEngine {
       throw const AiResponseFailure('the engine returned an empty summary');
     }
     return answer.toString();
+  }
+
+  /// The API's explanation of a refusal, as text.
+  ///
+  /// Best effort by design: a body that cannot be read must not replace the
+  /// failure with a different one, so anything unexpected becomes a short note
+  /// rather than an exception.
+  Future<String> _errorBody(ResponseBody? body) async {
+    if (body == null) return '(no body)';
+    try {
+      final String text = await utf8.decoder.bind(body.stream).join();
+      return text.length > 600 ? '${text.substring(0, 600)}…' : text;
+    } catch (_) {
+      return '(body unreadable)';
+    }
   }
 
   Object? _tryDecode(String payload) {

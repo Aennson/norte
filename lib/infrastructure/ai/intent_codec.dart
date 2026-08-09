@@ -35,10 +35,22 @@ class IntentCodec {
 
   /// The JSON Schema handed to the model as `output_config.format`.
   ///
-  /// Constant, which is what makes it part of the cached prefix. Slots are an
-  /// open object on purpose: the five intents do not share a slot set, and a
-  /// schema with a union of every field would invite the model to fill in
-  /// slots that do not belong to the intent it chose.
+  /// Constant, which is what makes it part of the cached prefix.
+  ///
+  /// **Every slot is declared, and every one is required-and-nullable.** The
+  /// first version left `slots` as an open `{"type": "object"}`, reasoning
+  /// that the five intents do not share a slot set and that a union would
+  /// invite the model to fill in fields belonging to some other intent. The
+  /// reasoning was fine and the API disagreed: structured output rejects an
+  /// unconstrained object, and every request came back **HTTP 400** — so the
+  /// voice pipeline reached a real transcript and then failed on the parse,
+  /// every time.
+  ///
+  /// The original worry is handled where it always was: [_slotsFrom] drops
+  /// nulls and blanks, and `IntentType.requiredSlots` decides what an intent
+  /// actually needs. A slot the model filled in for the wrong intent is
+  /// ignored downstream rather than prevented upstream, which is the weaker
+  /// guarantee — and the only one on offer.
   static const Map<String, Object?> schema = <String, Object?>{
     'type': 'object',
     'properties': <String, Object?>{
@@ -53,7 +65,33 @@ class IntentCodec {
           'unknown',
         ],
       },
-      'slots': <String, Object?>{'type': 'object'},
+      'slots': <String, Object?>{
+        'type': 'object',
+        'properties': <String, Object?>{
+          'issueKey': _nullableString,
+          'transition': _nullableString,
+          'comment': _nullableString,
+          'title': _nullableString,
+          'text': _nullableString,
+          'triggerAt': _nullableString,
+          'priority': _nullableString,
+          'dueDate': _nullableString,
+        },
+        // Strict structured output requires every declared property to be
+        // required; nullability is what lets an intent leave the seven that
+        // are not its own empty.
+        'required': <String>[
+          'issueKey',
+          'transition',
+          'comment',
+          'title',
+          'text',
+          'triggerAt',
+          'priority',
+          'dueDate',
+        ],
+        'additionalProperties': false,
+      },
       'confidence': <String, Object?>{
         'type': 'number',
         'minimum': 0,
@@ -62,6 +100,10 @@ class IntentCodec {
     },
     'required': <String>['intent', 'slots', 'confidence'],
     'additionalProperties': false,
+  };
+
+  static const Map<String, Object?> _nullableString = <String, Object?>{
+    'type': <String>['string', 'null'],
   };
 
   /// The system message.
