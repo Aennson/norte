@@ -21,6 +21,7 @@ import '../jira/jira_providers.dart';
 import '../meetings/meeting_providers.dart';
 import '../tasks/task_providers.dart';
 import 'audio_level.dart';
+import 'speech_filler.dart';
 import 'voice_latency_log.dart';
 import 'widgets/voice_overlay.dart';
 
@@ -248,14 +249,14 @@ class VoiceSession extends Notifier<VoiceSessionState> {
   /// When the last committed segment arrived, for the latency measurement.
   DateTime? _committedAt;
 
-  /// `true` once a segment has been taken as *the* command for this session.
+  /// `true` while a segment is being parsed or routed.
   ///
-  /// VAD segments on silence, so one spoken sentence can arrive as several
-  /// committed segments — a real run produced "14 chars" and then "5 chars"
-  /// from a single command. Each one used to start its own parse and could
-  /// route its own action, so a pause mid-sentence would have executed twice.
-  /// For a mutating intent that is not a cosmetic bug.
-  bool _tookCommand = false;
+  /// The session listens continuously and executes commands as they are
+  /// spoken, so segments keep arriving while an earlier one is still in
+  /// flight. This is what stops the second half of one sentence being read as
+  /// a second command — VAD segments on silence, and a pause mid-sentence
+  /// used to execute twice.
+  bool _busy = false;
 
   /// `true` once the container is gone, so an in-flight [stop] does not try to
   /// read providers that no longer exist.
@@ -282,7 +283,7 @@ class VoiceSession extends Notifier<VoiceSessionState> {
       isActive: true,
       phase: VoicePhase.connecting,
     );
-    _tookCommand = false;
+    _busy = false;
 
     final Microphone microphone = ref.read(microphoneProvider);
     final RealtimeTranscription engine = ref.read(
@@ -402,25 +403,41 @@ class VoiceSession extends Notifier<VoiceSessionState> {
       return;
     }
 
-    // An empty commit is the service closing the session, not a second
-    // utterance. Parsing it started a race the real segment could lose — and
-    // did: the empty one returned `unknown` in three milliseconds while the
-    // real one was still in flight, and overwrote it.
+    // An empty commit is the service closing a segment, not an utterance.
+    // Parsing it started a race the real segment could lose — and did: the
+    // empty one returned `unknown` in three milliseconds while the real one
+    // was still in flight, and overwrote it.
     if (event.text.trim().isEmpty) {
-      _log('committed segment: empty — session closing, not an utterance');
+      _log('committed segment: empty — not an utterance');
       return;
     }
 
-    // The microphone is closed the moment the first segment commits, so
-    // anything after it is the tail of audio already sent — not a new command.
-    if (_tookCommand) {
+    // Hesitation is not a command. Parsing it costs an API call, a second of
+    // the user's time, and an `unknown` that reads on screen as the app
+    // failing to understand — when nothing was said.
+    if (SpeechFiller.isOnlyFiller(event.text)) {
+      _log('committed segment: filler only — ignored');
+      state = state.copyWith(clearPartial: true);
+      return;
+    }
+
+    // A confirmation is on screen and a mutation is one tap away. Anything
+    // said now is the user reading, not a new command.
+    if (state.confirming != null) {
+      _log('committed segment ignored — a confirmation is waiting');
+      return;
+    }
+
+    // VAD segments on silence, so one sentence can arrive in pieces. Without
+    // this, a pause mid-sentence executed the command twice.
+    if (_busy) {
       _log(
-        'committed segment: ${event.text.length} chars — ignored, this '
-        'session already has its command',
+        'committed segment: ${event.text.length} chars — ignored, the '
+        'previous one is still in flight',
       );
       return;
     }
-    _tookCommand = true;
+    _busy = true;
 
     _committedAt = ref.read(clockProvider).now();
     _log('committed segment: ${event.text.length} chars');
@@ -434,26 +451,29 @@ class VoiceSession extends Notifier<VoiceSessionState> {
   }
 
   Future<void> _onCommitted(String utterance) async {
-    // The microphone has done its job; closing it now is what makes the pause
-    // between speaking and acting a pause rather than a recording.
-    await ref.read(microphoneProvider).close();
+    // **The microphone stays open.** The session listens until the user stops
+    // it and acts on commands as they are spoken; closing after each one made
+    // every command a separate press of the button.
+    try {
+      // A segment spoken while a question is on screen **is the answer**. Read
+      // as a fresh command it would be nonsense — "PROJ-123" on its own names
+      // no action — and the user would be told to rephrase the very thing the
+      // app asked them for (S05-UT-05).
+      if (state.askingFor != null) {
+        await answerSlot(utterance);
+        return;
+      }
 
-    // A segment spoken while a question is on screen **is the answer**. Read
-    // as a fresh command it would be nonsense — "PROJ-123" on its own names
-    // no action — and the user would be told to rephrase the very thing the
-    // app asked them for (S05-UT-05).
-    if (state.askingFor != null) {
-      await answerSlot(utterance);
-      return;
+      await _parseAndRoute(
+        utterance,
+        context: IntentContext(
+          locale: _locale,
+          knownIssueKeys: await _knownIssueKeys(),
+        ),
+      );
+    } finally {
+      _busy = false;
     }
-
-    await _parseAndRoute(
-      utterance,
-      context: IntentContext(
-        locale: _locale,
-        knownIssueKeys: await _knownIssueKeys(),
-      ),
-    );
   }
 
   Future<void> _parseAndRoute(
@@ -505,13 +525,22 @@ class VoiceSession extends Notifier<VoiceSessionState> {
   }
 
   void _onFailure(Object error) {
+    final Failure failure = error is Failure ? error : const EngineFailure();
+    // A failed *command* is not a failed session. If the microphone is still
+    // open the user can simply say it again, which is what they asked for:
+    // keep everything until the command goes through. Only a failure that
+    // takes the pipeline down stops the session.
+    final bool fatal =
+        !state.isActive ||
+        failure is MissingApiKeyFailure ||
+        failure is AuthFailure ||
+        failure is MicrophonePermissionFailure ||
+        failure is RecordingFailure;
+
     state = state.copyWith(
-      failure: error is Failure ? error : const EngineFailure(),
-      // Failed, not asking. The overlay renders the two differently because
-      // they mean opposite things: one is the app still working, the other is
-      // the app stopped.
-      phase: VoicePhase.failed,
-      level: 0,
+      failure: failure,
+      phase: fatal ? VoicePhase.failed : VoicePhase.listening,
+      level: fatal ? 0 : null,
     );
   }
 

@@ -160,14 +160,44 @@ void main() {
       expect(container.read(voiceSessionProvider).phase, VoicePhase.connecting);
     });
 
-    testWidgets('one utterance is one command, however VAD splits it', (
+    testWidgets('a segment arriving mid-parse is the same sentence, not a '
+        'second command', (WidgetTester tester) async {
+      // VAD segments on silence, so one spoken sentence arrives in pieces — a
+      // real run produced 14 characters and then 5 from a single command.
+      // Routing both executed it twice, which for a mutating intent is not
+      // cosmetic.
+      ai
+        ..alwaysParseAs(
+          '{"intent":"createTask","slots":{"title":"algo"},"confidence":0.95}',
+        )
+        // Holds the first parse in flight, which is the only state in which
+        // the tail of a sentence can arrive.
+        ..latency = const Duration(milliseconds: 200);
+      useDesktopViewport(tester);
+      await tester.pumpWidget(host());
+      await tester.pumpAndSettle();
+
+      final ProviderContainer container = ProviderScope.containerOf(
+        tester.element(find.byType(VoiceHost)),
+      );
+      await container.read(voiceSessionProvider.notifier).start();
+      await tester.pumpAndSettle();
+
+      realtime.emitCommitted('cria tarefa algo');
+      await tester.pump();
+      realtime.emitCommitted('e mais isso');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+
+      expect(ai.intentCalls, hasLength(1), reason: 'the tail is not a command');
+    });
+
+    testWidgets('the session keeps listening and takes the next command', (
       WidgetTester tester,
     ) async {
-      // VAD segments on silence, so a single spoken sentence arrives as
-      // several committed segments — a real run produced 14 characters and
-      // then 5 from one command. Each used to start its own parse and could
-      // route its own action, so a pause mid-sentence executed twice. For a
-      // mutating intent that is not cosmetic.
+      // The Developer asked for the microphone to stay open until they stop
+      // it, executing commands as they are spoken. Each command used to close
+      // the microphone, which made every one a separate press of the button.
       ai.alwaysParseAs(
         '{"intent":"createTask","slots":{"title":"algo"},"confidence":0.95}',
       );
@@ -181,12 +211,50 @@ void main() {
       await container.read(voiceSessionProvider.notifier).start();
       await tester.pumpAndSettle();
 
-      realtime.emitCommitted('cria tarefa algo');
+      realtime.emitCommitted('cria tarefa uma');
       await tester.pumpAndSettle();
-      realtime.emitCommitted('e mais isso');
+      realtime.emitCommitted('cria tarefa duas');
+      await tester.pumpAndSettle();
+      // The route runs through several awaits — the settings read, the use
+      // case, the repository — and `pumpAndSettle` returns when frames stop,
+      // not when futures do.
       await tester.pumpAndSettle();
 
-      expect(ai.intentCalls, hasLength(1), reason: 'the tail is not a command');
+      // Two utterances, two commands — the point of a session that stays
+      // open. The *executed* state is not asserted here: routing runs through
+      // Drift, which needs real time and does not advance under
+      // `pumpAndSettle`. S05-E2E-02 covers the executed path against the real
+      // app; what this test owns is that the session took a second command at
+      // all.
+      expect(ai.intentCalls, hasLength(2));
+      expect(container.read(voiceSessionProvider).isActive, isTrue);
+      // And the microphone was never closed, which is what the Developer
+      // asked for: it stays open until they stop it.
+      expect(microphone.closes, 0);
+    });
+
+    testWidgets('hesitation alone never reaches the parser', (
+      WidgetTester tester,
+    ) async {
+      useDesktopViewport(tester);
+      await tester.pumpWidget(host());
+      await tester.pumpAndSettle();
+
+      final ProviderContainer container = ProviderScope.containerOf(
+        tester.element(find.byType(VoiceHost)),
+      );
+      await container.read(voiceSessionProvider.notifier).start();
+      await tester.pumpAndSettle();
+
+      realtime.emitCommitted('eeeeh');
+      await tester.pumpAndSettle();
+      realtime.emitCommitted('hmmm');
+      await tester.pumpAndSettle();
+
+      expect(ai.intentCalls, isEmpty);
+      // And it is not reported as a misunderstanding: nothing was said.
+      expect(container.read(voiceSessionProvider).notUnderstood, isFalse);
+      expect(container.read(voiceSessionProvider).phase, VoicePhase.listening);
     });
 
     testWidgets('an empty committed segment is not an utterance', (

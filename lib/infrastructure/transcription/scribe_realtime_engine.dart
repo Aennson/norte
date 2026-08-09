@@ -226,6 +226,11 @@ class ScribeRealtimeEngine implements RealtimeTranscription {
       'model_id': model,
       'audio_format': audioFormat,
       'commit_strategy': 'vad',
+      // Hesitations are not commands. The service lists `no_verbatim` among
+      // the settings it echoes on `session_started`, and asking for it is the
+      // cheapest place to drop "eeh" and "hmm" — before they are ever
+      // transcribed, let alone parsed.
+      'no_verbatim': 'true',
       if (_iso639_3(language) case final String code) 'language_code': code,
     },
   );

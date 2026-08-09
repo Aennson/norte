@@ -133,6 +133,13 @@ Intents and their slots:
 - unknown       {}
 
 Rules:
+- **A "task" is this app's own, never a Jira issue.** "cria tarefa…",
+  "nova atividade…", "anota uma tarefa…" are `createTask` and nothing else.
+- **Jira must be asked for explicitly.** Choose `updateJira`, `addComment` or
+  `queryStatus` only when the utterance names an issue key (`PROJ-123`) or
+  says Jira outright. Without one of those, an utterance about work is about a
+  local task. When in doubt, prefer the local intent: a wrong local task is a
+  row the user deletes, a wrong Jira write is a change their team saw.
 - Issue keys are uppercase, `LETTERS-NUMBER`, exactly as the project writes
   them. Correct an obvious mishearing against the keys given as context, but
   never invent a key that was not spoken.
