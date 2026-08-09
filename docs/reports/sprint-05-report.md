@@ -41,8 +41,8 @@ machine, and again on `ubuntu-latest` in CI.
 |---|---|---|
 | G1 — static analysis | `flutter analyze` | `No issues found! (ran in 4.5s)` — 0 errors, 0 warnings, 0 infos ✅ |
 | G2 — formatting | `dart format --output=none --set-exit-if-changed .` | exit 0 ✅ |
-| G3 — tests | `flutter test` | `00:55 +620: All tests passed!` ✅ |
-| G4 — coverage | `flutter test --coverage` + `dart run tool/check_coverage.dart` | domain+application **93.0%** (516/555) · project **83.9%** (3832/4569) — `gate G4: OK` ✅ |
+| G3 — tests | `flutter test` | `00:55 +621: All tests passed!` ✅ |
+| G4 — coverage | `flutter test --coverage` + `dart run tool/check_coverage.dart` | domain+application **93.2%** (517/555) · project **83.9%** (3840/4577) — `gate G4: OK` ✅ |
 | G5 — dependency rule | `dart run tool/check_imports.dart` | `check_imports: OK — no layer or color violations in lib` ✅ |
 | G6 — secrets | `grep -rEn "(api[_-]?key\|token)[[:space:]]*=[[:space:]]*['\"]" lib/` | no match ✅ |
 | E2E | `flutter test integration_test/<suite>`, one per file (DEC-010) | 9 suites, 33 scenarios, all passing on the Linux runner ✅ |
@@ -211,23 +211,52 @@ handshake.
    Record the p95 from the **last** line against the < 3s target
    (`docs/architecture.md` §15).
 
-7. **Settle the wire format (DEC-026).** Three outcomes, and each is now
-   distinguishable:
+7. **The wire format is already settled (DEC-026).** It was probed against a
+   live session before this report was finalised, using a short-lived key the
+   Developer supplied. What is left for the manual pass is narrower than it
+   was: the name of a **transcript** frame, which needs real speech and which a
+   synthetic tone cannot produce. Three outcomes, all now distinguishable:
 
    | What happens | What it means |
    |---|---|
-   | Transcripts appear in the overlay | The assumed protocol is the real one |
-   | Connects, nothing appears, and `[voice] unrecognised frame: type=…, keys=…` in the console | The frame names differ — the log names the shape so the reader can be corrected |
-   | `AuthFailure` / `NetworkFailure` on screen | Key or host wrong; the two are deliberately distinct |
+   | Transcripts appear in the overlay | Everything holds, including the frame name |
+   | Connects, nothing appears, `[voice] unrecognised frame: message_type="…", keys=[…]` | The transcript frame has a name the tolerant reader does not match — the log gives it, and it is a one-line fix |
+   | `AuthFailure` on screen | The key lacks the speech-to-text permission, or the plan does not include realtime |
 
-   The middle row is new. It was silent before: `_onMessage` discarded what it
-   could not read, so a protocol mismatch and a dead microphone looked
-   identical. The log reports a frame's `type` and its **keys** — never its
-   text, because speech does not go in a log (BR-06).
+### 7.3 What the live probe settled, and what it cost
 
-Until the script runs, what is proven is that the pipeline is correct **against
-the contract this repository states**, and what is not proven is that the
-contract matches the service.
+The wire format is no longer an assumption. Probing it took about twenty
+minutes and found the adapter wrong in four places — three of which would have
+broken **every** session:
+
+| Assumed | Actual |
+|---|---|
+| `type` discriminates a frame | **`message_type`** does |
+| Errors are `{"error":{"type":…}}` | `{"message_type":"input_error","error":"a sentence"}` |
+| `{"type":"flush"}` commits a segment | No such message; the service refuses it and drops the socket |
+| `language_code` takes BCP-47 (`pt-BR`) | **ISO-639-3** (`por`); a bad code closes the socket with 1008 |
+
+Two things were confirmed rather than corrected: `xi-api-key` authenticates,
+and audio is raw binary — thirteen candidate JSON audio messages were each
+refused by name.
+
+**The fakes were the real casualty.** `FakeRealtimeSocket` had been emitting
+the invented dialect, so the contract suite (S05-CT-01) was holding two
+implementations to a protocol *neither had ever seen*, and agreeing. A fake
+that speaks a dialect the service does not is worse than no fake: it
+manufactures confidence. Both fakes now speak the observed shapes.
+
+**The uncomfortable part is the timing.** All of this was reachable on day one
+with sixty lines of `dart:io` and a key — no dependency on the app, no
+credential in the tree. It was not done because `docs/project-rules.md` §5.4,
+"no real APIs in tests", was read as "no real APIs at all". It forbids them in
+*tests*. It says nothing about a diagnostic run by hand, and a sprint whose
+whole subject is a third-party socket should have run one before writing the
+adapter.
+
+Until the manual script runs, what is proven is that the pipeline is correct
+**against a contract now observed rather than assumed** — and what is not
+proven is the one frame that needs a human voice.
 
 ## 8. Deviations and open items
 
@@ -236,7 +265,8 @@ contract matches the service.
 | Manual script and p95 latency | **Open** — §7. Carried explicitly, not discharged |
 | Scribe key shared the Whisper slot | **Fixed before merge** — DEC-028, §7.1. Found by writing §7.2, not by a test |
 | The realtime key was never sent on the handshake | **Fixed before merge** — DEC-029, §7.1. `realtime_socket.dart` had zero coverage |
-| Scribe wire format unverified | **Open** — DEC-026, settled by the same manual pass |
+| Scribe wire format unverified | **Settled** — DEC-026, §7.3. Probed against a live session; four assumptions corrected, both fakes re-dialected |
+| The name of a transcript frame | **Open** — needs real speech; the diagnostics log names it on the first attempt |
 | Wall-clock reminder times (`tomorrow 09:00`) | **Deliberately deferred** — DEC-025 hands them to Sprint 06 with a failing case attached, rather than implementing S06-IT-02's timezone work without its tests |
 | iOS never built or tested; no `macos/` golden set | **Still open** — inherited from DEC-020, unchanged by this sprint. Sprint 08 is where a three-platform or two-platform v1.0 has to be decided |
 
@@ -275,7 +305,7 @@ the Developer's, not the executing AI's.
 ---
 
 **One box is unticked, and it is the manual one.** Everything a machine can
-verify about this sprint has been verified — 620 unit, golden and contract
+verify about this sprint has been verified — 621 unit, golden and contract
 tests, 33 E2E scenarios on a Linux desktop host, an eval whose thresholds sit
 close enough to the results to bite. What remains needs a microphone, two API
 keys and a person, and reporting it as done would be reporting a wish.

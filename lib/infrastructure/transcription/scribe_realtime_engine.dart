@@ -60,7 +60,18 @@ class ScribeRealtimeEngine implements RealtimeTranscription {
   /// Model id. Configurable because the user pays for it.
   final String model;
 
-  /// BCP-47 language hint, or `null` to let the service detect it.
+  /// Language hint as a **BCP-47 tag** — `pt-BR`, `en`, `it` — or `null` to
+  /// let the service detect it.
+  ///
+  /// The app speaks BCP-47 everywhere (BR-11, `IntentContext.locale`), and the
+  /// service speaks ISO-639-3. [_iso639_3] does the conversion, and this is
+  /// where it belongs: an adapter exists to keep a service's vocabulary out of
+  /// the rest of the app.
+  ///
+  /// It matters more than it looks. The first draft passed the tag straight
+  /// through, and the service does not merely ignore what it cannot read — it
+  /// answers `invalid_request` and closes with 1008, so **every session would
+  /// have died on the handshake** the moment a language was configured.
   final String? language;
 
   /// Diagnostics sink for frames this adapter could not read (DEC-026).
@@ -159,11 +170,12 @@ class ScribeRealtimeEngine implements RealtimeTranscription {
     if (_stopped) return;
     _stopped = true;
 
-    // Ask the service to commit whatever segment is still open before the
-    // socket goes: a user who stops talking and lifts their finger has
-    // finished a sentence, and dropping it would lose the command.
-    _socket?.send(jsonEncode(<String, Object?>{'type': 'flush'}));
-
+    // No control frame on the way out. The first draft sent
+    // `{"type":"flush"}` here — a message this protocol does not have. The
+    // service answers `input_error: Message must be a valid protocol message`
+    // and drops the connection (DEC-026). Commits are VAD-driven server-side,
+    // which is what `vad_commit_strategy` in the session config means, so
+    // closing the socket is the whole of the goodbye.
     await _teardown();
     final StreamController<TranscriptEvent>? events = _events;
     _events = null;
@@ -176,7 +188,7 @@ class ScribeRealtimeEngine implements RealtimeTranscription {
     queryParameters: <String, String>{
       'model_id': model,
       'encoding': 'pcm_s16le_16000',
-      if (language case final String tag) 'language_code': tag,
+      if (_iso639_3(language) case final String code) 'language_code': code,
     },
   );
 
@@ -286,22 +298,37 @@ class ScribeRealtimeEngine implements RealtimeTranscription {
   }
 
   void _onAudioDone() {
+    // The microphone closed — the user let go of the button. Nothing is sent:
+    // there is no commit message in this protocol, and the one the first draft
+    // invented got the session dropped. VAD closes the segment from the
+    // silence that follows, which is what `min_silence_duration_ms` in the
+    // session config is for.
     _audioEnded = true;
-    // The microphone closed — the user let go of the button. Let the service
-    // commit the open segment; `stop` follows from the caller.
-    _socket?.send(jsonEncode(<String, Object?>{'type': 'flush'}));
   }
 
   // --- messages ----------------------------------------------------------
 
   /// Reads one service frame.
   ///
-  /// The wire shape is the service's, and the adapter is deliberately
-  /// tolerant about which of its spellings it gets: `partial`/`final`,
-  /// `is_final`, `text`/`transcript`. An adapter that insisted on one exact
-  /// spelling would turn a harmless protocol revision into a silent loss of
-  /// every command (`docs/architecture.md` §15 — "Copilot CLI changing
-  /// interface/output", the same risk in a different coat).
+  /// **The shapes here are observed, not assumed** — they come from a live
+  /// session against the service (DEC-026, settled). The discriminator is
+  /// `message_type`, *not* `type`, which is what the first draft read and why
+  /// it would have understood nothing at all:
+  ///
+  /// ```json
+  /// {"message_type": "session_started", "session_id": "...", "config": {}}
+  /// {"message_type": "input_error",     "error": "Unexpected message type: x"}
+  /// {"message_type": "invalid_request", "error": "Invalid language code..."}
+  /// ```
+  ///
+  /// Errors carry a **flat `error` string**, not a nested object with a typed
+  /// code — the first draft read `error.type` and would have found nothing.
+  ///
+  /// Transcript frames are still read tolerantly (`partial`/`final`/
+  /// `committed` in the name, `is_final`, `text`/`transcript`), because the
+  /// live session never produced one: a synthetic tone is not speech, and this
+  /// account's key cannot reach TTS to make any. That single unknown is what
+  /// the manual pass settles, and [log] is what it will read.
   void _onMessage(Object? frame) {
     final Object? decoded = switch (frame) {
       final String text => _tryDecode(text),
@@ -312,15 +339,21 @@ class ScribeRealtimeEngine implements RealtimeTranscription {
     };
     if (decoded is! Map<String, Object?>) return;
 
-    final String type = switch (decoded['type']) {
+    // `type` stays as a fallback rather than being dropped: it costs one `??`
+    // and means a rename in either direction still reads.
+    final String type = switch (decoded['message_type'] ?? decoded['type']) {
       final String value => value,
       _ => '',
     };
 
-    if (type == 'error') {
-      _fail(_failureFor(decoded['error']));
+    if (type.contains('error') || type == 'invalid_request') {
+      _fail(_failureFor(type, decoded['error']));
       return;
     }
+
+    // Session bookkeeping, not speech. Named, so it is not reported as an
+    // unrecognised frame on every single session.
+    if (type == 'session_started' || type == 'session_ended') return;
 
     final String? text = switch (decoded['text'] ?? decoded['transcript']) {
       final String value => value,
@@ -328,8 +361,8 @@ class ScribeRealtimeEngine implements RealtimeTranscription {
     };
     if (text == null) {
       log?.call(
-        'unrecognised frame: type="$type", keys=${decoded.keys.toList()} — '
-        'no `text` or `transcript` field (DEC-026)',
+        'unrecognised frame: message_type="$type", '
+        'keys=${decoded.keys.toList()} — no `text` or `transcript` field',
       );
       return;
     }
@@ -350,21 +383,37 @@ class ScribeRealtimeEngine implements RealtimeTranscription {
     }
   }
 
-  Failure _failureFor(Object? error) {
-    final String? code = error is Map<String, Object?>
-        ? error['type'] as String?
-        : null;
-    return switch (code) {
-      'authentication_error' => const AuthFailure(
-        'the transcription service rejected the API key',
-      ),
-      'rate_limit_error' => const RateLimitFailure(
-        'the transcription service is rate limiting',
-      ),
-      _ => const TranscriptionFailure(
-        'the transcription service ended the session',
-      ),
+  /// Maps a service error frame onto a [Failure].
+  ///
+  /// The service sends a human sentence, not a typed code, so the mapping
+  /// reads the sentence. That is less elegant than matching on a code and it
+  /// is what is actually on the wire; the code the first draft matched on was
+  /// the more elegant fiction.
+  Failure _failureFor(String type, Object? error) {
+    final String message = switch (error) {
+      final String text => text,
+      _ => 'the transcription service refused the session',
     };
+    final String lower = message.toLowerCase();
+
+    if (lower.contains('permission') ||
+        lower.contains('unauthorized') ||
+        lower.contains('api key')) {
+      return const AuthFailure(
+        'the transcription service rejected the API key',
+      );
+    }
+    if (lower.contains('rate limit') || lower.contains('too many')) {
+      return const RateLimitFailure(
+        'the transcription service is rate limiting',
+      );
+    }
+    // `input_error` and `invalid_request` mean this app sent something wrong,
+    // not that the user said something wrong. Surfacing it as a validation
+    // failure would point them at their own speech.
+    return TranscriptionFailure(
+      'the transcription service refused the session ($type)',
+    );
   }
 
   // --- plumbing ----------------------------------------------------------
@@ -394,6 +443,21 @@ class ScribeRealtimeEngine implements RealtimeTranscription {
     _buffer.clear();
     _bufferedBytes = 0;
   }
+
+  /// [tag] as the ISO-639-3 code the service accepts, or `null` when there is
+  /// no tag or none this app supports.
+  ///
+  /// Only the three languages BR-11 names are mapped. An unmapped tag returns
+  /// `null`, so the service **detects** the language — a better outcome than
+  /// sending a code it will reject and close the session over. Guessing at a
+  /// fourth language's code would be inventing support the app does not have.
+  static String? _iso639_3(String? tag) =>
+      switch (tag?.split(RegExp('[-_]')).first.toLowerCase()) {
+        'pt' => 'por',
+        'en' => 'eng',
+        'it' => 'ita',
+        _ => null,
+      };
 
   static Future<void> _wait(Duration duration) =>
       Future<void>.delayed(duration);

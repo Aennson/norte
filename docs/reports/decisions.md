@@ -723,32 +723,74 @@ forms.
 
 ---
 
-## DEC-026 — The Scribe realtime wire format is an assumption until the manual pass (Sprint 05)
+## DEC-026 — The Scribe realtime wire format (Sprint 05)
 
-**Status:** accepted, with an open obligation.
+**Status:** **settled** against a live session, 2026-08-08. The Developer
+supplied a short-lived key and the protocol was probed directly; what follows
+records both the original decision and what the probe found.
+
+### What the live session established
+
+The adapter's assumptions were wrong in four places, and three of them would
+have broken every session:
+
+| Assumed | Actual | Consequence had it shipped |
+|---|---|---|
+| `type` discriminates a frame | **`message_type`** does | No frame recognised, ever |
+| Errors are `{"error":{"type":…}}` | `{"message_type":"input_error","error":"a sentence"}` | Every failure read as generic |
+| `{"type":"flush"}` commits a segment | No such message; answered `input_error: Message must be a valid protocol message`, then the socket drops | The session killed at the end of every command |
+| `language_code` takes BCP-47 | **ISO-639-3** (`por`), and a bad code closes with 1008 | Every session dead on the handshake once a language was set |
+
+The fourth is the one that matters least and reads worst: audio is raw binary,
+which the adapter already had right — no JSON audio message type is accepted at
+all (`audio`, `audio_chunk`, `input_audio`, and ten other candidates were each
+refused by name).
+
+Two things were confirmed rather than corrected: **`xi-api-key` on the
+handshake authenticates** (DEC-029), and the session config the service opens
+with names its own VAD settings — `vad_commit_strategy`,
+`min_silence_duration_ms` — so commits genuinely are server-side, which is what
+makes having no commit message coherent rather than an omission.
+
+**Still unknown:** the exact name of a transcript frame. A synthetic tone is not
+speech and never produced one, and the probe key lacked the `text_to_speech`
+permission needed to synthesize an utterance to feed back in. The tolerant
+reader (`partial`/`final`/`committed` in the name, `is_final`, `text`/
+`transcript`) stands, and the diagnostics log is what the manual pass reads.
+
+### The original decision, and why the tolerance was still right
 
 **Context.** `ScribeRealtimeEngine` speaks a WebSocket protocol this repository
-cannot exercise: every automated test drives it through `FakeRealtimeSocket`,
-because a suite that called the real service would violate
-`docs/project-rules.md` §5.4. The adapter's assumptions about frame names —
-`partial_transcript`, `final_transcript`, an `error` frame carrying a typed
-code — are therefore **unverified against the service**.
+cannot exercise in CI: every automated test drives it through
+`FakeRealtimeSocket`, because a suite that called the real service would
+violate `docs/project-rules.md` §5.4. The adapter's assumptions about frame
+names were therefore unverified when it was written.
 
-**Decision.** Ship the adapter with a deliberately tolerant reader: it accepts
-`partial`/`final`/`committed` in the type, an `is_final` boolean, and either
-`text` or `transcript` as the field. A protocol revision then degrades into a
-harmless spelling difference rather than the silent loss of every voice
-command — the same risk `docs/architecture.md` §15 records for the Copilot CLI,
-wearing a different coat.
+**Decision.** Ship a deliberately tolerant reader — `partial`/`final`/
+`committed` in the name, an `is_final` boolean, either `text` or `transcript`
+as the field — so that a protocol revision degrades into a harmless spelling
+difference rather than the silent loss of every voice command. The same risk
+`docs/architecture.md` §15 records for the Copilot CLI, wearing a different
+coat.
 
-**The obligation this leaves open:** the manual script is the only thing that
-can confirm the wire format, and until it is run against a real key the
-adapter's protocol is a well-reasoned guess. It is carried in the Sprint 05
-report rather than closed by silence.
+**How it held up.** Tolerance was the right instinct and it was not enough. It
+would have absorbed a renamed transcript frame; it could not absorb a different
+*discriminator*, and `type` versus `message_type` is exactly that. The lesson
+is narrower than "be tolerant": **be tolerant about values, and verify the
+shape.** A tolerant reader of a field that does not exist reads nothing,
+tolerantly.
+
+**What made it verifiable.** A short-lived key and a throwaway probe outside
+the repository — sixty lines of `dart:io`, no dependency on the app, no
+credential anywhere in the tree. That is the tool the sprint should have
+reached for on day one rather than at the end, and the reason it did not is
+that "no real APIs in tests" was read as "no real APIs at all". §5.4 forbids
+them in *tests*; it says nothing about a diagnostic run by hand.
 
 **Impact.** `lib/infrastructure/transcription/scribe_realtime_engine.dart`;
-`lib/infrastructure/transcription/realtime_socket.dart`;
-`docs/reports/sprint-05-report.md` §7.
+`test/support/fake_realtime_socket.dart` and `fake_realtime_server.dart`, both
+of which were speaking the invented dialect and are now speaking the observed
+one; `docs/reports/sprint-05-report.md` §7.
 
 ---
 

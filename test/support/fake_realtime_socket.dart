@@ -10,6 +10,13 @@ import 'package:norte/infrastructure/transcription/realtime_socket.dart';
 /// S05-UT-06 needs a connection that dies mid-speech and returns three seconds
 /// later, with the assertion resting on exactly which bytes arrive after it.
 /// Against a real socket that is a timing race; here it is two method calls.
+///
+/// **The frames it emits are the service's own**, captured from a live session
+/// (DEC-026): `message_type` as the discriminator, `input_error` with a flat
+/// `error` string. The first draft of this fake invented `type` and a nested
+/// error object, which meant every test above it agreed with the adapter about
+/// a protocol neither of them had ever seen. A fake that speaks a dialect the
+/// service does not is worse than no fake: it manufactures confidence.
 class FakeRealtimeSocket implements RealtimeSocket {
   FakeRealtimeSocket();
 
@@ -53,23 +60,33 @@ class FakeRealtimeSocket implements RealtimeSocket {
       if (frame is String) jsonDecode(frame) as Map<String, Object?>,
   ];
 
+  /// Pushes the frame the service opens every session with.
+  void emitSessionStarted() => _emit(<String, Object?>{
+    'message_type': 'session_started',
+    'session_id': 'synthetic-session',
+    'config': <String, Object?>{'sample_rate': 16000, 'model_id': 'fake'},
+  });
+
   /// Pushes a `partial` transcript from the service.
-  void emitPartial(String text) =>
-      _emit(<String, Object?>{'type': 'partial_transcript', 'text': text});
+  void emitPartial(String text) => _emit(<String, Object?>{
+    'message_type': 'partial_transcript',
+    'text': text,
+  });
 
   /// Pushes a `committed` transcript — VAD closed the segment.
-  void emitCommitted(String text) =>
-      _emit(<String, Object?>{'type': 'final_transcript', 'text': text});
+  void emitCommitted(String text) => _emit(<String, Object?>{
+    'message_type': 'final_transcript',
+    'text': text,
+  });
 
   /// Pushes an arbitrary frame — for the shapes the reader is *not* expected
   /// to understand.
   void emitRaw(Map<String, Object?> frame) => _emit(frame);
 
-  /// Pushes a service-side error frame.
-  void emitError(String type) => _emit(<String, Object?>{
-    'type': 'error',
-    'error': <String, Object?>{'type': type},
-  });
+  /// Pushes a service-side error frame, in the shape the service sends: a
+  /// `message_type` naming the kind and a **flat sentence** in `error`.
+  void emitError(String message, {String type = 'input_error'}) =>
+      _emit(<String, Object?>{'message_type': type, 'error': message});
 
   /// The connection dies without a goodbye, as a lost network does.
   Future<void> drop() async {

@@ -343,7 +343,7 @@ void main() {
       await pumpEventQueue();
 
       spy.current.emitRaw(<String, Object?>{
-        'type': 'speech_segment',
+        'message_type': 'speech_segment',
         'utterance': 'muda o PROJ-123 pra concluído',
       });
       await pumpEventQueue();
@@ -376,7 +376,7 @@ void main() {
         ..emitPartial('muda o')
         ..emitCommitted('muda o PROJ-123 pra concluído')
         ..emitRaw(<String, Object?>{
-          'type': 'transcript',
+          'message_type': 'transcript',
           'is_final': true,
           'transcript': 'outra coisa',
         });
@@ -389,21 +389,70 @@ void main() {
   group('S05-UT-06: service errors', () {
     test('S05-UT-06: an error frame ends the session', () async {
       final List<TranscriptEvent> events = await listen();
-      connector.current.emitError('rate_limit_error');
+      connector.current.emitError('Rate limit exceeded');
       await pumpEventQueue();
 
       expect(events, isEmpty);
     });
 
-    test('S05-UT-06: a rate-limit frame is RateLimitFailure', () async {
-      final List<Object> errors = <Object>[];
-      engine.start(microphone.stream).listen((_) {}, onError: errors.add);
+    test('S05-UT-06: the sentence decides the failure, because the service '
+        'sends a sentence', () async {
+      // Observed shapes (DEC-026). There is no typed code on the wire, so the
+      // mapping reads the message the service actually sends.
+      final Map<String, Matcher> cases = <String, Matcher>{
+        'The API key you used is missing the permission speech_to_text':
+            isA<AuthFailure>(),
+        'Rate limit exceeded, too many requests': isA<RateLimitFailure>(),
+        'Unexpected message type: not_a_thing': isA<TranscriptionFailure>(),
+      };
+
+      for (final MapEntry<String, Matcher> entry in cases.entries) {
+        final FakeSocketConnector spy = FakeSocketConnector();
+        final ScribeRealtimeEngine subject = ScribeRealtimeEngine(
+          credentialStore: FakeTranscriptionCredentialStore('synthetic-key'),
+          connect: spy.call,
+          sleep: (Duration _) async {},
+        );
+        addTearDown(subject.stop);
+
+        final List<Object> errors = <Object>[];
+        subject
+            .start(const Stream<Uint8List>.empty())
+            .listen((_) {}, onError: errors.add);
+        await pumpEventQueue();
+
+        spy.current.emitError(entry.key);
+        await pumpEventQueue();
+
+        expect(errors.single, entry.value, reason: entry.key);
+      }
+    });
+
+    test('S05-UT-06: session bookkeeping is not mistaken for speech', () async {
+      // Every session opens with `session_started`. Reporting it as an
+      // unrecognised frame would put a line in the diagnostics log on every
+      // single command and bury the one that matters.
+      final List<String> lines = <String>[];
+      final FakeSocketConnector spy = FakeSocketConnector();
+      final ScribeRealtimeEngine subject = ScribeRealtimeEngine(
+        credentialStore: FakeTranscriptionCredentialStore('synthetic-key'),
+        connect: spy.call,
+        log: lines.add,
+        sleep: (Duration _) async {},
+      );
+      addTearDown(subject.stop);
+
+      final List<TranscriptEvent> events = <TranscriptEvent>[];
+      subject
+          .start(const Stream<Uint8List>.empty())
+          .listen(events.add, onError: (Object _) {});
       await pumpEventQueue();
 
-      connector.current.emitError('rate_limit_error');
+      spy.current.emitSessionStarted();
       await pumpEventQueue();
 
-      expect(errors.single, isA<RateLimitFailure>());
+      expect(events, isEmpty);
+      expect(lines, isEmpty);
     });
   });
 }

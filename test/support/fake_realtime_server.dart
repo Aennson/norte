@@ -84,7 +84,10 @@ class FakeRealtimeServer {
   void emitCommitted(String text) {
     if (sockets.isEmpty) return;
     sockets.last.add(
-      jsonEncode(<String, Object?>{'type': 'final_transcript', 'text': text}),
+      jsonEncode(<String, Object?>{
+        'message_type': 'final_transcript',
+        'text': text,
+      }),
     );
   }
 }
