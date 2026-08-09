@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -73,10 +74,20 @@ void main() {
     });
 
     test('an unreachable host is NetworkFailure', () async {
-      // Port 1 on loopback: nothing listens there.
+      // A port this test *knows* is free, because it held it a moment ago and
+      // let go. The first version assumed port 1 on loopback was closed; on
+      // the CI runner it was not, and the test failed there and nowhere else.
+      // An assumption about the host is not a fixture.
+      final ServerSocket probe = await ServerSocket.bind(
+        InternetAddress.loopbackIPv4,
+        0,
+      );
+      final int freePort = probe.port;
+      await probe.close();
+
       await expectLater(
         WebSocketRealtimeSocket.connect(
-          Uri.parse('ws://127.0.0.1:1'),
+          Uri.parse('ws://127.0.0.1:$freePort'),
           'synthetic-key',
         ),
         throwsA(isA<NetworkFailure>()),
