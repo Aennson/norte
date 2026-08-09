@@ -1047,9 +1047,14 @@
   "@voiceReasonDeletion": {
     "description": "Why a spoken deleteTask always confirms, at any confidence."
   },
-  "voiceDoneTaskUpdated": "Task updated",
+  "voiceDoneTaskUpdated": "Task updated: {title}",
   "@voiceDoneTaskUpdated": {
-    "description": "Feedback after a spoken updateTask."
+    "description": "Feedback after a spoken updateTask. Names the row it acted on, so a taskRef that resolved to something the user did not expect is visible the moment it happens rather than the next time they read the list (Sprint 05b, §6.3.1).",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
   },
   "voiceDoneTaskDeleted": "Deleted {title}",
   "@voiceDoneTaskDeleted": {
@@ -1060,9 +1065,14 @@
       }
     }
   },
-  "voiceDoneTaskCommented": "Note added — it stays on your list",
+  "voiceDoneTaskCommented": "Note added to {title} — it stays on your list",
   "@voiceDoneTaskCommented": {
-    "description": "Feedback after a spoken commentTask. Says where the note went, because the same sentence spoken with an issue key would have reached the whole team (BR-01)."
+    "description": "Feedback after a spoken commentTask. Names the row and says where the note went, because the same sentence spoken with an issue key would have reached the whole team (BR-01).",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
   },
   "voiceTaskNotFound": "No task called “{reference}”.",
   "@voiceTaskNotFound": {

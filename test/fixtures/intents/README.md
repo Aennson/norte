@@ -35,8 +35,8 @@ untranslated transition name — plus answers in the shapes a model actually
 emits: fenced JSON, JSON behind a sentence of prose, prose with no JSON at all,
 JSON missing `intent`, and an `intent` outside the enum.
 
-Current PT-BR headroom: 61/64 intents (95.3%) and 56/64 exact slot sets
-(87.5%), against thresholds of 90% and 85%. Both are deliberately close enough
+Current PT-BR headroom: 64/67 intents (95.5%) and 59/67 exact slot sets
+(88.1%), against thresholds of 90% and 85%. Both are deliberately close enough
 that a regression in the codec moves them below the line.
 
 ## Sprint 05a — the local task intents
@@ -59,6 +59,29 @@ easier to hit, which is the opposite of what they are for.
 **None of these utterances names an issue key or says Jira**, which is what
 S05a-UT-07 checks: it re-parses every row whose utterance carries neither and
 fails if any of them produced `updateJira`, `addComment` or `queryStatus`.
+
+## Sprint 05b — the optional `resolvesTo`
+
+Three PT-BR rows (`ptbr-065..067`) carry a `taskRef` spelled the way a person
+says it out loud rather than the way the title is written: `Hero Brazil-762`
+for `HEROBRAZIL-762` (a space), `Hero Brasil-762` for the same (a Brazilian
+speaker's spelling of an English word), and `ligar pra Samára` for `Ligar para
+Samara`. Each carries an extra key:
+
+```json
+"resolvesTo": "HEROBRAZIL-762"
+```
+
+`resolvesTo` is the title the reference must reach through the ladder of
+`docs/architecture.md` §6.3.1. S05b-EV-01 parses the row, routes it over a
+list that includes the decoys the thresholds exist to keep apart —
+`HEROBRAZIL-763` one digit away, and "Ligar para Samara de novo" — and fails
+if the outcome named anything else. Rows without the key are references
+spelled the way their title is, and the eval ignores them.
+
+These three are correct on purpose, which raised the PT-BR headroom slightly
+(95.3% → 95.5% intent, 87.5% → 88.1% slots). They measure resolution, not
+parsing: the parse was never what failed on 2026-08-09.
 
 ## The `triggerAt` convention
 

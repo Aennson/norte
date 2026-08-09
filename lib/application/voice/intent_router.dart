@@ -46,6 +46,7 @@ final class IntentExecuted extends RouteOutcome {
     this.reminder,
     this.status,
     this.deletedTitle,
+    this.resolvedApproximately = false,
   });
 
   final VoiceIntent intent;
@@ -68,6 +69,15 @@ final class IntentExecuted extends RouteOutcome {
   /// The row is gone, so [task] cannot carry it, and "deleted" without saying
   /// *what* is the one outcome message a user cannot check.
   final String? deletedTitle;
+
+  /// `true` when `taskRef` reached its task through tier 4 of §6.3.1 — the one
+  /// tier that consults a threshold rather than an exact answer.
+  ///
+  /// Not a warning and not a different outcome: the action ran. It exists
+  /// because the presentation layer names the row for every mutating local
+  /// intent, and a caller that wants to know *why* a row it did not expect was
+  /// named should not have to re-run the ladder to find out.
+  final bool resolvedApproximately;
 }
 
 /// Nothing ran. The user has to say yes first.
@@ -221,12 +231,14 @@ class IntentRouter {
     }
 
     Task? target;
+    bool approximate = false;
     if (intent.type.needsTaskRef) {
-      final (Task?, RouteOutcome?) resolution = await _resolve(intent, taskId);
-      if (resolution.$2 case final RouteOutcome unresolved) {
+      final _Resolution resolution = await _resolve(intent, taskId);
+      if (resolution.outcome case final RouteOutcome unresolved) {
         return Ok<RouteOutcome>(unresolved);
       }
-      target = resolution.$1;
+      target = resolution.task;
+      approximate = resolution.approximate;
     }
 
     if (!confirmed) {
@@ -240,9 +252,9 @@ class IntentRouter {
 
     return switch (intent.type) {
       IntentType.createTask => _createTask(intent),
-      IntentType.updateTask => _updateTask(intent, target!),
-      IntentType.deleteTask => _deleteTask(intent, target!),
-      IntentType.commentTask => _commentTask(intent, target!),
+      IntentType.updateTask => _updateTask(intent, target!, approximate),
+      IntentType.deleteTask => _deleteTask(intent, target!, approximate),
+      IntentType.commentTask => _commentTask(intent, target!, approximate),
       IntentType.createReminder => _createReminder(intent),
       IntentType.updateJira => _updateJira(intent),
       IntentType.addComment => _addComment(intent),
@@ -294,6 +306,7 @@ class IntentRouter {
   Future<Result<RouteOutcome>> _updateTask(
     VoiceIntent intent,
     Task target,
+    bool approximate,
   ) async {
     final String? description = intent.slotText('description');
     final DateTime? dueDate = _dateFrom(intent.slots['dueDate']);
@@ -307,7 +320,11 @@ class IntentRouter {
     );
     return switch (updated) {
       Ok<Task>(:final Task value) => Ok<RouteOutcome>(
-        IntentExecuted(intent: intent, task: value),
+        IntentExecuted(
+          intent: intent,
+          task: value,
+          resolvedApproximately: approximate,
+        ),
       ),
       Err<Task>(:final Failure failure) => Err<RouteOutcome>(failure),
     };
@@ -316,11 +333,16 @@ class IntentRouter {
   Future<Result<RouteOutcome>> _deleteTask(
     VoiceIntent intent,
     Task target,
+    bool approximate,
   ) async {
     final Result<void> removed = await deleteTask(target.id);
     return switch (removed) {
       Ok<void>() => Ok<RouteOutcome>(
-        IntentExecuted(intent: intent, deletedTitle: target.title),
+        IntentExecuted(
+          intent: intent,
+          deletedTitle: target.title,
+          resolvedApproximately: approximate,
+        ),
       ),
       Err<void>(:final Failure failure) => Err<RouteOutcome>(failure),
     };
@@ -329,6 +351,7 @@ class IntentRouter {
   Future<Result<RouteOutcome>> _commentTask(
     VoiceIntent intent,
     Task target,
+    bool approximate,
   ) async {
     final Result<Task> commented = await commentTask(
       id: target.id,
@@ -336,7 +359,11 @@ class IntentRouter {
     );
     return switch (commented) {
       Ok<Task>(:final Task value) => Ok<RouteOutcome>(
-        IntentExecuted(intent: intent, task: value),
+        IntentExecuted(
+          intent: intent,
+          task: value,
+          resolvedApproximately: approximate,
+        ),
       ),
       Err<Task>(:final Failure failure) => Err<RouteOutcome>(failure),
     };
@@ -418,14 +445,18 @@ class IntentRouter {
   /// Resolves `taskRef` (§6.3.1) into either the one task it named or the
   /// outcome that says why it named none.
   ///
-  /// Exactly one half of the pair is ever non-null. A record rather than a
-  /// sealed type because the alternative would be two more classes used in one
-  /// place, and rather than a field because a router that remembered anything
-  /// between calls would be a router two concurrent commands could confuse.
-  Future<(Task?, RouteOutcome?)> _resolve(
-    VoiceIntent intent,
-    String? taskId,
-  ) async {
+  /// **The ladder of four tiers, in order, each exhausted before the next.**
+  /// Exact, containment, squashed, approximate. The first that yields exactly
+  /// one task wins; several inside a tier is a question, never a coin toss.
+  /// The ordering is the safety: an exact spelling must never be beaten by a
+  /// better-scoring approximate one, which is why the tiers are separate
+  /// passes rather than one scoring function with bonuses (S05b-UT-08).
+  ///
+  /// A record rather than a sealed type because the alternative would be two
+  /// more classes used in one place, and rather than a field because a router
+  /// that remembered anything between calls would be a router two concurrent
+  /// commands could confuse.
+  Future<_Resolution> _resolve(VoiceIntent intent, String? taskId) async {
     final String reference = intent.slotText('taskRef')!;
     final List<Task> all = await tasks.listAll();
 
@@ -434,40 +465,114 @@ class IntentRouter {
       // names a row is a task deleted between the question and the answer, and
       // it reads as "no such task" rather than re-opening the choice.
       for (final Task task in all) {
-        if (task.id == taskId) return (task, null);
+        if (task.id == taskId) return _Resolution.found(task);
       }
-      return (null, TaskNotFound(intent: intent, reference: reference));
+      return _Resolution.unresolved(
+        TaskNotFound(intent: intent, reference: reference),
+      );
     }
 
-    final List<Task> matches = <Task>[
+    _Resolution? decide(List<Task> tier, {bool approximate = false}) =>
+        switch (tier.length) {
+          0 => null, // this tier is exhausted; try the next
+          1 => _Resolution.found(tier.single, approximate: approximate),
+          _ => _Resolution.unresolved(
+            TaskAmbiguous(
+              intent: intent,
+              reference: reference,
+              candidates: List<Task>.unmodifiable(tier),
+            ),
+          ),
+        };
+
+    // Tier 1 — the folded title *is* the phrase. It exists so that a title
+    // which is the phrase is not held hostage by a longer one containing it:
+    // without it "Ligar para Samara" could never be acted on while "Ligar para
+    // Samara de novo" existed.
+    final String wanted = TextMatch.fold(reference);
+    final _Resolution? tier1 = decide(<Task>[
+      for (final Task task in all)
+        if (TextMatch.fold(task.title) == wanted) task,
+    ]);
+    if (tier1 != null) return tier1;
+
+    // Tier 2 — the folded title contains the phrase.
+    final _Resolution? tier2 = decide(<Task>[
       for (final Task task in all)
         if (TextMatch.contains(task.title, reference)) task,
+    ]);
+    if (tier2 != null) return tier2;
+
+    // From here on the comparison stops being the title as written, so the
+    // digit rule applies: a candidate whose digit runs disagree with the
+    // phrase's is out of tiers 3 and 4 entirely, not merely out-scored
+    // (DEC-035, S05b-UT-04).
+    final List<Task> comparable = <Task>[
+      for (final Task task in all)
+        if (_digitsAgree(reference, task.title)) task,
     ];
 
-    if (matches.isEmpty) {
-      return (null, TaskNotFound(intent: intent, reference: reference));
+    // Tier 3 — separators are noise. Deterministic: no threshold is consulted,
+    // because "Hero Brazil-762" for `HEROBRAZIL-762` is how a person spells an
+    // identifier out loud, not something anybody misheard.
+    final String squashed = TextMatch.squash(reference);
+    if (squashed.isNotEmpty) {
+      final _Resolution? tier3 = decide(<Task>[
+        for (final Task task in comparable)
+          if (TextMatch.squash(task.title).contains(squashed)) task,
+      ]);
+      if (tier3 != null) return tier3;
     }
-    if (matches.length == 1) return (matches.single, null);
 
-    // One more chance before asking: a title that *is* the phrase, folded,
-    // beats every task that merely contains it. Without this, "Ligar para
-    // Samara" could never be acted on while "Ligar para Samara de novo"
-    // existed — the more specific row would hold the shorter one hostage.
-    final String wanted = TextMatch.fold(reference);
-    final List<Task> exact = <Task>[
-      for (final Task task in matches)
-        if (TextMatch.fold(task.title) == wanted) task,
-    ];
-    if (exact.length == 1) return (exact.single, null);
+    // Tier 4 — approximate, and the only tier that can be wrong. A reference
+    // too short to be an approximation of anything never reaches it: "PR" run
+    // through an edit-distance metric matches half the list.
+    if (squashed.length >= TextMatch.minApproximateLength) {
+      final List<(Task, double)> scored = <(Task, double)>[
+        for (final Task task in comparable)
+          if (TextMatch.similarity(task.title, reference)
+              case final double score
+              when score >= TextMatch.similarityThreshold)
+            (task, score),
+      ]..sort(((Task, double) a, (Task, double) b) => b.$2.compareTo(a.$2));
 
-    return (
-      null,
-      TaskAmbiguous(
-        intent: intent,
-        reference: reference,
-        candidates: List<Task>.unmodifiable(matches),
-      ),
+      if (scored.length == 1 ||
+          (scored.length > 1 &&
+              scored.first.$2 - scored[1].$2 >= TextMatch.similarityMargin)) {
+        return _Resolution.found(scored.first.$1, approximate: true);
+      }
+      if (scored.length > 1) {
+        // A near tie is a question. Picking the best of two spellings that are
+        // both plausible is how the wrong row gets changed.
+        return _Resolution.unresolved(
+          TaskAmbiguous(
+            intent: intent,
+            reference: reference,
+            candidates: List<Task>.unmodifiable(<Task>[
+              for (final (Task task, double _) in scored) task,
+            ]),
+          ),
+        );
+      }
+    }
+
+    return _Resolution.unresolved(
+      TaskNotFound(intent: intent, reference: reference),
     );
+  }
+
+  /// `true` unless [reference] and [title] both carry digit runs and the two
+  /// sets differ.
+  ///
+  /// The asymmetry is deliberate: a phrase with no number in it says nothing
+  /// about the numbers in a title, and excluding on that would stop "hero
+  /// brazil" from ever finding `HEROBRAZIL-762`. It is two *different* numbers
+  /// that make two different chamados.
+  static bool _digitsAgree(String reference, String title) {
+    final Set<String> spoken = TextMatch.digitRuns(reference);
+    final Set<String> written = TextMatch.digitRuns(title);
+    if (spoken.isEmpty || written.isEmpty) return true;
+    return spoken.length == written.length && spoken.containsAll(written);
   }
 
   /// The local task linked to [issueKey], case-insensitively, or `null`.
@@ -491,6 +596,25 @@ class IntentRouter {
     final String text => DateTime.tryParse(text)?.toUtc(),
     _ => null,
   };
+}
+
+/// What the ladder of §6.3.1 decided: either the one task, or the outcome
+/// that says why there was not one.
+///
+/// Exactly one of [task] and [outcome] is ever non-null.
+class _Resolution {
+  const _Resolution.found(Task this.task, {this.approximate = false})
+    : outcome = null;
+
+  const _Resolution.unresolved(RouteOutcome this.outcome)
+    : task = null,
+      approximate = false;
+
+  final Task? task;
+  final RouteOutcome? outcome;
+
+  /// Whether [task] was reached through tier 4 rather than an exact answer.
+  final bool approximate;
 }
 
 /// The `status` vocabulary of §6.3.2, or `null` for anything else.

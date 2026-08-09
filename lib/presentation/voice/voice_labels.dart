@@ -85,14 +85,23 @@ String confirmationReasonText(
 String executedText(AppLocalizations l10n, IntentExecuted executed) =>
     switch (executed.intent.type) {
       IntentType.createTask => l10n.voiceDoneTask,
-      IntentType.updateTask => l10n.voiceDoneTaskUpdated,
+      // Every mutating local intent names the row it acted on (Sprint 05b).
+      // The ladder of §6.3.1 can resolve a spoken reference to a title spelled
+      // differently, and "Task updated" would leave the user to find out which
+      // one the next time they read the list — by which point the wrong row
+      // has been wrong for a while.
+      IntentType.updateTask => l10n.voiceDoneTaskUpdated(
+        executed.task?.title ?? '',
+      ),
       IntentType.deleteTask => l10n.voiceDoneTaskDeleted(
         executed.deletedTitle ?? '',
       ),
-      // Says where the note went. The same sentence with an issue key in it
-      // would have reached the user's whole team, and the difference is the
-      // one thing worth reporting back (BR-01, §3.2).
-      IntentType.commentTask => l10n.voiceDoneTaskCommented,
+      // Says where the note went, and onto what. The same sentence with an
+      // issue key in it would have reached the user's whole team, and the
+      // difference is the one thing worth reporting back (BR-01, §3.2).
+      IntentType.commentTask => l10n.voiceDoneTaskCommented(
+        executed.task?.title ?? '',
+      ),
       IntentType.createReminder => l10n.voiceDoneReminder,
       // BR-05 in one sentence: the write is queued, not sent. Saying "done"
       // would promise something the outbox has not delivered yet.

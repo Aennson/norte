@@ -770,7 +770,9 @@ class AppLocalizationsIt extends AppLocalizations {
       'Eliminare un’attività è irreversibile, quindi chiediamo sempre.';
 
   @override
-  String get voiceDoneTaskUpdated => 'Attività aggiornata';
+  String voiceDoneTaskUpdated(String title) {
+    return 'Attività aggiornata: $title';
+  }
 
   @override
   String voiceDoneTaskDeleted(String title) {
@@ -778,7 +780,9 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
-  String get voiceDoneTaskCommented => 'Nota aggiunta — resta nella tua lista';
+  String voiceDoneTaskCommented(String title) {
+    return 'Nota aggiunta a $title — resta nella tua lista';
+  }
 
   @override
   String voiceTaskNotFound(String reference) {

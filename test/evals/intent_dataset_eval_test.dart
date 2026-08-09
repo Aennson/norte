@@ -2,12 +2,78 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:norte/application/usecases/add_jira_comment.dart';
+import 'package:norte/application/usecases/comment_task.dart';
+import 'package:norte/application/usecases/create_reminder.dart';
+import 'package:norte/application/usecases/create_task.dart';
+import 'package:norte/application/usecases/delete_task.dart';
+import 'package:norte/application/usecases/refresh_jira_status.dart';
+import 'package:norte/application/usecases/update_jira_status.dart';
+import 'package:norte/application/usecases/update_task.dart';
 import 'package:norte/application/voice/intent_parser.dart';
+import 'package:norte/application/voice/intent_router.dart';
 import 'package:norte/domain/entities/intent_context.dart';
+import 'package:norte/domain/entities/task.dart';
 import 'package:norte/domain/entities/voice_intent.dart';
+import 'package:norte/domain/entities/voice_settings.dart';
 import 'package:norte/domain/failures/result.dart';
 
-import '../fakes/fake_ai_engine.dart';
+import '../fakes/fakes.dart';
+import '../support/task_fixtures.dart';
+
+final DateTime _t0 = DateTime.utc(2026, 8, 9, 10);
+
+/// The list a `taskRef` from the dataset is resolved against.
+///
+/// The decoys are the point. `HEROBRAZIL-763` is one digit from `-762` and
+/// scores above `similarityThreshold` against a reference for either, so a
+/// ladder that ranked instead of excluding would have to ask; "Ligar para
+/// Samara de novo" is the containment trap tier 1 exists for.
+const List<(String, String)> _plausibleTitles = <(String, String)>[
+  ('t-762', 'HEROBRAZIL-762'),
+  ('t-763', 'HEROBRAZIL-763'),
+  ('t-samara', 'Ligar para Samara'),
+  ('t-samara-2', 'Ligar para Samara de novo'),
+  ('t-demo', 'Preparar a demo'),
+];
+
+/// The real router over [tasks], with the real use cases behind it.
+///
+/// The eval asserts which row a spoken reference reached, and a spy has no
+/// rows to reach.
+IntentRouter _routerOver(FakeTaskRepository tasks) {
+  final FakeClock clock = FakeClock(_t0);
+  final FakeIdGenerator ids = FakeIdGenerator();
+  final FakeOutboxRepository outbox = FakeOutboxRepository();
+  return IntentRouter(
+    tasks: tasks,
+    createTask: CreateTask(repository: tasks, clock: clock, idGenerator: ids),
+    updateTask: UpdateTask(repository: tasks, clock: clock),
+    deleteTask: DeleteTask(repository: tasks),
+    commentTask: CommentTask(repository: tasks, clock: clock, idGenerator: ids),
+    createReminder: CreateReminder(
+      repository: FakeReminderRepository(),
+      clock: clock,
+      idGenerator: ids,
+    ),
+    updateJiraStatus: UpdateJiraStatus(
+      outbox: outbox,
+      clock: clock,
+      idGenerator: ids,
+    ),
+    addJiraComment: AddJiraComment(
+      outbox: outbox,
+      clock: clock,
+      idGenerator: ids,
+    ),
+    refreshJiraStatus: RefreshJiraStatus(
+      gateway: FakeJiraGateway(),
+      repository: tasks,
+      clock: clock,
+    ),
+    settings: FakeVoiceSettingsStore(const VoiceSettings()),
+  );
+}
 
 /// One utterance with its ground truth and the raw answer the fake replays.
 class _Row {
@@ -17,6 +83,7 @@ class _Row {
     required this.expectedIntent,
     required this.expectedSlots,
     required this.response,
+    this.resolvesTo,
   });
 
   factory _Row.fromJson(Map<String, Object?> json) {
@@ -30,6 +97,7 @@ class _Row {
         ...(expected['slots']! as Map<String, Object?>),
       },
       response: json['response']! as String,
+      resolvesTo: json['resolvesTo'] as String?,
     );
   }
 
@@ -38,6 +106,11 @@ class _Row {
   final IntentType expectedIntent;
   final Map<String, Object?> expectedSlots;
   final String response;
+
+  /// The title this row's `taskRef` must reach through the ladder of §6.3.1,
+  /// when the two are spelled differently (Sprint 05b). `null` on every row
+  /// whose reference is spelled the way the title is.
+  final String? resolvesTo;
 
   bool get isAmbiguous => expectedIntent == IntentType.unknown;
 }
@@ -294,6 +367,72 @@ void main() {
             rows.where((_Row r) => r.expectedIntent == type),
             isNotEmpty,
             reason: '$locale carries no ${type.name} row',
+          );
+        }
+      });
+
+      test('S05b-EV-01: a taskRef spelled differently still finds its '
+          'row', () async {
+        // The Definition of Done of Sprint 05b: at least three rows whose
+        // `taskRef` is spelled differently from any plausible title, routed
+        // through the real ladder against a list that includes the decoys the
+        // thresholds exist to keep apart — `HEROBRAZIL-763` one digit away,
+        // and a second "Ligar para…" close enough to score.
+        //
+        // Only pt-BR carries them: the defect was found in pt-BR, and the
+        // reference is spelled by whoever is speaking, not by the parser.
+        final List<_Row> spelled = rows
+            .where((_Row row) => row.resolvesTo != null)
+            .toList();
+        if (locale != 'pt-BR') {
+          expect(spelled, isEmpty);
+          return;
+        }
+        expect(spelled.length, greaterThanOrEqualTo(3));
+
+        for (final _Row row in spelled) {
+          final FakeTaskRepository tasks = FakeTaskRepository();
+          addTearDown(tasks.dispose);
+          for (final (String id, String title) in _plausibleTitles) {
+            await tasks.save(
+              Task(
+                id: id,
+                title: title,
+                createdAt: _t0,
+                updatedAt: _t0,
+                status: TaskStatus.todo,
+              ),
+            );
+          }
+
+          final Result<VoiceIntent> parsed = await IntentParser(
+            engine: FakeAiEngine(
+              intents: <String, String>{row.utterance: row.response},
+            ),
+          ).parse(row.utterance, context: IntentContext(locale: locale));
+          final VoiceIntent intent = parsed.valueOrNull!;
+
+          final Result<RouteOutcome> routed = await _routerOver(
+            tasks,
+          ).route(intent);
+          final RouteOutcome outcome = routed.valueOrNull!;
+
+          // A deletion stops at the confirmation sheet however it resolved
+          // (BR-04's floor), so the row it named is on the sheet rather than
+          // in an executed outcome. Both must name the same title.
+          final String? named = switch (outcome) {
+            IntentExecuted(:final Task? task, :final String? deletedTitle) =>
+              task?.title ?? deletedTitle,
+            ConfirmationRequired(:final Task? task) => task?.title,
+            _ => null,
+          };
+          expect(
+            named,
+            row.resolvesTo,
+            reason:
+                '`${row.id}` "${row.utterance}" — `${row.expectedSlots['taskRef']}` '
+                'reached `$named`, not `${row.resolvesTo}` '
+                '(outcome ${outcome.runtimeType})',
           );
         }
       });

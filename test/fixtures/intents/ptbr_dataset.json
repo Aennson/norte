@@ -722,6 +722,44 @@
         }
       },
       "response": "{\"intent\": \"createTask\", \"slots\": {\"title\": \"preparar a demo\", \"description\": \"levar o adaptador\"}, \"confidence\": 0.9}"
+    },
+    {
+      "id": "ptbr-065",
+      "utterance": "coloca a atividade Hero Brazil-762 para o status de pronto",
+      "expected": {
+        "intent": "updateTask",
+        "slots": {
+          "taskRef": "Hero Brazil-762",
+          "status": "done"
+        }
+      },
+      "resolvesTo": "HEROBRAZIL-762",
+      "response": "{\"intent\": \"updateTask\", \"slots\": {\"taskRef\": \"Hero Brazil-762\", \"status\": \"done\"}, \"confidence\": 0.94}"
+    },
+    {
+      "id": "ptbr-066",
+      "utterance": "apaga a atividade Hero Brasil-762",
+      "expected": {
+        "intent": "deleteTask",
+        "slots": {
+          "taskRef": "Hero Brasil-762"
+        }
+      },
+      "resolvesTo": "HEROBRAZIL-762",
+      "response": "{\"intent\": \"deleteTask\", \"slots\": {\"taskRef\": \"Hero Brasil-762\"}, \"confidence\": 0.98}"
+    },
+    {
+      "id": "ptbr-067",
+      "utterance": "comenta na atividade ligar pra Samára: cliente retornou",
+      "expected": {
+        "intent": "commentTask",
+        "slots": {
+          "taskRef": "ligar pra Samára",
+          "comment": "cliente retornou"
+        }
+      },
+      "resolvesTo": "Ligar para Samara",
+      "response": "{\"intent\": \"commentTask\", \"slots\": {\"taskRef\": \"ligar pra Samára\", \"comment\": \"cliente retornou\"}, \"confidence\": 0.91}"
     }
   ]
 }
