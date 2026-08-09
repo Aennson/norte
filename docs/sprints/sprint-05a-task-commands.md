@@ -18,10 +18,10 @@ reference (DEC-030).
 
 ## Entry criteria
 
-- [ ] Sprint 05 DoD complete and merged.
-- [ ] `IntentParser`, `IntentRouter` and the `ConfirmSheet` in place, with the
+- [x] Sprint 05 DoD complete and merged.
+- [x] `IntentParser`, `IntentRouter` and the `ConfirmSheet` in place, with the
       continuous-listening session of DEC-031.
-- [ ] `TaskQuery.statuses` already a set (it is — the application layer has
+- [x] `TaskQuery.statuses` already a set (it is — the application layer has
       supported multiple statuses since Sprint 01; only the UI restricted it).
 
 ## Scope
@@ -168,7 +168,7 @@ both wired to `TaskQuery`.
 
 ## Definition of Done
 
-- [ ] Gates G1–G6 green; domain+application coverage ≥ 90%.
-- [ ] All S05a-* tests passing.
-- [ ] The eval dataset extended with the local intents, still ≥ 90% / ≥ 85%.
-- [ ] Report `docs/reports/sprint-05a-report.md`.
+- [x] Gates G1–G6 green; domain+application coverage ≥ 90%.
+- [x] All S05a-* tests passing.
+- [x] The eval dataset extended with the local intents, still ≥ 90% / ≥ 85%.
+- [x] Report `docs/reports/sprint-05a-report.md`.

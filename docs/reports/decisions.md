@@ -1076,3 +1076,44 @@ identifies nothing. The hash chain restarts from that entry.
 
 **Impact.** `docs/sprints/sprint-10-audit-log.md` (new); `docs/project-rules.md`
 §4 (BR-12); `docs/architecture.md` §10, §14.1.
+
+---
+
+## DEC-034 — Accent folding is written, not depended on (Sprint 05a)
+
+**Status:** accepted.
+
+**Context.** Two features added this sprint need the same comparison: naming a
+task out loud (`docs/architecture.md` §6.3.1) and searching the list (§4.1).
+A user who says "orcamento" means the task called "orçamento", and a search box
+that disagreed with the voice command about which tasks match would be two
+features with two opinions about the same string.
+
+Dart's core library has no Unicode normalisation — no NFD, no `String.fold` —
+so lowercasing alone does not do it. The obvious answer is the `diacritic`
+package, roughly the same thirty lines behind a version constraint.
+
+**Decision.** `TextMatch` in `domain/services/`, with an explicit map from each
+lowercase accented rune to its unaccented spelling. It covers the Latin-1
+diacritics Portuguese and Italian actually use plus the two ligatures they
+borrow, and it says so in its own dartdoc: it is not a collator, and it knows
+nothing about Turkish dotless i or Greek final sigma.
+
+`domain/` may import nothing outside `domain/` (§3), so a package here would
+also have been the first third-party dependency in the layer that is supposed
+to have none.
+
+**Rejected alternatives.**
+
+- *The `diacritic` package.* A dependency in the domain layer for eight vowels,
+  and one that would have to be added to `docs/architecture.md` §2.1 as part of
+  the stack. The scope it buys — every script in Unicode — is scope the three
+  supported languages (BR-11) do not use.
+- *Fold with a regex over a normalised string.* There is nothing to normalise
+  against without NFD; the regex would need the same map.
+- *Compare case-insensitively and ignore accents entirely.* Then "orcamento"
+  finds nothing, which is the exact complaint the fold exists to answer.
+
+**Impact.** `lib/domain/services/text_match.dart` (new);
+`lib/application/usecases/list_tasks.dart`;
+`lib/application/voice/intent_router.dart`.
