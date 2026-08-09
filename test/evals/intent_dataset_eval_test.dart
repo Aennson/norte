@@ -19,7 +19,6 @@ import 'package:norte/domain/entities/voice_settings.dart';
 import 'package:norte/domain/failures/result.dart';
 
 import '../fakes/fakes.dart';
-import '../fakes/fake_ai_engine.dart';
 import '../support/task_fixtures.dart';
 
 final DateTime _t0 = DateTime.utc(2026, 8, 9, 10);
