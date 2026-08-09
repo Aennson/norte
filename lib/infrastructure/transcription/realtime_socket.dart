@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../domain/failures/failure.dart';
@@ -39,9 +40,27 @@ typedef RealtimeSocketConnector =
 class WebSocketRealtimeSocket implements RealtimeSocket {
   WebSocketRealtimeSocket(this._channel);
 
-  /// Connects to [uri] with [apiKey] in the `xi-api-key` header.
+  /// Header the API key is presented in.
+  ///
+  /// A **header, not a query parameter**, and deliberately: a URL is the one
+  /// part of a request that reliably ends up in proxy logs, crash reports and
+  /// shell history. A credential in a query string is a credential you cannot
+  /// take back (BR-08).
+  static const String apiKeyHeader = 'xi-api-key';
+
+  /// Connects to [uri], presenting [apiKey] in [apiKeyHeader].
+  ///
+  /// Uses `IOWebSocketChannel` rather than the platform-agnostic
+  /// `WebSocketChannel.connect`, because only the former can send handshake
+  /// headers — and the app's three targets are all `dart:io` platforms
+  /// (`docs/architecture.md` §12). The generic constructor silently sends no
+  /// headers at all, which is how this shipped in its first draft: the key was
+  /// accepted as an argument and dropped on the floor.
   static Future<RealtimeSocket> connect(Uri uri, String apiKey) async {
-    final WebSocketChannel channel = WebSocketChannel.connect(uri);
+    final WebSocketChannel channel = IOWebSocketChannel.connect(
+      uri,
+      headers: <String, Object?>{apiKeyHeader: apiKey},
+    );
     try {
       await channel.ready;
     } on WebSocketChannelException catch (error) {

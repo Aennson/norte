@@ -41,8 +41,8 @@ machine, and again on `ubuntu-latest` in CI.
 |---|---|---|
 | G1 — static analysis | `flutter analyze` | `No issues found! (ran in 4.5s)` — 0 errors, 0 warnings, 0 infos ✅ |
 | G2 — formatting | `dart format --output=none --set-exit-if-changed .` | exit 0 ✅ |
-| G3 — tests | `flutter test` | `00:33 +613: All tests passed!` ✅ |
-| G4 — coverage | `flutter test --coverage` + `dart run tool/check_coverage.dart` | domain+application **93.0%** (516/555) · project **83.6%** (3817/4568) — `gate G4: OK` ✅ |
+| G3 — tests | `flutter test` | `00:55 +620: All tests passed!` ✅ |
+| G4 — coverage | `flutter test --coverage` + `dart run tool/check_coverage.dart` | domain+application **93.0%** (516/555) · project **83.9%** (3832/4569) — `gate G4: OK` ✅ |
 | G5 — dependency rule | `dart run tool/check_imports.dart` | `check_imports: OK — no layer or color violations in lib` ✅ |
 | G6 — secrets | `grep -rEn "(api[_-]?key\|token)[[:space:]]*=[[:space:]]*['\"]" lib/` | no match ✅ |
 | E2E | `flutter test integration_test/<suite>`, one per file (DEC-010) | 9 suites, 33 scenarios, all passing on the Linux runner ✅ |
@@ -65,7 +65,7 @@ invocation that contributes nothing to `lcov.info`.
 The fix was `test/presentation/voice_session_test.dart`, which drives the same
 pipeline through a widget tree and covers the branches an E2E scenario reaches
 only one at a time: every slot question, every intent description, every
-failure mapping. 79.2% → **83.6%**.
+failure mapping. 79.2% → **83.9%**.
 
 ## 3. Tests
 
@@ -143,18 +143,33 @@ The sprint's Definition of Done asks for a p95 latency measurement "with the
 real engine in a manual test". It has **not been run**, and this sprint is
 therefore closed with one box open rather than with a box ticked on a promise.
 
-### 7.1 A defect found while writing these instructions
+### 7.1 Two defects found while writing these instructions
 
-The script was unrunnable as first shipped. `ScribeRealtimeEngine` was wired to
-the **Whisper** credential store, so there was nowhere to put an ElevenLabs key
-that did not already hold the OpenAI one: configuring voice commands would have
+Neither was found by a test. Both were found by writing down the steps a person
+would follow and discovering the steps had no answer.
+
+**The script was unrunnable.** `ScribeRealtimeEngine` was wired to the
+**Whisper** credential store, so there was nowhere to put an ElevenLabs key that
+did not already hold the OpenAI one: configuring voice commands would have
 silently broken Sprint 04's meeting transcription. Fixed under DEC-028 — three
-providers now occupy three slots, and the store has no default constructor, so
-the composition root cannot pick the wrong one by omission.
+providers, three slots, and no default constructor, so the composition root
+cannot pick the wrong store by omission.
 
-Worth recording *how* it was found: not by a test, but by writing down the steps
-a person would follow and discovering that step 2 had no answer. `main()` is the
-one layer no suite exercises, and this is what that costs.
+**The key was never sent.** `WebSocketRealtimeSocket.connect` took an `apiKey`,
+documented it as going into `xi-api-key`, and dropped it — the generic
+`WebSocketChannel.connect` carries no headers. No permission on any key would
+have made the session authenticate. Fixed under DEC-029, with the key in a
+header rather than the query string (BR-08) and a real loopback WebSocket
+server, `FakeRealtimeServer`, watching the handshake.
+
+**What they have in common is the gap that produced them.** `main()` is
+untested by construction, and `realtime_socket.dart` had **0 of 14 lines
+covered** because every engine test drives `FakeRealtimeSocket`. A fake
+transport is the right tool for reproducing a dropped connection; it is the
+wrong tool for asking whether a credential leaves the machine, and nothing was
+asking. Both fixes make the mistake harder to *express*, not merely detected:
+a store with no default constructor, and a socket suite that watches a real
+handshake.
 
 ### 7.2 The steps
 
@@ -220,6 +235,7 @@ contract matches the service.
 |---|---|
 | Manual script and p95 latency | **Open** — §7. Carried explicitly, not discharged |
 | Scribe key shared the Whisper slot | **Fixed before merge** — DEC-028, §7.1. Found by writing §7.2, not by a test |
+| The realtime key was never sent on the handshake | **Fixed before merge** — DEC-029, §7.1. `realtime_socket.dart` had zero coverage |
 | Scribe wire format unverified | **Open** — DEC-026, settled by the same manual pass |
 | Wall-clock reminder times (`tomorrow 09:00`) | **Deliberately deferred** — DEC-025 hands them to Sprint 06 with a failing case attached, rather than implementing S06-IT-02's timezone work without its tests |
 | iOS never built or tested; no `macos/` golden set | **Still open** — inherited from DEC-020, unchanged by this sprint. Sprint 08 is where a three-platform or two-platform v1.0 has to be decided |
@@ -259,7 +275,7 @@ the Developer's, not the executing AI's.
 ---
 
 **One box is unticked, and it is the manual one.** Everything a machine can
-verify about this sprint has been verified — 613 unit, golden and contract
+verify about this sprint has been verified — 620 unit, golden and contract
 tests, 33 E2E scenarios on a Linux desktop host, an eval whose thresholds sit
 close enough to the results to bite. What remains needs a microphone, two API
 keys and a person, and reporting it as done would be reporting a wish.

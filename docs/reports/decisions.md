@@ -817,3 +817,43 @@ it belongs to invites exactly one slot for two providers.
 `lib/main.dart`; `lib/presentation/settings/voice_settings_section.dart`;
 `lib/presentation/voice/voice_providers.dart`; four new strings in each of the
 three ARB files; `test/infrastructure/transcription_credential_slots_test.dart`.
+
+---
+
+## DEC-029 — The realtime key travels in a header, over a socket a test can watch (Sprint 05)
+
+**Status:** accepted.
+
+**Context.** The second wiring defect of the same family as DEC-028, found the
+same way — by answering a question about the manual pass rather than by a test.
+`WebSocketRealtimeSocket.connect` accepted an `apiKey` argument, documented it
+as going into the `xi-api-key` header, and **never sent it**:
+`WebSocketChannel.connect` carries no headers at all. `realtime_socket.dart`
+had **0 of 14 lines covered**, because every engine test drives
+`FakeRealtimeSocket`.
+
+A fake transport is the right tool for reproducing a dropped connection
+deterministically. It is the wrong tool for asking whether a credential leaves
+the machine, and nothing in the suite was asking.
+
+**Decision.** Three parts.
+
+1. Connect through `IOWebSocketChannel`, which can send handshake headers. The
+   generic constructor cannot, and its silence is what hid the bug. All three
+   v1.0 targets are `dart:io` platforms (`docs/architecture.md` §12).
+2. Present the key in the **`xi-api-key` header, never in the query string**. A
+   URL is the part of a request that reliably reaches proxy logs, crash reports
+   and shell history; a credential put there cannot be taken back (BR-08).
+3. Add `FakeRealtimeServer` — a real loopback WebSocket server that records the
+   handshake — and test the adapter against it. This is the same shape as
+   `FakeClaudeServer` and `FakeJiraServer`, and for the same reason: an adapter
+   mocked at its own boundary tests the mock.
+
+**What this does not settle.** Whether ElevenLabs authenticates a realtime
+socket by this header at all. That is DEC-026's open item, and a 401 on the
+handshake is exactly the signal the manual pass is looking for — it now
+surfaces as `AuthFailure` rather than as a generic network problem.
+
+**Impact.** `lib/infrastructure/transcription/realtime_socket.dart`;
+`test/support/fake_realtime_server.dart`;
+`test/infrastructure/realtime_socket_test.dart`.
