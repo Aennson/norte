@@ -214,7 +214,11 @@ void main() {
           'marca a tarefa Ligar para Samara como concluída',
         );
         expect((await only(tester)).status, TaskStatus.done);
-        expect(find.text(l10nOf(tester).voiceDoneTaskUpdated), findsOneWidget);
+        // Sprint 05b: the outcome names the row it acted on.
+        expect(
+          find.text(l10nOf(tester).voiceDoneTaskUpdated('Ligar para Samara')),
+          findsOneWidget,
+        );
         expect(microphone.closes, 0);
 
         // 2 — the note. It lands on the user's own row and nowhere else.
@@ -228,7 +232,7 @@ void main() {
           'cliente retornou',
         ]);
         expect(
-          find.text(l10nOf(tester).voiceDoneTaskCommented),
+          find.text(l10nOf(tester).voiceDoneTaskCommented('Ligar para Samara')),
           findsOneWidget,
         );
         expect(microphone.opens, 1, reason: 'one session, three commands');
