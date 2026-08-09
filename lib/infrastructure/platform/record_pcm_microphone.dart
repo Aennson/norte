@@ -81,7 +81,11 @@ class RecordPcmMicrophone implements Microphone {
 
   @override
   Future<void> close() async {
-    log?.call('closing after $_captured frames');
+    // Only when there was something to close. `close` is idempotent and gets
+    // called from three places — the commit, the caller's stop, and teardown —
+    // so an unconditional line printed the same fact three times per session
+    // and made a quiet log look busy.
+    if (_session != null) log?.call('closing after $_captured frames');
     await _frames?.cancel();
     _frames = null;
     try {

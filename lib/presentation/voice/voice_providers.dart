@@ -65,6 +65,23 @@ final Provider<ReminderRepository> reminderRepositoryProvider =
       (Ref ref) => throw UnimplementedError('wired in main.dart'),
     );
 
+/// Where the session writes what it decided, for the manual pass.
+///
+/// The engine and the microphone each got a log when their step turned out to
+/// be the one nobody could see. This is the third step — commit, parse,
+/// route — and it stayed dark through two rounds of debugging while the
+/// Developer and I guessed at which of them had failed.
+///
+/// **It logs shapes, never speech**: the length of a committed segment, the
+/// intent's type and confidence, the outcome's class. A transcript does not go
+/// in a log (BR-06).
+final Provider<void Function(String)> voiceLogProvider =
+    Provider<void Function(String)>(
+      (Ref ref) => (String line) {
+        debugPrint('[voice] $line');
+      },
+    );
+
 /// The rolling latency window the sprint's p95 is read from.
 ///
 /// A provider so the manual pass can read it, and so a test can assert that
@@ -376,6 +393,7 @@ class VoiceSession extends Notifier<VoiceSessionState> {
     }
 
     _committedAt = ref.read(clockProvider).now();
+    _log('committed segment: ${event.text.length} chars');
     state = state.copyWith(
       committed: event.text,
       phase: VoicePhase.understanding,
@@ -418,10 +436,15 @@ class VoiceSession extends Notifier<VoiceSessionState> {
 
     switch (parsed) {
       case Err<VoiceIntent>(:final Failure failure):
+        _log('parse failed — ${failure.runtimeType}: ${failure.message}');
         _onFailure(failure);
         return;
       case Ok<VoiceIntent>(:final VoiceIntent value):
         _recordLatency();
+        _log(
+          'parsed ${value.type.name} at ${value.confidence.toStringAsFixed(2)}'
+          ', slots ${value.slots.keys.toList()}',
+        );
         state = state.copyWith(intent: value);
         await _execute(value);
     }
@@ -444,6 +467,11 @@ class VoiceSession extends Notifier<VoiceSessionState> {
       case Ok<RouteOutcome>(value: IntentNotUnderstood()):
         state = state.copyWith(notUnderstood: true, phase: VoicePhase.asking);
     }
+  }
+
+  void _log(String line) {
+    if (_disposed) return;
+    ref.read(voiceLogProvider)(line);
   }
 
   void _onFailure(Object error) {
