@@ -1443,6 +1443,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This app cannot work out that time yet. Try \"in 20 minutes\".'**
   String get voiceTimeUnsupported;
+
+  /// Status line when the voice session ended in a failure. The reason is on the line below it.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped'**
+  String get voiceFailed;
+
+  /// Placeholder of the Scribe key field. ElevenLabs keys start with sk_, unlike the Claude key's sk-ant-.
+  ///
+  /// In en, this message translates to:
+  /// **'sk_...'**
+  String get settingsScribeKeyHint;
 }
 
 class _AppLocalizationsDelegate

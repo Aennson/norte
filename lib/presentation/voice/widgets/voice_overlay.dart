@@ -20,6 +20,14 @@ enum VoicePhase {
 
   /// A question is on screen — a missing slot, or a refusal to guess.
   asking,
+
+  /// Something went wrong and the session is over.
+  ///
+  /// Distinct from [asking] because the two say opposite things: a question
+  /// means the app is still working and needs one more word, a failure means
+  /// it has stopped. Sharing a phase made a failed session render under
+  /// "Understanding…", which is the app describing work it is not doing.
+  failed,
 }
 
 /// The terminal-style panel that shows what the app is hearing
@@ -119,13 +127,16 @@ class VoiceOverlay extends StatelessWidget {
                         VoicePhase.listening => LucideIcons.mic,
                         VoicePhase.understanding ||
                         VoicePhase.asking => LucideIcons.sparkles,
+                        VoicePhase.failed => LucideIcons.triangleAlert,
                       },
                       size: 16,
-                      // Connecting is not yet listening, and saying so in the
-                      // accent colour would overstate it.
-                      color: phase == VoicePhase.connecting
-                          ? colors.textMuted
-                          : colors.accent,
+                      color: switch (phase) {
+                        // Connecting is not yet listening, and saying so in
+                        // the accent colour would overstate it.
+                        VoicePhase.connecting => colors.textMuted,
+                        VoicePhase.failed => colors.error,
+                        _ => colors.accent,
+                      },
                     ),
                     const SizedBox(width: NorteSpacing.sm),
                     Expanded(

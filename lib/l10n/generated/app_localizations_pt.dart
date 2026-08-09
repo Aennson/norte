@@ -770,4 +770,10 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get voiceTimeUnsupported =>
       'Este app ainda não sabe resolver esse horário. Tente \"em 20 minutos\".';
+
+  @override
+  String get voiceFailed => 'Parado';
+
+  @override
+  String get settingsScribeKeyHint => 'sk_...';
 }

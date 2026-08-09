@@ -84,6 +84,9 @@ class VoiceHost extends ConsumerWidget {
         VoicePhase.listening => l10n.voiceListening,
         VoicePhase.understanding ||
         VoicePhase.asking => l10n.voiceUnderstanding,
+        // Not "Understanding…". A failed session is not doing any work, and
+        // saying it is was the app describing something that had stopped.
+        VoicePhase.failed => l10n.voiceFailed,
       },
       stopLabel: l10n.voiceStop,
       meterLabel: l10n.voiceMeterLabel,

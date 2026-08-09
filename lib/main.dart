@@ -90,7 +90,11 @@ Future<void> main() async {
   // The voice pipeline. The microphone is a separate adapter from the meeting
   // recorder and knows no path at all, which is what makes BR-06 structural
   // rather than a rule someone has to remember.
-  final RecordPcmMicrophone microphone = RecordPcmMicrophone();
+  final RecordPcmMicrophone microphone = RecordPcmMicrophone(
+    // Says what the platform said when capture will not start. Run the app
+    // from a terminal to read it.
+    log: (String line) => debugPrint('[mic] $line'),
+  );
   final ScribeRealtimeEngine scribe = ScribeRealtimeEngine(
     credentialStore: scribeCredentials,
     // Diagnostics for the one part of the pipeline no test can exercise: the

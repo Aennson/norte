@@ -434,7 +434,11 @@ class VoiceSession extends Notifier<VoiceSessionState> {
   void _onFailure(Object error) {
     state = state.copyWith(
       failure: error is Failure ? error : const EngineFailure(),
-      phase: VoicePhase.asking,
+      // Failed, not asking. The overlay renders the two differently because
+      // they mean opposite things: one is the app still working, the other is
+      // the app stopped.
+      phase: VoicePhase.failed,
+      level: 0,
     );
   }
 

@@ -767,4 +767,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get voiceTimeUnsupported =>
       'This app cannot work out that time yet. Try \"in 20 minutes\".';
+
+  @override
+  String get voiceFailed => 'Stopped';
+
+  @override
+  String get settingsScribeKeyHint => 'sk_...';
 }

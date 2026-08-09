@@ -1034,5 +1034,13 @@
   "voiceTimeUnsupported": "This app cannot work out that time yet. Try \"in 20 minutes\".",
   "@voiceTimeUnsupported": {
     "description": "Failure when a reminder's triggerAt is a wall-clock phrase Sprint 05 cannot resolve (DEC-025)."
+  },
+  "voiceFailed": "Stopped",
+  "@voiceFailed": {
+    "description": "Status line when the voice session ended in a failure. The reason is on the line below it."
+  },
+  "settingsScribeKeyHint": "sk_...",
+  "@settingsScribeKeyHint": {
+    "description": "Placeholder of the Scribe key field. ElevenLabs keys start with sk_, unlike the Claude key's sk-ant-."
   }
 }

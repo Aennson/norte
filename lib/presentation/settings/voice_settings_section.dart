@@ -114,7 +114,10 @@ class _VoiceSettingsSectionState extends ConsumerState<VoiceSettingsSection> {
           NorteTextField(
             key: VoiceSettingsSection.apiKeyFieldKey,
             label: l10n.settingsScribeKeyField,
-            hint: l10n.aiKeyFieldHint,
+            // Not the Claude hint. An ElevenLabs key starts `sk_`, and showing
+            // `sk-ant-` under a field that wants the other provider's key is
+            // the form telling the user to paste the wrong thing.
+            hint: l10n.settingsScribeKeyHint,
             controller: _apiKey,
             isSecret: true,
             errorText: _showEmpty ? l10n.aiKeyRequired : null,

@@ -248,5 +248,7 @@
   "voiceMeterLabel": "Livello del microfono",
   "voiceNoAudio": "Il microfono è aperto, ma non arriva alcun suono.",
   "voiceReconnecting": "Connessione persa — riconnessione…",
-  "voiceTimeUnsupported": "Questa app non sa ancora risolvere quell'orario. Prova \"tra 20 minuti\"."
+  "voiceTimeUnsupported": "Questa app non sa ancora risolvere quell'orario. Prova \"tra 20 minuti\".",
+  "voiceFailed": "Fermato",
+  "settingsScribeKeyHint": "sk_..."
 }

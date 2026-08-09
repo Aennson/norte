@@ -25,6 +25,7 @@ class RecordPcmMicrophone implements Microphone {
     rec.AudioRecorder? recorder,
     ph.Permission permission = ph.Permission.microphone,
     Future<bool> Function()? openAppSettings,
+    this.log,
   }) : micPermission = permission,
        _recorder = recorder ?? rec.AudioRecorder(),
        _openAppSettings = openAppSettings ?? ph.openAppSettings;
@@ -32,6 +33,16 @@ class RecordPcmMicrophone implements Microphone {
   final rec.AudioRecorder _recorder;
   final ph.Permission micPermission;
   final Future<bool> Function() _openAppSettings;
+
+  /// Diagnostics sink for what the platform actually said.
+  ///
+  /// The user is told "the recording could not be made", which is all they can
+  /// act on. This is where the reason goes — the `PlatformException`, the
+  /// HRESULT behind it, the permission the platform reported. The first draft
+  /// caught the exception and dropped it, so the app knew exactly why the
+  /// microphone would not open and told nobody. That is the difference between
+  /// a bug report of "it does not work" and one that names the cause.
+  final void Function(String line)? log;
 
   /// Sample rate Scribe Realtime expects.
   static const int sampleRate = 16000;
@@ -89,7 +100,23 @@ class RecordPcmMicrophone implements Microphone {
     // Asking rather than checking: this is the moment the user pressed the
     // voice button, which is the only moment at which a prompt is not an
     // ambush.
-    final MicrophonePermission granted = await requestPermission();
+    final MicrophonePermission granted;
+    try {
+      granted = await requestPermission();
+    } catch (error) {
+      // `permission_handler` is not implemented on every desktop platform, and
+      // a plugin that throws here would otherwise read as a refusal — sending
+      // the user to a settings page for a permission that was never the
+      // problem.
+      log?.call('permission check failed: $error');
+      session.addError(
+        const RecordingFailure('the microphone permission could not be read'),
+      );
+      await session.close();
+      return;
+    }
+
+    log?.call('permission: ${granted.name}');
     if (granted != MicrophonePermission.granted) {
       session.addError(
         MicrophonePermissionFailure(
@@ -110,7 +137,13 @@ class RecordPcmMicrophone implements Microphone {
           numChannels: channels,
         ),
       );
-    } catch (_) {
+    } catch (error) {
+      // The platform's own words. On Windows this carries the HRESULT the
+      // Media Foundation capture failed with, which is the whole difference
+      // between "it does not work" and a fix.
+      log?.call(
+        'startStream failed at ${sampleRate}Hz/${channels}ch pcm16: $error',
+      );
       session.addError(
         const RecordingFailure('the microphone could not be opened'),
       );
@@ -118,11 +151,14 @@ class RecordPcmMicrophone implements Microphone {
       return;
     }
 
+    log?.call('capture started at ${sampleRate}Hz/${channels}ch pcm16');
+
     _frames = frames.listen(
       (Uint8List chunk) {
         if (!session.isClosed) session.add(chunk);
       },
       onError: (Object error) {
+        log?.call('capture stream error: $error');
         if (!session.isClosed) {
           session.addError(const RecordingFailure('audio capture stopped'));
         }

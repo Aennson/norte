@@ -248,5 +248,7 @@
   "voiceMeterLabel": "Nível do microfone",
   "voiceNoAudio": "O microfone está aberto, mas nenhum som está chegando.",
   "voiceReconnecting": "Conexão caiu — reconectando…",
-  "voiceTimeUnsupported": "Este app ainda não sabe resolver esse horário. Tente \"em 20 minutos\"."
+  "voiceTimeUnsupported": "Este app ainda não sabe resolver esse horário. Tente \"em 20 minutos\".",
+  "voiceFailed": "Parado",
+  "settingsScribeKeyHint": "sk_..."
 }
