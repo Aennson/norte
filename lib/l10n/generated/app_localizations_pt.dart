@@ -756,4 +756,18 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get settingsScribeNotConfigured =>
       'Sem chave de tempo real — os comandos de voz não vão funcionar';
+
+  @override
+  String get voiceMeterLabel => 'Nível do microfone';
+
+  @override
+  String get voiceNoAudio =>
+      'O microfone está aberto, mas nenhum som está chegando.';
+
+  @override
+  String get voiceReconnecting => 'Conexão caiu — reconectando…';
+
+  @override
+  String get voiceTimeUnsupported =>
+      'Este app ainda não sabe resolver esse horário. Tente \"em 20 minutos\".';
 }

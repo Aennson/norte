@@ -348,11 +348,16 @@ void main() {
       });
       await pumpEventQueue();
 
+      // The sink also carries connection notes ("socket open"), which the
+      // manual pass wants; this assertion is about the frame line.
+      final List<String> unread = lines
+          .where((String l) => l.contains('unrecognised'))
+          .toList();
       expect(events, isEmpty);
-      expect(lines.single, contains('speech_segment'));
-      expect(lines.single, contains('utterance'));
+      expect(unread.single, contains('speech_segment'));
+      expect(unread.single, contains('utterance'));
       // Shape, never content: the transcript does not go in a log (BR-06).
-      expect(lines.single, isNot(contains('PROJ-123')));
+      expect(unread.single, isNot(contains('PROJ-123')));
     });
 
     test('S05-UT-06: a frame it can read is not reported', () async {
@@ -382,7 +387,7 @@ void main() {
         });
       await pumpEventQueue();
 
-      expect(lines, isEmpty);
+      expect(lines.where((String l) => l.contains('unrecognised')), isEmpty);
     });
   });
 
@@ -452,7 +457,7 @@ void main() {
       await pumpEventQueue();
 
       expect(events, isEmpty);
-      expect(lines, isEmpty);
+      expect(lines.where((String l) => l.contains('unrecognised')), isEmpty);
     });
   });
 }

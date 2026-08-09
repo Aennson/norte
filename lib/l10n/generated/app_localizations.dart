@@ -1419,6 +1419,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No realtime key — voice commands will not run'**
   String get settingsScribeNotConfigured;
+
+  /// Accessible label of the input level meter.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone level'**
+  String get voiceMeterLabel;
+
+  /// Shown when the session is connected but no audio frames have been captured.
+  ///
+  /// In en, this message translates to:
+  /// **'The microphone is open but no sound is arriving.'**
+  String get voiceNoAudio;
+
+  /// Shown when the realtime socket dropped mid-session.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection lost — reconnecting…'**
+  String get voiceReconnecting;
+
+  /// Failure when a reminder's triggerAt is a wall-clock phrase Sprint 05 cannot resolve (DEC-025).
+  ///
+  /// In en, this message translates to:
+  /// **'This app cannot work out that time yet. Try \"in 20 minutes\".'**
+  String get voiceTimeUnsupported;
 }
 
 class _AppLocalizationsDelegate

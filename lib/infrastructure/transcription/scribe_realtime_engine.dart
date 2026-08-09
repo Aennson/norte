@@ -135,8 +135,30 @@ class ScribeRealtimeEngine implements RealtimeTranscription {
   bool _stopped = false;
   bool _audioEnded = false;
 
+  final StreamController<bool> _connected = StreamController<bool>.broadcast();
+  bool _isConnected = false;
+
+  /// Frames of audio handed to the socket since the session opened.
+  ///
+  /// Diagnostic only. It is a count, not a copy — nothing here retains audio
+  /// (BR-06).
+  int _framesSent = 0;
+
   @override
   TranscriptionMode get mode => TranscriptionMode.realtime;
+
+  @override
+  Stream<bool> get isConnected async* {
+    yield _isConnected;
+    yield* _connected.stream;
+  }
+
+  void _setConnected(bool value) {
+    if (_isConnected == value) return;
+    _isConnected = value;
+    if (!_connected.isClosed) _connected.add(value);
+    log?.call(value ? 'socket open' : 'socket closed');
+  }
 
   /// Bytes currently held for replay. Never more than [maxBufferedBytes].
   int get bufferedBytes => _bufferedBytes;
@@ -148,6 +170,7 @@ class ScribeRealtimeEngine implements RealtimeTranscription {
     _events = events;
     _stopped = false;
     _audioEnded = false;
+    _framesSent = 0;
     _buffer.clear();
     _bufferedBytes = 0;
 
@@ -214,6 +237,7 @@ class ScribeRealtimeEngine implements RealtimeTranscription {
           return;
         }
         _socket = socket;
+        _setConnected(true);
         _incoming = socket.messages.listen(
           _onMessage,
           onError: (Object _) => _onSocketGone(),
@@ -238,7 +262,9 @@ class ScribeRealtimeEngine implements RealtimeTranscription {
 
   /// The socket went away. Reconnect unless the caller is done with us.
   void _onSocketGone() {
+    _setConnected(false);
     if (_stopped || _events == null) return;
+    log?.call('socket dropped after $_framesSent audio frames — reconnecting');
     unawaited(_incoming?.cancel());
     _incoming = null;
     _socket = null;
@@ -259,6 +285,10 @@ class ScribeRealtimeEngine implements RealtimeTranscription {
     if (_stopped) return;
     final RealtimeSocket? socket = _socket;
     if (socket != null) {
+      if (_framesSent == 0) {
+        log?.call('first audio frame sent (${chunk.length} bytes)');
+      }
+      _framesSent++;
       socket.send(chunk);
       return;
     }
@@ -432,6 +462,7 @@ class ScribeRealtimeEngine implements RealtimeTranscription {
   }
 
   Future<void> _teardown() async {
+    _setConnected(false);
     await _audio?.cancel();
     _audio = null;
     await _incoming?.cancel();

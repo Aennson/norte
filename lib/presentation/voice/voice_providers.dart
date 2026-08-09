@@ -20,6 +20,7 @@ import '../../domain/ports/voice_settings_store.dart';
 import '../jira/jira_providers.dart';
 import '../meetings/meeting_providers.dart';
 import '../tasks/task_providers.dart';
+import 'audio_level.dart';
 import 'voice_latency_log.dart';
 import 'widgets/voice_overlay.dart';
 
@@ -124,6 +125,8 @@ class VoiceSessionState {
     this.failure,
     this.notUnderstood = false,
     this.latency,
+    this.level = 0,
+    this.framesHeard = 0,
   });
 
   final VoicePhase phase;
@@ -158,6 +161,24 @@ class VoiceSessionState {
   /// (`sprint-05` validation rules).
   final Duration? latency;
 
+  /// Input level in `0.0..1.0`, measured from the PCM actually captured.
+  ///
+  /// Not an animation. A meter driven by a timer looks identical whether the
+  /// microphone works or not, which is an assurance the app cannot honestly
+  /// give — and the exact confusion this field exists to end.
+  final double level;
+
+  /// Frames of audio captured since the session opened.
+  ///
+  /// `0` after a second or two of "listening" means the microphone is open and
+  /// producing nothing, which is a different problem from a service that is
+  /// not answering — and the screen says so rather than leaving both looking
+  /// like silence.
+  final int framesHeard;
+
+  /// `true` once any audio at all has arrived from the microphone.
+  bool get hasHeardAudio => framesHeard > 0;
+
   VoiceSessionState copyWith({
     VoicePhase? phase,
     bool? isActive,
@@ -170,6 +191,8 @@ class VoiceSessionState {
     Failure? failure,
     bool? notUnderstood,
     Duration? latency,
+    double? level,
+    int? framesHeard,
     bool clearPartial = false,
     bool clearConfirming = false,
     bool clearAsking = false,
@@ -186,6 +209,8 @@ class VoiceSessionState {
     failure: clearFailure ? null : failure ?? this.failure,
     notUnderstood: notUnderstood ?? this.notUnderstood,
     latency: latency ?? this.latency,
+    level: level ?? this.level,
+    framesHeard: framesHeard ?? this.framesHeard,
   );
 }
 
@@ -201,6 +226,7 @@ class VoiceSessionState {
 /// the engine and is never copied, buffered or written by this class (BR-06).
 class VoiceSession extends Notifier<VoiceSessionState> {
   StreamSubscription<TranscriptEvent>? _events;
+  StreamSubscription<bool>? _connection;
 
   /// When the last committed segment arrived, for the latency measurement.
   DateTime? _committedAt;
@@ -218,6 +244,7 @@ class VoiceSession extends Notifier<VoiceSessionState> {
     ref.onDispose(() {
       _disposed = true;
       unawaited(_events?.cancel());
+      unawaited(_connection?.cancel());
     });
     return const VoiceSessionState();
   }
@@ -235,7 +262,14 @@ class VoiceSession extends Notifier<VoiceSessionState> {
       realtimeTranscriptionProvider,
     );
 
-    final Stream<Uint8List> pcm = microphone.open();
+    // The audio is tapped on its way past, never held: a frame goes in, a
+    // level comes out, and the bytes carry on to the engine untouched (BR-06).
+    final Stream<Uint8List> pcm = microphone.open().map(_measure);
+
+    // The socket decides when "listening" becomes true. Saying it from the
+    // button press would be claiming to hear someone while still dialling.
+    _connection = engine.isConnected.listen(_onConnectionChanged);
+
     _events = engine
         .start(pcm)
         .listen(
@@ -247,14 +281,37 @@ class VoiceSession extends Notifier<VoiceSessionState> {
             }
           },
         );
+  }
 
-    state = state.copyWith(phase: VoicePhase.listening);
+  /// One frame of PCM, measured and passed on unchanged.
+  Uint8List _measure(Uint8List frame) {
+    if (!_disposed && state.isActive) {
+      state = state.copyWith(
+        level: AudioLevel.smooth(state.level, AudioLevel.of(frame)),
+        framesHeard: state.framesHeard + 1,
+      );
+    }
+    return frame;
+  }
+
+  void _onConnectionChanged(bool connected) {
+    if (_disposed || !state.isActive) return;
+    // Only the two phases the connection owns. A session that has committed
+    // speech and is parsing it must not be dragged back to "listening"
+    // because the socket happened to reconnect.
+    if (state.phase == VoicePhase.connecting && connected) {
+      state = state.copyWith(phase: VoicePhase.listening);
+    } else if (state.phase == VoicePhase.listening && !connected) {
+      state = state.copyWith(phase: VoicePhase.connecting, level: 0);
+    }
   }
 
   /// Ends the session — the user pressed stop, or the command finished.
   Future<void> stop() async {
     await _events?.cancel();
     _events = null;
+    await _connection?.cancel();
+    _connection = null;
     if (_disposed) return;
     await ref.read(realtimeTranscriptionProvider).stop();
     await ref.read(microphoneProvider).close();
@@ -307,6 +364,7 @@ class VoiceSession extends Notifier<VoiceSessionState> {
     state = state.copyWith(
       committed: event.text,
       phase: VoicePhase.understanding,
+      level: 0,
       clearPartial: true,
     );
     unawaited(_onCommitted(event.text));

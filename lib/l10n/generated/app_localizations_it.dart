@@ -761,4 +761,18 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get settingsScribeNotConfigured =>
       'Nessuna chiave in tempo reale — i comandi vocali non funzioneranno';
+
+  @override
+  String get voiceMeterLabel => 'Livello del microfono';
+
+  @override
+  String get voiceNoAudio =>
+      'Il microfono è aperto, ma non arriva alcun suono.';
+
+  @override
+  String get voiceReconnecting => 'Connessione persa — riconnessione…';
+
+  @override
+  String get voiceTimeUnsupported =>
+      'Questa app non sa ancora risolvere quell\'orario. Prova \"tra 20 minuti\".';
 }

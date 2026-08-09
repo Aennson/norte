@@ -1018,5 +1018,21 @@
   "settingsScribeNotConfigured": "No realtime key — voice commands will not run",
   "@settingsScribeNotConfigured": {
     "description": "Shown when no Scribe key is stored."
+  },
+  "voiceMeterLabel": "Microphone level",
+  "@voiceMeterLabel": {
+    "description": "Accessible label of the input level meter."
+  },
+  "voiceNoAudio": "The microphone is open but no sound is arriving.",
+  "@voiceNoAudio": {
+    "description": "Shown when the session is connected but no audio frames have been captured."
+  },
+  "voiceReconnecting": "Connection lost — reconnecting…",
+  "@voiceReconnecting": {
+    "description": "Shown when the realtime socket dropped mid-session."
+  },
+  "voiceTimeUnsupported": "This app cannot work out that time yet. Try \"in 20 minutes\".",
+  "@voiceTimeUnsupported": {
+    "description": "Failure when a reminder's triggerAt is a wall-clock phrase Sprint 05 cannot resolve (DEC-025)."
   }
 }

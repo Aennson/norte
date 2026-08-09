@@ -87,6 +87,11 @@ String voiceFailureText(
   String? issueKey,
 }) => switch (failure) {
   NotLinkedFailure() => l10n.voiceErrorNotLinked(issueKey ?? ''),
+  // The one validation this sprint raises on its own initiative: a reminder
+  // time it cannot resolve until Sprint 06 (DEC-025). It knows exactly what is
+  // wrong, so falling through to a generic error would be the app withholding
+  // what it knows — and it suggests the phrasing that does work.
+  ValidationFailure(field: 'triggerAt') => l10n.voiceTimeUnsupported,
   MissingApiKeyFailure() => l10n.aiErrorMissingKey,
   AuthFailure() => l10n.aiErrorRejectedKey,
   AiResponseFailure() => l10n.aiErrorUnreadable,

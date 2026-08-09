@@ -244,5 +244,9 @@
   "settingsScribeKeyField": "Chave da API de voz em tempo real",
   "settingsScribeDescription": "Sua chave do ElevenLabs Scribe, usada só para comandos de voz. É um serviço diferente da chave de transcrição acima — reuniões vão para o Whisper, comandos falados vão para o Scribe, e cada um guarda a sua própria chave.",
   "settingsScribeConfigured": "Chave de tempo real configurada",
-  "settingsScribeNotConfigured": "Sem chave de tempo real — os comandos de voz não vão funcionar"
+  "settingsScribeNotConfigured": "Sem chave de tempo real — os comandos de voz não vão funcionar",
+  "voiceMeterLabel": "Nível do microfone",
+  "voiceNoAudio": "O microfone está aberto, mas nenhum som está chegando.",
+  "voiceReconnecting": "Conexão caiu — reconectando…",
+  "voiceTimeUnsupported": "Este app ainda não sabe resolver esse horário. Tente \"em 20 minutos\"."
 }

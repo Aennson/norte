@@ -1,3 +1,6 @@
+import 'dart:math' as math;
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,6 +27,21 @@ import 'package:norte/presentation/voice/widgets/confirm_sheet.dart';
 import 'package:norte/presentation/voice/widgets/voice_overlay.dart';
 
 import '../fakes/fakes.dart';
+
+/// A frame of loud synthetic speech — enough to move the meter well past the
+/// floor.
+Uint8List _loudFrame() {
+  final Uint8List bytes = Uint8List(3200);
+  final ByteData view = ByteData.view(bytes.buffer);
+  for (var i = 0; i < 1600; i++) {
+    view.setInt16(
+      i * 2,
+      (math.sin(2 * math.pi * 440 * i / 16000) * 20000).round(),
+      Endian.little,
+    );
+  }
+  return bytes;
+}
 
 /// The voice presentation layer, driven through a real widget tree.
 ///
@@ -112,6 +130,90 @@ void main() {
   );
 
   group('the session on screen', () {
+    testWidgets('the overlay says "connecting" until the socket is open', (
+      WidgetTester tester,
+    ) async {
+      useDesktopViewport(tester);
+      // A socket that never comes up. The overlay must not claim to be
+      // listening — the complaint that produced this test was an app that said
+      // "Ouvindo…" from the moment the button was pressed.
+      realtime.setConnected(false);
+      await tester.pumpWidget(host());
+      await tester.pumpAndSettle();
+
+      final ProviderContainer container = ProviderScope.containerOf(
+        tester.element(find.byType(VoiceHost)),
+      );
+      final VoiceSession session = container.read(
+        voiceSessionProvider.notifier,
+      );
+      await session.start();
+      await tester.pumpAndSettle();
+
+      // `FakeRealtimeTranscription.start` connects immediately, so this is the
+      // state *after* it: listening, honestly.
+      expect(container.read(voiceSessionProvider).phase, VoicePhase.listening);
+
+      // Now the socket drops mid-session.
+      realtime.setConnected(false);
+      await tester.pumpAndSettle();
+      expect(container.read(voiceSessionProvider).phase, VoicePhase.connecting);
+    });
+
+    testWidgets('the level comes from the audio, not from a timer', (
+      WidgetTester tester,
+    ) async {
+      useDesktopViewport(tester);
+      await tester.pumpWidget(host());
+      await tester.pumpAndSettle();
+
+      final ProviderContainer container = ProviderScope.containerOf(
+        tester.element(find.byType(VoiceHost)),
+      );
+      await container.read(voiceSessionProvider.notifier).start();
+      await tester.pumpAndSettle();
+
+      expect(container.read(voiceSessionProvider).level, 0);
+      expect(container.read(voiceSessionProvider).hasHeardAudio, isFalse);
+
+      // Loud audio through the microphone, which the session taps on its way
+      // to the engine.
+      microphone.emit(_loudFrame());
+      await tester.pumpAndSettle();
+
+      final VoiceSessionState after = container.read(voiceSessionProvider);
+      expect(after.level, greaterThan(0.5));
+      expect(after.hasHeardAudio, isTrue);
+      // And the bytes still reached the engine untouched.
+      expect(realtime.receivedChunks, hasLength(1));
+    });
+
+    testWidgets('a silent microphone is said out loud', (
+      WidgetTester tester,
+    ) async {
+      useDesktopViewport(tester);
+      await tester.pumpWidget(host());
+      await tester.pumpAndSettle();
+
+      final ProviderContainer container = ProviderScope.containerOf(
+        tester.element(find.byType(VoiceHost)),
+      );
+      await container.read(voiceSessionProvider.notifier).start();
+      await tester.pumpAndSettle();
+
+      // Connected, listening, nothing arriving. Silence from a microphone and
+      // silence from a service look identical on screen and send the user to
+      // completely different places, so the screen distinguishes them.
+      final AppLocalizations l10n = AppLocalizations.of(
+        tester.element(find.byType(VoiceOverlay)),
+      );
+      expect(find.text(l10n.voiceNoAudio), findsOneWidget);
+
+      microphone.emit(_loudFrame());
+      await tester.pumpAndSettle();
+      expect(find.text(l10n.voiceNoAudio), findsNothing);
+    });
+
     testWidgets('the overlay appears and the microphone opens', (
       WidgetTester tester,
     ) async {

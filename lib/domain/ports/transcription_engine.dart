@@ -111,6 +111,19 @@ abstract interface class RealtimeTranscription implements TranscriptionEngine {
   /// Opens a session and streams what it hears from [pcm16k].
   Stream<TranscriptEvent> start(Stream<Uint8List> pcm16k);
 
+  /// Whether a session socket is open right now.
+  ///
+  /// **The UI is not allowed to guess this.** Opening a socket takes time, and
+  /// reconnecting after a drop takes more; a screen that said "Listening" from
+  /// the moment the button was pressed would be claiming to hear someone
+  /// while it was still dialling — and would go on claiming it through an
+  /// outage. This is the port's answer to "are you actually there?", and the
+  /// overlay renders it rather than assuming it.
+  ///
+  /// A broadcast stream that emits the current value on subscription, then on
+  /// every change. `false` until the first connection succeeds.
+  Stream<bool> get isConnected;
+
   /// Closes the session. Safe to call when no session is open.
   Future<void> stop();
 }

@@ -754,4 +754,17 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsScribeNotConfigured =>
       'No realtime key — voice commands will not run';
+
+  @override
+  String get voiceMeterLabel => 'Microphone level';
+
+  @override
+  String get voiceNoAudio => 'The microphone is open but no sound is arriving.';
+
+  @override
+  String get voiceReconnecting => 'Connection lost — reconnecting…';
+
+  @override
+  String get voiceTimeUnsupported =>
+      'This app cannot work out that time yet. Try \"in 20 minutes\".';
 }

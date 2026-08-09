@@ -76,12 +76,18 @@ class VoiceHost extends ConsumerWidget {
     return VoiceOverlay(
       phase: session.phase,
       statusLabel: switch (session.phase) {
-        VoicePhase.connecting => l10n.voiceConnecting,
+        // "Reconnecting" rather than "Connecting" once audio has been heard:
+        // the user knows the session was working a moment ago, and telling
+        // them it is starting up would be the app pretending nothing happened.
+        VoicePhase.connecting =>
+          session.hasHeardAudio ? l10n.voiceReconnecting : l10n.voiceConnecting,
         VoicePhase.listening => l10n.voiceListening,
-        VoicePhase.understanding => l10n.voiceUnderstanding,
+        VoicePhase.understanding ||
         VoicePhase.asking => l10n.voiceUnderstanding,
       },
       stopLabel: l10n.voiceStop,
+      meterLabel: l10n.voiceMeterLabel,
+      level: session.level,
       onStop: controller.stop,
       partial: session.partial,
       committed: session.committed,
@@ -107,6 +113,13 @@ class VoiceHost extends ConsumerWidget {
     if (asking != null) return slotQuestion(l10n, asking.slot);
     final executed = session.executed;
     if (executed != null) return executedText(l10n, executed);
+
+    // Connected, listening, and nothing coming in. Said plainly, because
+    // silence from a microphone and silence from a service look identical on
+    // screen and send the user to completely different places.
+    if (session.phase == VoicePhase.listening && !session.hasHeardAudio) {
+      return l10n.voiceNoAudio;
+    }
     return null;
   }
 }

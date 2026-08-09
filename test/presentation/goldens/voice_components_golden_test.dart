@@ -68,6 +68,11 @@ void main() {
               phase: VoicePhase.listening,
               statusLabel: l10n.voiceListening,
               stopLabel: l10n.voiceStop,
+              meterLabel: l10n.voiceMeterLabel,
+              // Mid-speech: the meter is up, which is the thing the picture is
+              // pinning. A flat meter here would look identical to a dead
+              // microphone, and that is exactly the confusion it exists to end.
+              level: 0.55,
               onStop: () {},
               partial: 'muda o PROJ-123 pra',
             );
@@ -95,6 +100,7 @@ void main() {
               phase: VoicePhase.understanding,
               statusLabel: l10n.voiceUnderstanding,
               stopLabel: l10n.voiceStop,
+              meterLabel: l10n.voiceMeterLabel,
               onStop: () {},
               committed: 'muda o PROJ-123 pra concluído',
             );
@@ -122,6 +128,7 @@ void main() {
               phase: VoicePhase.asking,
               statusLabel: l10n.voiceUnderstanding,
               stopLabel: l10n.voiceStop,
+              meterLabel: l10n.voiceMeterLabel,
               onStop: () {},
               committed: 'muda pra concluído',
               // The targeted question, and only the one slot (S05-UT-05).

@@ -5,6 +5,7 @@ import '../../shared/theme/norte_colors.dart';
 import '../../shared/theme/norte_spacing.dart';
 import '../../shared/theme/norte_typography.dart';
 import '../../shared/widgets/norte_button.dart';
+import 'audio_meter.dart';
 
 /// What the voice session is doing, as far as the user is concerned.
 enum VoicePhase {
@@ -32,13 +33,22 @@ enum VoicePhase {
 ///
 /// The `❯` prefix in `accent` is the terminal prompt the whole aesthetic is
 /// built on (§1.1).
+///
+/// **The meter is the honest part.** Before it, this panel said "Listening…"
+/// from the moment the button was pressed and looked identical whether the
+/// microphone was feeding the pipeline, sitting mute, or never opened at all —
+/// which is what a user reported, and they were right to. [level] comes from
+/// the PCM actually captured, so a flat meter is information: the microphone
+/// is open and producing nothing.
 class VoiceOverlay extends StatelessWidget {
   const VoiceOverlay({
     required this.phase,
     required this.statusLabel,
     required this.stopLabel,
     required this.onStop,
+    required this.meterLabel,
     super.key,
+    this.level = 0,
     this.partial,
     this.committed,
     this.message,
@@ -62,6 +72,12 @@ class VoiceOverlay extends StatelessWidget {
 
   /// A question or a refusal — "Which ticket?", "I did not catch a command."
   final String? message;
+
+  /// Microphone input level, `0.0..1.0`, measured from the captured audio.
+  final double level;
+
+  /// Localized description of the meter, for screen readers (BR-11).
+  final String meterLabel;
 
   /// The prompt character of the design system's terminal aesthetic.
   static const String prompt = '❯';
@@ -98,11 +114,18 @@ class VoiceOverlay extends StatelessWidget {
                 Row(
                   children: <Widget>[
                     Icon(
-                      phase == VoicePhase.listening
-                          ? LucideIcons.mic
-                          : LucideIcons.sparkles,
+                      switch (phase) {
+                        VoicePhase.connecting => LucideIcons.plug,
+                        VoicePhase.listening => LucideIcons.mic,
+                        VoicePhase.understanding ||
+                        VoicePhase.asking => LucideIcons.sparkles,
+                      },
                       size: 16,
-                      color: colors.accent,
+                      // Connecting is not yet listening, and saying so in the
+                      // accent colour would overstate it.
+                      color: phase == VoicePhase.connecting
+                          ? colors.textMuted
+                          : colors.accent,
                     ),
                     const SizedBox(width: NorteSpacing.sm),
                     Expanded(
@@ -112,6 +135,11 @@ class VoiceOverlay extends StatelessWidget {
                           color: colors.textSecondary,
                         ),
                       ),
+                    ),
+                    AudioMeter(
+                      level: level,
+                      isLive: phase == VoicePhase.listening,
+                      semanticLabel: meterLabel,
                     ),
                   ],
                 ),

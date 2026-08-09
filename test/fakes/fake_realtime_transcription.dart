@@ -66,12 +66,32 @@ class FakeRealtimeTranscription implements RealtimeTranscription {
 
   StreamController<TranscriptEvent>? _session;
 
+  final StreamController<bool> _connected = StreamController<bool>.broadcast();
+  bool _isConnected = false;
+
   @override
   TranscriptionMode get mode => TranscriptionMode.realtime;
 
   @override
+  Stream<bool> get isConnected async* {
+    yield _isConnected;
+    yield* _connected.stream;
+  }
+
+  /// Opens or drops the notional connection, so a test can drive the overlay
+  /// through "connecting" as a user would see it.
+  void setConnected(bool value) {
+    if (_isConnected == value) return;
+    _isConnected = value;
+    if (!_connected.isClosed) _connected.add(value);
+  }
+
+  @override
   Stream<TranscriptEvent> start(Stream<Uint8List> pcm16k) {
     isRunning = true;
+    // A fake socket is up the instant it is asked for; the delay a real one
+    // has is what `setConnected` exists to reproduce deliberately.
+    setConnected(true);
     final StreamController<TranscriptEvent> controller =
         StreamController<TranscriptEvent>();
     _session = controller;
@@ -124,6 +144,7 @@ class FakeRealtimeTranscription implements RealtimeTranscription {
   Future<void> stop() async {
     stopCount++;
     isRunning = false;
+    setConnected(false);
     final StreamController<TranscriptEvent>? session = _session;
     _session = null;
     if (session != null && !session.isClosed) await session.close();
