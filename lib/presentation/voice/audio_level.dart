@@ -24,19 +24,26 @@ abstract final class AudioLevel {
   /// [frame] is signed 16-bit little-endian, the format the realtime engine
   /// requires. An odd-length frame has its trailing byte ignored rather than
   /// being read as half a sample.
+  /// **Read through [ByteData], not [Int16List.view].** The typed-list view
+  /// requires its offset to be a multiple of two and throws otherwise, and
+  /// `record` hands out frames that are views into a larger buffer at whatever
+  /// offset the platform chose. The first version used it, threw on the very
+  /// first frame, and — because the level is computed inside a `map` on the
+  /// microphone stream — took the whole session down with it. `getInt16` reads
+  /// at any offset.
   static double of(Uint8List frame) {
     final int samples = frame.lengthInBytes ~/ 2;
     if (samples == 0) return 0;
 
-    final Int16List pcm = Int16List.view(
+    final ByteData pcm = ByteData.view(
       frame.buffer,
       frame.offsetInBytes,
-      samples,
+      samples * 2,
     );
 
     var sum = 0.0;
     for (var i = 0; i < samples; i++) {
-      final double normalized = pcm[i] / 32768.0;
+      final double normalized = pcm.getInt16(i * 2, Endian.little) / 32768.0;
       sum += normalized * normalized;
     }
     final double rms = math.sqrt(sum / samples);

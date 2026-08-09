@@ -42,6 +42,32 @@ void main() {
       expect(() => AudioLevel.of(Uint8List(3201)), returnsNormally);
     });
 
+    test('a frame at an odd offset into its buffer is read, not thrown at', () {
+      // The regression, reported from a real run. `record` hands out
+      // `Uint8List`s that are *views* into a larger buffer, and nothing
+      // promises the view begins on an even byte. The first version used
+      // `Int16List.view`, which requires two-byte alignment and throws
+      // otherwise — and because the level is computed inside a `map` on the
+      // microphone stream, that throw propagated as a stream error and killed
+      // the session. The console said it plainly: one frame captured, then
+      // `session failed after 0 audio frames`, then 426 more frames captured
+      // by a microphone nobody was listening to any more.
+      final Uint8List backing = Uint8List(3202);
+      final ByteData writer = ByteData.view(backing.buffer);
+      for (var i = 0; i < 1600; i++) {
+        writer.setInt16(1 + i * 2, 12000, Endian.little);
+      }
+      final Uint8List odd = Uint8List.view(backing.buffer, 1, 3200);
+
+      expect(odd.offsetInBytes.isOdd, isTrue, reason: 'the point of the test');
+      expect(() => AudioLevel.of(odd), returnsNormally);
+      expect(AudioLevel.of(odd), greaterThan(0));
+    });
+
+    test('a 1538-byte frame is read — the size the platform actually sent', () {
+      expect(() => AudioLevel.of(Uint8List(1538)), returnsNormally);
+    });
+
     test('room tone stays near the floor, speech does not', () {
       // Roughly -60 dB: below the floor, and the reason the floor exists.
       final double quiet = AudioLevel.of(tone(0.001));

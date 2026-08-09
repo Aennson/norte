@@ -41,7 +41,7 @@ machine, and again on `ubuntu-latest` in CI.
 |---|---|---|
 | G1 — static analysis | `flutter analyze` | `No issues found! (ran in 4.5s)` — 0 errors, 0 warnings, 0 infos ✅ |
 | G2 — formatting | `dart format --output=none --set-exit-if-changed .` | exit 0 ✅ |
-| G3 — tests | `flutter test` | `00:55 +621: All tests passed!` ✅ |
+| G3 — tests | `flutter test` | `00:39 +636: All tests passed!` ✅ |
 | G4 — coverage | `flutter test --coverage` + `dart run tool/check_coverage.dart` | domain+application **93.2%** (517/555) · project **83.9%** (3840/4577) — `gate G4: OK` ✅ |
 | G5 — dependency rule | `dart run tool/check_imports.dart` | `check_imports: OK — no layer or color violations in lib` ✅ |
 | G6 — secrets | `grep -rEn "(api[_-]?key\|token)[[:space:]]*=[[:space:]]*['\"]" lib/` | no match ✅ |
@@ -223,40 +223,60 @@ handshake.
    | Connects, nothing appears, `[voice] unrecognised frame: message_type="…", keys=[…]` | The transcript frame has a name the tolerant reader does not match — the log gives it, and it is a one-line fix |
    | `AuthFailure` on screen | The key lacks the speech-to-text permission, or the plan does not include realtime |
 
-### 7.3 What the live probe settled, and what it cost
+### 7.3 How the wire format was actually settled
 
-The wire format is no longer an assumption. Probing it took about twenty
-minutes and found the adapter wrong in four places — three of which would have
-broken **every** session:
+It took three rounds, and the order is the lesson.
 
-| Assumed | Actual |
-|---|---|
-| `type` discriminates a frame | **`message_type`** does |
-| Errors are `{"error":{"type":…}}` | `{"message_type":"input_error","error":"a sentence"}` |
-| `{"type":"flush"}` commits a segment | No such message; the service refuses it and drops the socket |
-| `language_code` takes BCP-47 (`pt-BR`) | **ISO-639-3** (`por`); a bad code closes the socket with 1008 |
+**Round one — writing the instructions.** Two wiring defects fell out of simply
+writing down the steps a person would follow: the Scribe key shared the Whisper
+slot (DEC-028), and the key was never sent on the handshake at all (DEC-029).
+Neither was reachable by any test, because both live in the seam between the
+app and the world.
 
-Two things were confirmed rather than corrected: `xi-api-key` authenticates,
-and audio is raw binary — thirteen candidate JSON audio messages were each
-refused by name.
+**Round two — a live probe.** With a short-lived key the protocol was probed
+directly. It corrected four assumptions — `message_type` rather than `type`, a
+flat error sentence, ISO-639-3 language codes, and that `xi-api-key`
+authenticates — and it produced **one confident wrong answer**: that audio is
+raw binary and no JSON audio message exists. Thirteen candidate message types
+were each refused; `input_audio_chunk` was not among them, and even it would
+have been refused without its required fields, because *refused by name* and
+*refused for a missing field* look identical from outside.
 
-**The fakes were the real casualty.** `FakeRealtimeSocket` had been emitting
-the invented dialect, so the contract suite (S05-CT-01) was holding two
-implementations to a protocol *neither had ever seen*, and agreeing. A fake
-that speaks a dialect the service does not is worse than no fake: it
-manufactures confidence. Both fakes now speak the observed shapes.
+**Round three — reading a working implementation.** The Developer pointed at
+`zefa-ia`, their own ElevenLabs integration, and it settled the rest in
+minutes: audio is base64 inside a JSON text frame, `audio_format=pcm_16000`
+and `commit_strategy=vad` belong in the query string, there is a fourth
+transcript type, and a commit rides on an audio chunk rather than not existing.
 
-**The uncomfortable part is the timing.** All of this was reachable on day one
-with sixty lines of `dart:io` and a key — no dependency on the app, no
-credential in the tree. It was not done because `docs/project-rules.md` §5.4,
-"no real APIs in tests", was read as "no real APIs at all". It forbids them in
-*tests*. It says nothing about a diagnostic run by hand, and a sprint whose
-whole subject is a third-party socket should have run one before writing the
-adapter.
+**What generalises.** A black-box probe can refute but never confirm: a message
+that is accepted proves its shape works, while a message that is refused proves
+nothing about *why*. Where a working implementation exists, read it first. This
+sprint spent an afternoon establishing something a colleague's repository
+already knew, and then shipped a wrong conclusion from it — the reference was
+available the whole time and nobody thought to ask.
 
-Until the manual script runs, what is proven is that the pipeline is correct
-**against a contract now observed rather than assumed** — and what is not
-proven is the one frame that needs a human voice.
+**The fakes were the recurring casualty.** `FakeRealtimeSocket` was rewritten
+twice: once from the invented dialect to the probed one, once from the probed
+one to the real one. In between, S05-CT-01 was holding two implementations to a
+protocol neither had ever seen — and they agreed. A fake that speaks a dialect
+the service does not is worse than no fake, because it manufactures confidence.
+
+### 7.4 One more defect, from the feedback work itself
+
+The audio meter added in §7.2 read PCM through `Int16List.view`, which requires
+a two-byte-aligned offset. `record` hands out frames that are views into a
+larger buffer at whatever offset the platform picked, so the very first frame
+threw — and because the level is computed inside a `map` on the microphone
+stream, the throw became a stream error and killed the session. The Developer's
+console showed it exactly: one frame captured, `session failed after 0 audio
+frames`, then 426 further frames captured by a microphone nobody was listening
+to.
+
+Two fixes, and the second is the one that matters: read through `ByteData`,
+which has no alignment requirement; and make the measurement incapable of
+breaking the pipeline it measures. **A diagnostic that can kill the thing it
+observes is worse than no diagnostic.** The frame now passes through whatever
+happens in the meter.
 
 ## 8. Deviations and open items
 
@@ -265,8 +285,8 @@ proven is the one frame that needs a human voice.
 | Manual script and p95 latency | **Open** — §7. Carried explicitly, not discharged |
 | Scribe key shared the Whisper slot | **Fixed before merge** — DEC-028, §7.1. Found by writing §7.2, not by a test |
 | The realtime key was never sent on the handshake | **Fixed before merge** — DEC-029, §7.1. `realtime_socket.dart` had zero coverage |
-| Scribe wire format unverified | **Settled** — DEC-026, §7.3. Probed against a live session; four assumptions corrected, both fakes re-dialected |
-| The name of a transcript frame | **Open** — needs real speech; the diagnostics log names it on the first attempt |
+| Scribe wire format unverified | **Settled** — DEC-026, §7.3, against `zefa-ia`, a working implementation. Audio is base64 JSON, not binary |
+| The audio meter killed the session | **Fixed** — §7.4. An unaligned frame threw inside a `map` on the microphone stream |
 | Wall-clock reminder times (`tomorrow 09:00`) | **Deliberately deferred** — DEC-025 hands them to Sprint 06 with a failing case attached, rather than implementing S06-IT-02's timezone work without its tests |
 | iOS never built or tested; no `macos/` golden set | **Still open** — inherited from DEC-020, unchanged by this sprint. Sprint 08 is where a three-platform or two-platform v1.0 has to be decided |
 
@@ -305,7 +325,7 @@ the Developer's, not the executing AI's.
 ---
 
 **One box is unticked, and it is the manual one.** Everything a machine can
-verify about this sprint has been verified — 621 unit, golden and contract
+verify about this sprint has been verified — 636 unit, golden and contract
 tests, 33 E2E scenarios on a Linux desktop host, an eval whose thresholds sit
 close enough to the results to bite. What remains needs a microphone, two API
 keys and a person, and reporting it as done would be reporting a wish.

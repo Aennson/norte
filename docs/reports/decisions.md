@@ -725,38 +725,58 @@ forms.
 
 ## DEC-026 — The Scribe realtime wire format (Sprint 05)
 
-**Status:** **settled** against a live session, 2026-08-08. The Developer
-supplied a short-lived key and the protocol was probed directly; what follows
-records both the original decision and what the probe found.
+**Status:** **settled** against `Aennson/zefa-ia`, the Developer's own working
+ElevenLabs integration, 2026-08-09. A live probe came first and got part of it
+right and one important part **wrong**; both rounds are recorded, because the
+way the probe misled is more useful than the answer it produced.
 
-### What the live session established
+### The protocol, as a working implementation speaks it
 
-The adapter's assumptions were wrong in four places, and three of them would
-have broken every session:
+Client to server — **one** message type, as JSON **text**, never a binary
+frame:
 
-| Assumed | Actual | Consequence had it shipped |
-|---|---|---|
-| `type` discriminates a frame | **`message_type`** does | No frame recognised, ever |
-| Errors are `{"error":{"type":…}}` | `{"message_type":"input_error","error":"a sentence"}` | Every failure read as generic |
-| `{"type":"flush"}` commits a segment | No such message; answered `input_error: Message must be a valid protocol message`, then the socket drops | The session killed at the end of every command |
-| `language_code` takes BCP-47 | **ISO-639-3** (`por`), and a bad code closes with 1008 | Every session dead on the handshake once a language was set |
+```json
+{"message_type":"input_audio_chunk","audio_base_64":"…",
+ "commit":false,"sample_rate":16000}
+```
 
-The fourth is the one that matters least and reads worst: audio is raw binary,
-which the adapter already had right — no JSON audio message type is accepted at
-all (`audio`, `audio_chunk`, `input_audio`, and ten other candidates were each
-refused by name).
+Session configuration is entirely in the query string: `model_id`,
+`audio_format=pcm_16000`, `commit_strategy=vad`, and an optional
+`language_code` in ISO-639-3.
 
-Two things were confirmed rather than corrected: **`xi-api-key` on the
-handshake authenticates** (DEC-029), and the session config the service opens
-with names its own VAD settings — `vad_commit_strategy`,
-`min_silence_duration_ms` — so commits genuinely are server-side, which is what
-makes having no commit message coherent rather than an omission.
+Server to client, discriminated by `message_type`: `session_started`,
+`partial_transcript`, `final_transcript`, `committed_transcript`,
+`committed_transcript_with_timestamps`, `rate_limited`, `input_error`. Errors
+carry a **flat sentence** in `error`, not a typed code.
 
-**Still unknown:** the exact name of a transcript frame. A synthetic tone is not
-speech and never produced one, and the probe key lacked the `text_to_speech`
-permission needed to synthesize an utterance to feed back in. The tolerant
-reader (`partial`/`final`/`committed` in the name, `is_final`, `text`/
-`transcript`) stands, and the diagnostics log is what the manual pass reads.
+A commit is not a message of its own — it **rides on an audio chunk**, so an
+empty chunk with `commit: true` is how a client says the sentence is over.
+
+### What the probe got right, and the one thing it got wrong
+
+Right, and worth having: `message_type` rather than `type`; the flat error
+string; `xi-api-key` on the handshake (DEC-029); ISO-639-3 language codes, and
+that a bad one closes the socket with 1008.
+
+**Wrong: it concluded audio is raw binary and that no JSON audio message
+exists.** The probe enumerated thirteen candidate `message_type` values and saw
+every one refused. It never tried `input_audio_chunk` — and had it tried,
+without `audio_base_64` and `sample_rate` the answer would have been the same
+refusal, because **"refused by name" and "refused for a missing field" are
+indistinguishable from outside**. A method that looked systematic produced a
+confident, wrong conclusion, and shipping it would have meant every chunk
+silently rejected: nothing transcribed, nothing obviously broken.
+
+The reference implementation carries a comment recording that its author made
+the same mistake before fixing it. Two independent arrivals at the same wrong
+answer is a good sign the API's failure mode, not the reader, is what is
+misleading.
+
+**The lesson worth keeping** is not "probe more". It is that **a black-box
+probe can only refute, never confirm** — an accepted message proves a shape
+works, a refused one proves nothing about *why*. Where a working
+implementation exists, read it first; it is the only oracle that answers the
+positive question.
 
 ### The original decision, and why the tolerance was still right
 

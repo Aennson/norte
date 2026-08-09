@@ -284,12 +284,27 @@ class VoiceSession extends Notifier<VoiceSessionState> {
   }
 
   /// One frame of PCM, measured and passed on unchanged.
+  ///
+  /// **Nothing in here may break the pipeline.** It sits in a `map` on the
+  /// microphone stream, so anything it throws becomes a stream error and ends
+  /// the session — which is exactly what happened when the level maths met a
+  /// frame at an odd byte offset: one frame captured, session dead, and a
+  /// microphone left recording for nobody.
+  ///
+  /// The measurement is a diagnostic. A diagnostic that can kill the thing it
+  /// is measuring is worse than none, so the frame goes through whatever
+  /// happens here.
   Uint8List _measure(Uint8List frame) {
-    if (!_disposed && state.isActive) {
-      state = state.copyWith(
-        level: AudioLevel.smooth(state.level, AudioLevel.of(frame)),
-        framesHeard: state.framesHeard + 1,
-      );
+    try {
+      if (!_disposed && state.isActive) {
+        state = state.copyWith(
+          level: AudioLevel.smooth(state.level, AudioLevel.of(frame)),
+          framesHeard: state.framesHeard + 1,
+        );
+      }
+    } catch (_) {
+      // A meter that cannot read this frame is a flat meter for 100ms, not a
+      // lost command.
     }
     return frame;
   }
