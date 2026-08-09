@@ -172,10 +172,19 @@ void main() {
         // here anyway, because it writes to Jira and the setting is on.
         expect(find.byType(ConfirmSheet), findsOneWidget);
         expect(find.text('PROJ-123 → Done'), findsOneWidget);
-        // The microphone closed the moment the segment committed: the user is
-        // reading a sheet, not being recorded.
-        expect(microphone.closes, greaterThanOrEqualTo(1));
+        // The microphone stays open (DEC-031): the session listens until the
+        // user stops it. What protects the user while a mutation is one tap
+        // away is not a closed microphone but the guard that ignores anything
+        // said while a confirmation is up — asserted below.
+        expect(microphone.closes, 0);
         // And nothing has been queued yet.
+        expect(await outbox.pending(t0), isEmpty);
+
+        // Speaking while the sheet is up is the user reading aloud, not a
+        // second command.
+        realtime.emitCommitted('cria tarefa outra coisa');
+        await tester.pumpAndSettle();
+        expect(find.byType(ConfirmSheet), findsOneWidget);
         expect(await outbox.pending(t0), isEmpty);
 
         await tester.tap(find.byKey(ConfirmSheet.confirmButtonKey));
