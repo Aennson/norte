@@ -182,11 +182,12 @@ void main() {
       },
     );
 
-    test('the schema version is 4', () {
-      // Bumped by Sprint 05, which adds `reminders` and `settings`. The
-      // assertion is deliberately literal: a migration added without moving
-      // this number is a migration that never runs on a user's device.
-      expect(database.schemaVersion, 4);
+    test('the schema version is 5', () {
+      // Bumped by Sprint 05a, which adds `task_comments`; Sprint 05 took it to
+      // 4 with `reminders` and `settings`. The assertion is deliberately
+      // literal: a migration added without moving this number is a migration
+      // that never runs on a user's device.
+      expect(database.schemaVersion, 5);
     });
   });
 

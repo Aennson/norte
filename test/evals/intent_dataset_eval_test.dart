@@ -239,6 +239,65 @@ void main() {
         );
       });
 
+      test('S05a-UT-07: no local utterance produces a Jira intent', () async {
+        // **Jira is opt-in by naming** (`sprint-05a` validation rules). An
+        // utterance that mentions neither an issue key nor Jira may not become
+        // a transition, a Jira comment or a status lookup — a wrong local task
+        // is a row the user deletes, a wrong Jira write is a change their
+        // whole team saw.
+        //
+        // The rule is checked against what the *codec* produced, not against
+        // the ground truth: a dataset can only be wrong about itself, and the
+        // failure this guards is the pipeline turning a local sentence into a
+        // remote action.
+        final RegExp issueKey = RegExp(r'\b[A-Z]{2,}-\d+\b');
+        const Set<IntentType> jira = <IntentType>{
+          IntentType.updateJira,
+          IntentType.addComment,
+          IntentType.queryStatus,
+        };
+
+        for (final _Row row in rows) {
+          final bool namesJira =
+              issueKey.hasMatch(row.utterance) ||
+              row.utterance.toLowerCase().contains('jira');
+          if (namesJira) continue;
+
+          final Result<VoiceIntent> result = await IntentParser(
+            engine: FakeAiEngine(
+              intents: <String, String>{row.utterance: row.response},
+            ),
+          ).parse(row.utterance, context: IntentContext(locale: locale));
+          final VoiceIntent intent =
+              result.valueOrNull ?? const VoiceIntent(type: IntentType.unknown);
+
+          expect(
+            jira,
+            isNot(contains(intent.type)),
+            reason:
+                '`${row.id}` "${row.utterance}" names no issue key and no '
+                'Jira, but produced `${intent.type.name}`',
+          );
+        }
+      });
+
+      test('S05a-UT-07: the local intents are represented at all', () {
+        // A rule about local utterances is vacuous if the dataset has none.
+        // Every one of the four is exercised, in every language.
+        for (final IntentType type in <IntentType>[
+          IntentType.createTask,
+          IntentType.updateTask,
+          IntentType.deleteTask,
+          IntentType.commentTask,
+        ]) {
+          expect(
+            rows.where((_Row r) => r.expectedIntent == type),
+            isNotEmpty,
+            reason: '$locale carries no ${type.name} row',
+          );
+        }
+      });
+
       test('S05-EV-01: no unknown-labelled row carries slots', () async {
         // Belt and braces on the same guarantee: even if a row were
         // misclassified, `unknown` must be empty of anything the router could

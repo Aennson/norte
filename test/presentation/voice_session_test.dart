@@ -611,10 +611,20 @@ void main() {
           questions.add(slotQuestion(l10n, slot));
         }
       }
-      // Six distinct slots, six distinct questions: a shared one would make
-      // "Which ticket?" appear where the app meant "Which status?".
-      expect(questions, hasLength(6));
+      // Seven distinct slots, seven distinct questions: a shared one would
+      // make "Which ticket?" appear where the app meant "Which status?".
+      expect(questions, hasLength(7));
       expect(questions, contains('Which ticket?'));
+      expect(questions, contains('Which task?'));
+
+      // `change` is not in `requiredSlots` — it is the pseudo-slot an
+      // `updateTask` reports when it named a task and no change — and it needs
+      // a question of its own all the same.
+      expect(
+        slotQuestion(l10n, VoiceIntent.changeSlot),
+        isNot(VoiceIntent.changeSlot),
+      );
+      expect(questions, isNot(contains(slotQuestion(l10n, 'change'))));
 
       // An unmapped slot degrades to its own name rather than to an empty
       // sheet — more use to whoever has to add the translation.
@@ -635,6 +645,15 @@ void main() {
               'comment': 'subiu',
             },
             IntentType.createTask: <String, dynamic>{'title': 'algo'},
+            IntentType.updateTask: <String, dynamic>{
+              'taskRef': 'algo',
+              'status': 'done',
+            },
+            IntentType.deleteTask: <String, dynamic>{'taskRef': 'algo'},
+            IntentType.commentTask: <String, dynamic>{
+              'taskRef': 'algo',
+              'comment': 'cliente retornou',
+            },
             IntentType.createReminder: <String, dynamic>{
               'text': 'algo',
               'triggerAt': '+20m',
@@ -664,6 +683,10 @@ void main() {
         ),
         'PROJ-123 → Done',
       );
+
+      // Every intent is covered, so a new one added without a line here is a
+      // failing test rather than an empty confirmation sheet.
+      expect(slots.keys, containsAll(IntentType.values));
     });
 
     testWidgets('both confirmation reasons say something different', (
@@ -671,10 +694,14 @@ void main() {
     ) async {
       await pumpLabels(tester);
 
-      expect(
-        confirmationReasonText(l10n, ConfirmationReason.jiraWrite),
-        isNot(confirmationReasonText(l10n, ConfirmationReason.lowConfidence)),
-      );
+      final Set<String> reasons = <String>{
+        for (final ConfirmationReason reason in ConfirmationReason.values)
+          confirmationReasonText(l10n, reason),
+      };
+      // One sentence each. "Deleting cannot be undone" and "I am not certain I
+      // understood" send the user to completely different decisions, and
+      // collapsing them would ask a question neither of them asks.
+      expect(reasons, hasLength(ConfirmationReason.values.length));
     });
 
     testWidgets('every outcome and every failure names something the user '

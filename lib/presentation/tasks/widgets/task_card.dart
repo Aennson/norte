@@ -111,6 +111,23 @@ class TaskCard extends StatelessWidget {
                     decorationColor: colors.textSecondary,
                   ),
                 ),
+                // The description, when there is one. Added in Sprint 05a
+                // because the search now reads it (§4.1): a list that can be
+                // filtered by a word the user cannot see is a list that
+                // answers questions it will not show its working for. Two
+                // lines, `textSecondary`, so the title still leads.
+                if (task.description case final String description
+                    when description.trim().isNotEmpty) ...<Widget>[
+                  const SizedBox(height: NorteSpacing.xs),
+                  Text(
+                    description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: NorteTypography.body.copyWith(
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                ],
                 if (task.dueDate != null ||
                     task.tags.isNotEmpty ||
                     link != null) ...<Widget>[
