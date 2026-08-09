@@ -1,9 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:norte/domain/entities/intent_context.dart';
 import 'package:norte/domain/entities/meeting.dart';
+import 'package:norte/domain/entities/voice_intent.dart';
 import 'package:norte/domain/failures/failure.dart';
 import 'package:norte/domain/ports/ai_credential_store.dart';
 import 'package:norte/infrastructure/ai/claude_api_engine.dart';
+import 'package:norte/infrastructure/ai/intent_codec.dart';
 
 import '../fakes/fake_clock.dart';
 import '../support/fake_claude_server.dart';
@@ -244,13 +247,45 @@ void main() {
       },
     );
 
-    test('intent parsing is not answered before Sprint 05', () async {
-      // Answering plausibly here would be implementing a future sprint
-      // (`docs/project-rules.md` §8).
-      await expectLater(
-        engineWith().parseIntent('muda o PROJ-123 pra concluído'),
-        throwsA(isA<EngineFailure>()),
-      );
-    });
+    test(
+      'parseIntent caches the prompt and sends the context uncached',
+      () async {
+        server.answer =
+            '{"intent":"updateJira","slots":{"issueKey":"PROJ-123",'
+            '"transition":"Done"},"confidence":0.92}';
+
+        final VoiceIntent intent = await engineWith().parseIntent(
+          'muda o PROJ-123 pra concluído',
+          const IntentContext(knownIssueKeys: <String>['PROJ-123']),
+        );
+
+        expect(intent.type, IntentType.updateJira);
+        expect(intent.slots['issueKey'], 'PROJ-123');
+        expect(intent.confidence, 0.92);
+
+        // The cached half is the codec's constant prompt, and nothing about
+        // this particular command may be in it — a varying prefix costs the
+        // cache on every voice command the user ever speaks.
+        final Map<String, Object?> block =
+            server.lastSystemBlocks.single! as Map<String, Object?>;
+        expect(block['text'], const IntentCodec().systemPrompt);
+        expect(block['cache_control'], <String, Object?>{'type': 'ephemeral'});
+        // The prompt does contain `PROJ-123` — as the slot example. What it
+        // must never contain is this call: the utterance, or the keys this
+        // particular user happens to have linked.
+        expect(
+          block['text'].toString(),
+          isNot(contains('muda o PROJ-123 pra concluído')),
+        );
+
+        // The situational half rides in the user message, after the breakpoint.
+        final List<Object?> messages =
+            server.bodies.last['messages']! as List<Object?>;
+        final String content =
+            (messages.single! as Map<String, Object?>)['content']! as String;
+        expect(content, contains('muda o PROJ-123 pra concluído'));
+        expect(content, contains('PROJ-123'));
+      },
+    );
   });
 }

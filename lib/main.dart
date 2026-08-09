@@ -12,11 +12,15 @@ import 'infrastructure/jira/secure_jira_credential_store.dart';
 import 'infrastructure/persistence/drift_meeting_repository.dart';
 import 'infrastructure/persistence/drift_meeting_template_repository.dart';
 import 'infrastructure/persistence/drift_outbox_repository.dart';
+import 'infrastructure/persistence/drift_reminder_repository.dart';
 import 'infrastructure/persistence/drift_task_repository.dart';
+import 'infrastructure/persistence/drift_voice_settings_store.dart';
 import 'infrastructure/persistence/norte_database.dart';
 import 'infrastructure/persistence/norte_database_factory.dart';
 import 'infrastructure/platform/record_audio_recorder.dart';
+import 'infrastructure/platform/record_pcm_microphone.dart';
 import 'infrastructure/platform/temp_audio_store.dart';
+import 'infrastructure/transcription/scribe_realtime_engine.dart';
 import 'infrastructure/transcription/secure_transcription_credential_store.dart';
 import 'infrastructure/transcription/whisper_batch_engine.dart';
 import 'jira_background_sync.dart';
@@ -24,6 +28,7 @@ import 'presentation/app/norte_app.dart';
 import 'presentation/jira/jira_providers.dart';
 import 'presentation/meetings/meeting_providers.dart';
 import 'presentation/tasks/task_providers.dart';
+import 'presentation/voice/voice_providers.dart';
 
 /// Composition root.
 ///
@@ -64,10 +69,18 @@ Future<void> main() async {
     dio: Dio(),
     credentialStore: aiCredentials,
     clock: const SystemClock(),
+    // A 4xx here is this app's bug, and the response says which. Run from a
+    // terminal to read it.
+    log: (String line) => debugPrint('[ai] $line'),
   );
 
+  // Two stores, two slots. Batch is Whisper and realtime is Scribe: different
+  // services, different credentials, and a user may hold one and not the
+  // other.
   final SecureTranscriptionCredentialStore whisperCredentials =
-      SecureTranscriptionCredentialStore(const FlutterSecureStorage());
+      const SecureTranscriptionCredentialStore.whisper(FlutterSecureStorage());
+  final SecureTranscriptionCredentialStore scribeCredentials =
+      const SecureTranscriptionCredentialStore.scribe(FlutterSecureStorage());
   final WhisperBatchEngine whisper = WhisperBatchEngine(
     dio: Dio(),
     credentialStore: whisperCredentials,
@@ -75,6 +88,26 @@ Future<void> main() async {
   final TempAudioStore audio = TempAudioStore();
   final RecordAudioRecorder recorder = RecordAudioRecorder(
     clock: const SystemClock(),
+  );
+
+  // The voice pipeline. The microphone is a separate adapter from the meeting
+  // recorder and knows no path at all, which is what makes BR-06 structural
+  // rather than a rule someone has to remember.
+  final RecordPcmMicrophone microphone = RecordPcmMicrophone(
+    // Says what the platform said when capture will not start. Run the app
+    // from a terminal to read it.
+    log: (String line) => debugPrint('[mic] $line'),
+  );
+  final ScribeRealtimeEngine scribe = ScribeRealtimeEngine(
+    credentialStore: scribeCredentials,
+    // Diagnostics for the one part of the pipeline no test can exercise: the
+    // service's actual wire format (DEC-026). Safe by construction — it
+    // reports the *shape* of a frame it could not read, never its text.
+    log: (String line) => debugPrint('[voice] $line'),
+  );
+  final DriftReminderRepository reminders = DriftReminderRepository(database);
+  final DriftVoiceSettingsStore voiceSettings = DriftVoiceSettingsStore(
+    database,
   );
 
   final OutboxDispatcher dispatcher = OutboxDispatcher(
@@ -106,6 +139,11 @@ Future<void> main() async {
       batchTranscriptionProvider.overrideWithValue(whisper),
       audioStoreProvider.overrideWithValue(audio),
       audioRecorderProvider.overrideWithValue(recorder),
+      microphoneProvider.overrideWithValue(microphone),
+      realtimeTranscriptionProvider.overrideWithValue(scribe),
+      realtimeCredentialStoreProvider.overrideWithValue(scribeCredentials),
+      reminderRepositoryProvider.overrideWithValue(reminders),
+      voiceSettingsStoreProvider.overrideWithValue(voiceSettings),
     ],
   );
   container.read(jiraSyncControllerProvider).start();

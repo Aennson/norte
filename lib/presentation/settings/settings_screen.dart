@@ -7,6 +7,7 @@ import 'ai_settings_section.dart';
 import 'jira_settings_section.dart';
 import 'template_settings_section.dart';
 import 'transcription_settings_section.dart';
+import 'voice_settings_section.dart';
 
 /// Settings destination.
 ///
@@ -34,6 +35,8 @@ class SettingsScreen extends StatelessWidget {
           TranscriptionSettingsSection(),
           SizedBox(height: NorteSpacing.lg),
           TemplateSettingsSection(),
+          SizedBox(height: NorteSpacing.lg),
+          VoiceSettingsSection(),
           SizedBox(height: NorteSpacing.lg),
         ],
       ),

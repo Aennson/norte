@@ -1,7 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:norte/domain/entities/intent_context.dart';
 import 'package:norte/domain/entities/meeting.dart';
 import 'package:norte/domain/entities/meeting_template.dart';
+import 'package:norte/domain/entities/voice_intent.dart';
 import 'package:norte/domain/failures/failure.dart';
 import 'package:norte/domain/ports/ai_credential_store.dart';
 import 'package:norte/domain/ports/ai_engine.dart';
@@ -18,6 +20,7 @@ class _Subject {
     required this.name,
     required this.engine,
     required this.answerWith,
+    required this.parseAs,
     required this.failWith,
     required this.clearKey,
   });
@@ -27,6 +30,9 @@ class _Subject {
 
   /// Makes the next `summarize` answer with this raw model text.
   final void Function(String raw) answerWith;
+
+  /// Makes the next `parseIntent` answer with this raw model text.
+  final void Function(String raw) parseAs;
 
   /// Makes the next `summarize` fail the way [status] would.
   final void Function(int status) failWith;
@@ -68,6 +74,7 @@ void main() {
           answerWith: (String raw) => fake
             ..reset()
             ..alwaysAnswer(raw),
+          parseAs: fake.alwaysParseAs,
           failWith: (int status) => fake.failWith = switch (status) {
             401 => const AuthFailure('rejected'),
             429 => const RateLimitFailure('throttled'),
@@ -88,6 +95,9 @@ void main() {
             baseUrl: server.baseUrl,
           ),
           answerWith: (String raw) => server
+            ..answer = raw
+            ..forceStatus = null,
+          parseAs: (String raw) => server
             ..answer = raw
             ..forceStatus = null,
           failWith: (int status) => server.forceStatus = status,
@@ -262,8 +272,107 @@ void main() {
         }
       });
     });
+
+    group('S05-CT-02: $name', () {
+      test(
+        'S05-CT-02: the three test utterances come back as valid intents',
+        () async {
+          for (final (String utterance, String raw, VoiceIntent expected)
+              in _intentCases) {
+            subject().parseAs(raw);
+
+            final VoiceIntent intent = await subject().engine.parseIntent(
+              utterance,
+              const IntentContext(),
+            );
+
+            expect(intent, expected, reason: utterance);
+            // "Valid against the schema" as the app means it: a type in the
+            // enum, confidence in range, and every required slot filled.
+            expect(IntentType.values, contains(intent.type));
+            expect(intent.confidence, inInclusiveRange(0.0, 1.0));
+            expect(intent.missingSlots, isEmpty, reason: utterance);
+          }
+        },
+      );
+
+      test('S05-CT-02: an unreadable answer is AiResponseFailure', () async {
+        // Not `unknown`: the adapter reports that it could not read the
+        // answer, and `IntentParser` is the only layer entitled to decide
+        // that an unreadable answer means "ask the user to rephrase".
+        subject().parseAs('Desculpe, não entendi.');
+
+        await expectLater(
+          subject().engine.parseIntent('faz aquilo lá', const IntentContext()),
+          throwsA(isA<AiResponseFailure>()),
+        );
+      });
+
+      test('S05-CT-02: a network failure maps to the same Failure', () async {
+        subject().failWith(429);
+
+        await expectLater(
+          subject().engine.parseIntent(
+            'muda o PROJ-123 pra concluído',
+            const IntentContext(),
+          ),
+          throwsA(isA<RateLimitFailure>()),
+        );
+      });
+
+      test('S05-CT-02: no key configured is MissingApiKeyFailure', () async {
+        subject().clearKey();
+
+        await expectLater(
+          subject().engine.parseIntent(
+            'muda o PROJ-123 pra concluído',
+            const IntentContext(),
+          ),
+          throwsA(isA<MissingApiKeyFailure>()),
+        );
+      });
+    });
   }
 }
+
+/// The three utterances of S05-CT-02, one raw answer each and the intent both
+/// adapters must arrive at.
+const List<(String, String, VoiceIntent)> _intentCases =
+    <(String, String, VoiceIntent)>[
+      (
+        'muda o PROJ-123 pra concluído',
+        '{"intent":"updateJira","slots":{"issueKey":"PROJ-123",'
+            '"transition":"Done"},"confidence":0.92}',
+        VoiceIntent(
+          type: IntentType.updateJira,
+          slots: <String, dynamic>{
+            'issueKey': 'PROJ-123',
+            'transition': 'Done',
+          },
+          confidence: 0.92,
+        ),
+      ),
+      (
+        'cria tarefa revisar PR do conector',
+        '{"intent":"createTask","slots":{"title":"revisar PR do conector"},'
+            '"confidence":0.95}',
+        VoiceIntent(
+          type: IntentType.createTask,
+          slots: <String, dynamic>{'title': 'revisar PR do conector'},
+          confidence: 0.95,
+        ),
+      ),
+      (
+        'como tá o PROJ-99?',
+        '{"intent":"queryStatus","slots":{"issueKey":"PROJ-99"},'
+            '"confidence":0.96}',
+        VoiceIntent(
+          type: IntentType.queryStatus,
+          slots: <String, dynamic>{'issueKey': 'PROJ-99'},
+          confidence: 0.96,
+        ),
+      ),
+    ];
 
 /// Reads the key each time, so a test can take it away mid-run.
 class _LazyKeyStore implements AiCredentialStore {

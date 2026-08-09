@@ -1,9 +1,12 @@
 import 'dart:async';
 
+import 'package:norte/domain/entities/intent_context.dart';
 import 'package:norte/domain/entities/meeting.dart';
 import 'package:norte/domain/entities/meeting_template.dart';
+import 'package:norte/domain/entities/voice_intent.dart';
 import 'package:norte/domain/failures/failure.dart';
 import 'package:norte/domain/ports/ai_engine.dart';
+import 'package:norte/infrastructure/ai/intent_codec.dart';
 import 'package:norte/infrastructure/ai/meeting_summary_codec.dart';
 
 /// One `summarize` call, as the engine received it.
@@ -22,6 +25,22 @@ class AiCall {
 
   @override
   String toString() => 'summarize(${transcript.length} chars, ${template.id})';
+}
+
+/// One `parseIntent` call, as the engine received it.
+class IntentCall {
+  const IntentCall({required this.utterance, required this.context});
+
+  /// The text the engine was asked to read.
+  final String utterance;
+
+  /// The situation it was given — the assertion the missing-slot second pass
+  /// turns on (S05-UT-05): a re-parse that arrived with no `pendingIntent` is
+  /// a re-parse that threw away the user's earlier answer.
+  final IntentContext context;
+
+  @override
+  String toString() => 'parseIntent("$utterance", ${context.locale})';
 }
 
 /// Deterministic [AiEngine] driven by fixtures
@@ -77,13 +96,26 @@ class FakeAiEngine implements AiEngine {
   /// When `true`, calls never complete — used to exercise timeout handling.
   bool hang = false;
 
+  /// Raw intent answers to give, in order, ahead of the fixture map.
+  final List<String> scriptedIntents = <String>[];
+
+  /// Every `parseIntent` call received, in order.
+  final List<IntentCall> intentCalls = <IntentCall>[];
+
   /// Convenience for the common case: always answer with [raw].
   // ignore: use_setters_to_change_properties
   void alwaysAnswer(String raw) {
     _fallbackAnswer = raw;
   }
 
+  /// Convenience for the common case: parse every utterance as [raw].
+  // ignore: use_setters_to_change_properties
+  void alwaysParseAs(String raw) {
+    _fallbackIntent = raw;
+  }
+
   String? _fallbackAnswer;
+  String? _fallbackIntent;
 
   /// The transcript of the most recent call, or `null` when there was none.
   String? get lastTranscript => calls.isEmpty ? null : calls.last.transcript;
@@ -122,22 +154,49 @@ class FakeAiEngine implements AiEngine {
   }
 
   @override
-  Future<String> parseIntent(String utterance) async {
-    final String? response = intents[utterance];
+  Future<VoiceIntent> parseIntent(
+    String utterance,
+    IntentContext context,
+  ) async {
+    intentCalls.add(IntentCall(utterance: utterance, context: context));
+
+    if (hang) return Completer<VoiceIntent>().future;
+    if (latency > Duration.zero) await Future<void>.delayed(latency);
+
+    final Failure? failure = failWith;
+    if (failure != null) throw failure;
+
+    final String? response = scriptedIntents.isNotEmpty
+        ? scriptedIntents.removeAt(0)
+        : intents[utterance] ?? _fallbackIntent;
     if (response == null) {
-      throw StateError('FakeAiEngine has no intent fixture for: "$utterance".');
+      throw StateError(
+        'FakeAiEngine has no intent fixture for: "$utterance". Add one to '
+        '`intents`, `scriptedIntents`, or call `alwaysParseAs` — do not rely '
+        'on a default.',
+      );
     }
-    return response;
+
+    // The real codec, including its refusal to read a malformed answer. That
+    // is what makes S05-CT-02 a contract test rather than two suites agreeing
+    // with themselves.
+    return const IntentCodec().parse(response, context: context);
   }
 
   /// Transcripts seen, in call order.
   List<String> get transcripts =>
       calls.map((AiCall call) => call.transcript).toList();
 
+  /// Utterances seen, in call order.
+  List<String> get utterances =>
+      intentCalls.map((IntentCall call) => call.utterance).toList();
+
   /// Forgets every recorded interaction.
   void reset() {
     calls.clear();
+    intentCalls.clear();
     scriptedAnswers.clear();
+    scriptedIntents.clear();
     failWith = null;
     latency = Duration.zero;
     hang = false;

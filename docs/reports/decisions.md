@@ -658,3 +658,358 @@ and forbids pushing anywhere else.
 honoured: `master` untouched, commits authored by the Developer with the AI as
 `Co-Authored-By`, and a single PR to `master` that merges only on 100% green
 Actions.
+
+---
+
+## DEC-024 — The provisional ports file is retired (Sprint 05)
+
+**Status:** accepted.
+
+**Context.** Sprint 00 could not create domain entities, so the fakes whose
+real ports needed them were declared in primitives in
+`test/fakes/ports/provisional_ports.dart`, each marked with the sprint that
+would promote it. `JiraGateway` went in Sprint 02, `AiEngine` in Sprint 03,
+`BatchTranscription` in Sprint 04. Sprint 05 promotes the last one,
+`RealtimeTranscription`, into `lib/domain/ports/transcription_engine.dart`,
+typed against `Uint8List` as `docs/architecture.md` §9.1 specifies.
+
+**Decision.** Delete the file rather than leave it as a stub. Its whole purpose
+was to hold contracts awaiting promotion, and none remain; a file of comments
+explaining that it is empty is a file the next reader opens to learn nothing.
+
+Worth recording for its own sake: **every provisional port was promoted
+unchanged in shape.** `Transcript` and `BatchTranscription` arrived in Sprint 04
+exactly as Sprint 00 sketched them (DEC-021), and `TranscriptEvent`'s
+`text`/`isCommitted` pair survived untouched into the real port. The one thing
+that changed was `AiEngine.parseIntent`, which Sprint 00 could only type as
+`String` and this sprint promotes to `VoiceIntent` (DEC-017).
+
+**Impact.** `test/fakes/ports/provisional_ports.dart` deleted;
+`test/fakes/fakes.dart` loses the export and gains a note;
+`lib/domain/ports/transcription_engine.dart` gains `TranscriptEvent` and
+`RealtimeTranscription`.
+
+---
+
+## DEC-025 — What Sprint 05's reminder stub resolves, and what it refuses (Sprint 05)
+
+**Status:** accepted.
+
+**Context.** The sprint's scope note says `createReminder` "only creates the
+persisted `Reminder` entity", and Sprint 06's entry criteria expect the entity
+"persisted via the stub". But `Reminder.triggerAt` is a `DateTime`, and the
+parser returns a slot like `+20m`, `today 15:00` or `friday 15:00`. Something
+has to turn one into the other, and the sprint's "Out" section excludes
+"date/time parsing beyond what the `AiEngine` returns in the slots".
+
+**Decision.** `CreateReminder` resolves exactly the forms that need nothing but
+the injected clock — an ISO 8601 instant, and a relative offset (`+90s`,
+`+20m`, `+1h`, `+2d`) — and returns `ValidationFailure` for a wall-clock
+phrase, naming the `triggerAt` field.
+
+Resolving `tomorrow 09:00` correctly needs the device timezone and a weekday
+calendar, which is precisely S06-IT-02. Implementing it here would be doing a
+future sprint's work without its tests; refusing it leaves Sprint 06 a case it
+has to make pass, which is the honest way to hand work forward. The boundary is
+pinned by a test of its own so it cannot drift silently.
+
+`NotificationScheduler` is deliberately **not** a constructor parameter, so
+"Sprint 05 does not schedule" is a fact about the type rather than a promise in
+a comment.
+
+**Impact.** `lib/application/usecases/create_reminder.dart`;
+`test/application/create_reminder_test.dart`; Sprint 06 inherits the wall-clock
+forms.
+
+---
+
+## DEC-026 — The Scribe realtime wire format (Sprint 05)
+
+**Status:** **settled** against `Aennson/zefa-ia`, the Developer's own working
+ElevenLabs integration, 2026-08-09. A live probe came first and got part of it
+right and one important part **wrong**; both rounds are recorded, because the
+way the probe misled is more useful than the answer it produced.
+
+### The protocol, as a working implementation speaks it
+
+Client to server — **one** message type, as JSON **text**, never a binary
+frame:
+
+```json
+{"message_type":"input_audio_chunk","audio_base_64":"…",
+ "commit":false,"sample_rate":16000}
+```
+
+Session configuration is entirely in the query string: `model_id`,
+`audio_format=pcm_16000`, `commit_strategy=vad`, and an optional
+`language_code` in ISO-639-3.
+
+Server to client, discriminated by `message_type`: `session_started`,
+`partial_transcript`, `final_transcript`, `committed_transcript`,
+`committed_transcript_with_timestamps`, `rate_limited`, `input_error`. Errors
+carry a **flat sentence** in `error`, not a typed code.
+
+A commit is not a message of its own — it **rides on an audio chunk**, so an
+empty chunk with `commit: true` is how a client says the sentence is over.
+
+### What the probe got right, and the one thing it got wrong
+
+Right, and worth having: `message_type` rather than `type`; the flat error
+string; `xi-api-key` on the handshake (DEC-029); ISO-639-3 language codes, and
+that a bad one closes the socket with 1008.
+
+**Wrong: it concluded audio is raw binary and that no JSON audio message
+exists.** The probe enumerated thirteen candidate `message_type` values and saw
+every one refused. It never tried `input_audio_chunk` — and had it tried,
+without `audio_base_64` and `sample_rate` the answer would have been the same
+refusal, because **"refused by name" and "refused for a missing field" are
+indistinguishable from outside**. A method that looked systematic produced a
+confident, wrong conclusion, and shipping it would have meant every chunk
+silently rejected: nothing transcribed, nothing obviously broken.
+
+The reference implementation carries a comment recording that its author made
+the same mistake before fixing it. Two independent arrivals at the same wrong
+answer is a good sign the API's failure mode, not the reader, is what is
+misleading.
+
+**The lesson worth keeping** is not "probe more". It is that **a black-box
+probe can only refute, never confirm** — an accepted message proves a shape
+works, a refused one proves nothing about *why*. Where a working
+implementation exists, read it first; it is the only oracle that answers the
+positive question.
+
+### The original decision, and why the tolerance was still right
+
+**Context.** `ScribeRealtimeEngine` speaks a WebSocket protocol this repository
+cannot exercise in CI: every automated test drives it through
+`FakeRealtimeSocket`, because a suite that called the real service would
+violate `docs/project-rules.md` §5.4. The adapter's assumptions about frame
+names were therefore unverified when it was written.
+
+**Decision.** Ship a deliberately tolerant reader — `partial`/`final`/
+`committed` in the name, an `is_final` boolean, either `text` or `transcript`
+as the field — so that a protocol revision degrades into a harmless spelling
+difference rather than the silent loss of every voice command. The same risk
+`docs/architecture.md` §15 records for the Copilot CLI, wearing a different
+coat.
+
+**How it held up.** Tolerance was the right instinct and it was not enough. It
+would have absorbed a renamed transcript frame; it could not absorb a different
+*discriminator*, and `type` versus `message_type` is exactly that. The lesson
+is narrower than "be tolerant": **be tolerant about values, and verify the
+shape.** A tolerant reader of a field that does not exist reads nothing,
+tolerantly.
+
+**What made it verifiable.** A short-lived key and a throwaway probe outside
+the repository — sixty lines of `dart:io`, no dependency on the app, no
+credential anywhere in the tree. That is the tool the sprint should have
+reached for on day one rather than at the end, and the reason it did not is
+that "no real APIs in tests" was read as "no real APIs at all". §5.4 forbids
+them in *tests*; it says nothing about a diagnostic run by hand.
+
+**Impact.** `lib/infrastructure/transcription/scribe_realtime_engine.dart`;
+`test/support/fake_realtime_socket.dart` and `fake_realtime_server.dart`, both
+of which were speaking the invented dialect and are now speaking the observed
+one; `docs/reports/sprint-05-report.md` §7.
+
+---
+
+## DEC-027 — The voice settings are read on demand, not watched (Sprint 05)
+
+**Status:** accepted.
+
+**Context.** `VoiceSettingsStore` was first written with a `watch()`, and the
+router held a snapshot from a `StreamProvider`. Writing S05-E2E-01 (C) found
+the flaw: between launch and the stream's first emission the router reports the
+defaults rather than the user's choice. With a default of "always confirm" that
+window is harmless — the user is asked when they expected not to be — but the
+shape of the bug is a confirmation decision that depends on scheduling.
+
+**Decision.** `VoiceSettingsStore` has `read` and `write` and no `watch`.
+`IntentRouter` reads it at the moment it needs to know, which costs one local
+query and has no window at all. The Settings screen uses a `FutureProvider`
+invalidated after a write — the pattern `aiConfiguredProvider` and
+`transcriptionConfiguredProvider` already use, so the codebase gains no new
+idiom.
+
+**Rejected alternative.** *Keep the stream and seed it with a synchronous
+read* — two sources of truth for one boolean, and the seeding is the same
+scheduling assumption written more elaborately.
+
+**Impact.** `lib/domain/ports/voice_settings_store.dart`;
+`lib/infrastructure/persistence/drift_voice_settings_store.dart`;
+`lib/application/voice/intent_router.dart`;
+`lib/presentation/voice/voice_providers.dart`.
+
+---
+
+## DEC-028 — Three BYOK credentials, three slots (Sprint 05)
+
+**Status:** accepted.
+
+**Context.** Sprint 05's first draft handed `whisperCredentials` to
+`ScribeRealtimeEngine` in the composition root. Whisper is OpenAI and Scribe is
+ElevenLabs — different services, different keys — so the app had one field and
+one storage slot for two credentials. Configuring voice commands would have
+silently broken meeting transcription, and the reverse.
+
+Nothing caught it. Every unit, contract and E2E test injects a credential store
+directly, so `main()`'s wiring is the one layer no suite exercises. It was found
+by writing the manual script's instructions and discovering they could not be
+followed: there was no field to put the Scribe key in that did not already hold
+something else.
+
+**Decision.** `SecureTranscriptionCredentialStore` gains two named
+constructors, `.whisper` and `.scribe`, filing under
+`transcription.whisper.apiKey` and `transcription.scribe.apiKey`. **There is no
+default constructor**, so the composition root cannot pick the wrong store by
+omission — the mistake is made impossible to express rather than merely
+asserted against, which is the only durable fix for a layer without tests.
+
+The voice settings section grows a masked key field beside its switch, with the
+same BR-08 shape as the other three key forms: the stored key is never read
+back into the field, and a configured install shows *that* a key exists, never
+the key.
+
+**Rejected alternative.** *One "transcription key" for both* — the shape that
+caused the bug. A slot named for what a key is *for* rather than which service
+it belongs to invites exactly one slot for two providers.
+
+**Impact.** `lib/infrastructure/transcription/secure_transcription_credential_store.dart`;
+`lib/main.dart`; `lib/presentation/settings/voice_settings_section.dart`;
+`lib/presentation/voice/voice_providers.dart`; four new strings in each of the
+three ARB files; `test/infrastructure/transcription_credential_slots_test.dart`.
+
+---
+
+## DEC-029 — The realtime key travels in a header, over a socket a test can watch (Sprint 05)
+
+**Status:** accepted.
+
+**Context.** The second wiring defect of the same family as DEC-028, found the
+same way — by answering a question about the manual pass rather than by a test.
+`WebSocketRealtimeSocket.connect` accepted an `apiKey` argument, documented it
+as going into the `xi-api-key` header, and **never sent it**:
+`WebSocketChannel.connect` carries no headers at all. `realtime_socket.dart`
+had **0 of 14 lines covered**, because every engine test drives
+`FakeRealtimeSocket`.
+
+A fake transport is the right tool for reproducing a dropped connection
+deterministically. It is the wrong tool for asking whether a credential leaves
+the machine, and nothing in the suite was asking.
+
+**Decision.** Three parts.
+
+1. Connect through `IOWebSocketChannel`, which can send handshake headers. The
+   generic constructor cannot, and its silence is what hid the bug. All three
+   v1.0 targets are `dart:io` platforms (`docs/architecture.md` §12).
+2. Present the key in the **`xi-api-key` header, never in the query string**. A
+   URL is the part of a request that reliably reaches proxy logs, crash reports
+   and shell history; a credential put there cannot be taken back (BR-08).
+3. Add `FakeRealtimeServer` — a real loopback WebSocket server that records the
+   handshake — and test the adapter against it. This is the same shape as
+   `FakeClaudeServer` and `FakeJiraServer`, and for the same reason: an adapter
+   mocked at its own boundary tests the mock.
+
+**What this does not settle.** Whether ElevenLabs authenticates a realtime
+socket by this header at all. That is DEC-026's open item, and a 401 on the
+handshake is exactly the signal the manual pass is looking for — it now
+surfaces as `AuthFailure` rather than as a generic network problem.
+
+**Impact.** `lib/infrastructure/transcription/realtime_socket.dart`;
+`test/support/fake_realtime_server.dart`;
+`test/infrastructure/realtime_socket_test.dart`.
+
+---
+
+## DEC-030 — A lettered sprint for the task commands (Sprint 05a)
+
+**Status:** accepted.
+
+**Context.** The Developer asked for the app's own tasks to be fully operable
+by voice — change status, comment, delete under confirmation, create with every
+attribute — plus multi-status filtering and a description search. None of it is
+in Sprint 05's documented scope, and `docs/project-rules.md` §8 forbids
+implementing a future sprint's work while a sprint is open.
+
+The numbering had no room. Sprints 00–08 deliver v1.0 and are all specified;
+09 opens v1.1. Inserting a number would renumber documents that other files,
+test IDs and reports already reference by name.
+
+**Decision.** `docs/sprints/sprint-05a-task-commands.md`, executed after 05 and
+before 06, with test IDs prefixed `S05a-`. Roadmap item 5a in
+`docs/architecture.md` §14 records the position.
+
+**Rejected alternatives.**
+
+- *Extend Sprint 05* — its PR is green and complete against its own scope, and
+  a sprint that grows while it is being closed is a sprint with no Definition
+  of Done.
+- *Fold it into Sprint 06* — Sprint 06 is reminders and notifications across
+  three platforms. Two unrelated subjects in one sprint means one DoD that
+  cannot fail cleanly.
+
+**Impact.** `docs/sprints/sprint-05a-task-commands.md` (new);
+`docs/architecture.md` §14.
+
+---
+
+## DEC-031 — Continuous listening, and what a session survives (Sprint 05)
+
+**Status:** accepted, on the Developer's instruction after the first real run.
+
+**Context.** Sprint 05 shipped a session that closed the microphone the moment
+a segment committed, executed one command, and ended — including when the
+command merely failed to be understood. In use that turned out to be wrong on
+both counts: every command needed its own press of the button, and a
+misunderstanding cost the user the session as well as the command.
+
+**Decision.** The microphone stays open until the user stops it, and commands
+execute as they are spoken. A failure ends the session only when it takes the
+pipeline down — no key, a rejected key, no microphone. Everything else leaves
+the session listening, because the fix for a misunderstanding is saying it
+again.
+
+Three guards keep "continuous" from meaning "twice":
+
+- A segment arriving while the previous one is still being parsed is the same
+  sentence. VAD segments on silence, and a real run produced 14 characters
+  followed by 5 from one command; routing both executed it twice.
+- Anything said while a confirmation sheet is up is the user reading, not a
+  new command.
+- A segment that is **only** hesitation never reaches the parser (DEC-032).
+
+**Impact.** `lib/presentation/voice/voice_providers.dart`;
+`docs/sprints/sprint-05-realtime-voice.md`'s implicit one-command-per-session
+assumption, which was never written down and is now contradicted here.
+
+---
+
+## DEC-032 — Hesitation is filtered twice, and asymmetrically (Sprint 05)
+
+**Status:** accepted.
+
+**Context.** "eeeh", "hmmm" and "aaah" commit as segments like any other. Each
+one costs an API call, a second of the user's time, and an answer of `unknown`
+that reads on screen as the app failing to understand — when nothing was said.
+
+The Developer expected `zefa-ia` to solve this and asked me to copy it. It does
+not: there is no disfluency handling anywhere in its STT or audio layers. What
+looks like filtering there is the model tidying up on its own. Recorded because
+"the other project already does it" was the premise, and it was not true.
+
+**Decision.** Two filters, and the asymmetry is the design.
+
+1. `no_verbatim` is requested of the service — it appears among the settings
+   the endpoint echoes on `session_started`, so it is the cheapest place to
+   drop hesitation, before it is ever transcribed.
+2. `SpeechFiller` catches what gets through, and rejects a segment **only when
+   it is entirely filler**. "eh, cria tarefa" is a command with a stumble in
+   front of it; dropping it to save an API call would lose a command the user
+   actually gave.
+
+Matching collapses repeated letters, so `eeeeh` and `eh` are one word and the
+list stays short.
+
+**Impact.** `lib/infrastructure/transcription/scribe_realtime_engine.dart`;
+`lib/presentation/voice/speech_filler.dart`.

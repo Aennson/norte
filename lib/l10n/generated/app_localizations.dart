@@ -1221,6 +1221,240 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Key configured'**
   String get settingsWhisperConfigured;
+
+  /// Voice overlay while the realtime session is opening.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting…'**
+  String get voiceConnecting;
+
+  /// Voice overlay while the user is speaking.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening…'**
+  String get voiceListening;
+
+  /// Voice overlay while the utterance is being parsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Understanding…'**
+  String get voiceUnderstanding;
+
+  /// Ends the voice session.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get voiceStop;
+
+  /// Shown for an unknown intent — never an action.
+  ///
+  /// In en, this message translates to:
+  /// **'I did not catch a command. Try saying it another way.'**
+  String get voiceNotUnderstood;
+
+  /// Title of the intent confirmation sheet (BR-04).
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm this action'**
+  String get voiceConfirmTitle;
+
+  /// Why a confident Jira intent still asks.
+  ///
+  /// In en, this message translates to:
+  /// **'Jira writes always ask first. You can change this in Settings.'**
+  String get voiceReasonJiraWrite;
+
+  /// Why a low-confidence intent asks (BR-04).
+  ///
+  /// In en, this message translates to:
+  /// **'I am not certain I understood. Check it before it runs.'**
+  String get voiceReasonLowConfidence;
+
+  /// Label of the confidence bar on the confirmation sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Confidence {percent}%'**
+  String voiceConfidenceLabel(int percent);
+
+  /// Question asked when the issueKey slot is missing.
+  ///
+  /// In en, this message translates to:
+  /// **'Which ticket?'**
+  String get voiceAskIssueKey;
+
+  /// Question asked when the transition slot is missing.
+  ///
+  /// In en, this message translates to:
+  /// **'Which status?'**
+  String get voiceAskTransition;
+
+  /// Question asked when the comment slot is missing.
+  ///
+  /// In en, this message translates to:
+  /// **'What should the comment say?'**
+  String get voiceAskComment;
+
+  /// Question asked when the title slot is missing.
+  ///
+  /// In en, this message translates to:
+  /// **'What should the task be called?'**
+  String get voiceAskTitle;
+
+  /// Question asked when the reminder text slot is missing.
+  ///
+  /// In en, this message translates to:
+  /// **'What should I remind you about?'**
+  String get voiceAskText;
+
+  /// Question asked when the reminder time slot is missing.
+  ///
+  /// In en, this message translates to:
+  /// **'For when?'**
+  String get voiceAskTriggerAt;
+
+  /// The interpreted transition, shown in mono.
+  ///
+  /// In en, this message translates to:
+  /// **'{issueKey} → {transition}'**
+  String voiceActionUpdateJira(String issueKey, String transition);
+
+  /// The interpreted comment, shown in mono.
+  ///
+  /// In en, this message translates to:
+  /// **'Comment on {issueKey}: {comment}'**
+  String voiceActionAddComment(String issueKey, String comment);
+
+  /// The interpreted task, shown in mono.
+  ///
+  /// In en, this message translates to:
+  /// **'New task: {title}'**
+  String voiceActionCreateTask(String title);
+
+  /// The interpreted reminder, shown in mono.
+  ///
+  /// In en, this message translates to:
+  /// **'Remind {text} — {triggerAt}'**
+  String voiceActionCreateReminder(String text, String triggerAt);
+
+  /// The interpreted status query, shown in mono.
+  ///
+  /// In en, this message translates to:
+  /// **'Status of {issueKey}'**
+  String voiceActionQueryStatus(String issueKey);
+
+  /// Feedback after a spoken createTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Task created'**
+  String get voiceDoneTask;
+
+  /// Feedback after a spoken Jira write reaches the outbox (BR-05).
+  ///
+  /// In en, this message translates to:
+  /// **'Queued for Jira'**
+  String get voiceDoneQueued;
+
+  /// Feedback after a spoken createReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder created'**
+  String get voiceDoneReminder;
+
+  /// Feedback after a spoken queryStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'{issueKey} is {status}'**
+  String voiceDoneStatus(String issueKey, String status);
+
+  /// Failure when a spoken issue key matches no linked task.
+  ///
+  /// In en, this message translates to:
+  /// **'No task here is linked to {issueKey}.'**
+  String voiceErrorNotLinked(String issueKey);
+
+  /// Title of the voice settings section.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice'**
+  String get settingsVoiceSection;
+
+  /// Explains the voice settings section.
+  ///
+  /// In en, this message translates to:
+  /// **'How spoken commands behave before they change anything.'**
+  String get settingsVoiceDescription;
+
+  /// The always-confirm switch, on by default.
+  ///
+  /// In en, this message translates to:
+  /// **'Always confirm Jira writes'**
+  String get settingsAlwaysConfirmJira;
+
+  /// Explains that BR-04 applies regardless of this switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask before every spoken transition or comment, however sure the app is. Low-confidence commands always ask, whatever this is set to.'**
+  String get settingsAlwaysConfirmJiraDescription;
+
+  /// Label of the Scribe key field.
+  ///
+  /// In en, this message translates to:
+  /// **'Realtime voice API key'**
+  String get settingsScribeKeyField;
+
+  /// Explains that realtime and batch transcription are different providers with different keys.
+  ///
+  /// In en, this message translates to:
+  /// **'Your ElevenLabs Scribe key, used only for voice commands. It is a different service from the transcription key above — meetings go to Whisper, spoken commands go to Scribe, and each keeps its own key.'**
+  String get settingsScribeDescription;
+
+  /// Shown when a Scribe key is stored.
+  ///
+  /// In en, this message translates to:
+  /// **'Realtime key configured'**
+  String get settingsScribeConfigured;
+
+  /// Shown when no Scribe key is stored.
+  ///
+  /// In en, this message translates to:
+  /// **'No realtime key — voice commands will not run'**
+  String get settingsScribeNotConfigured;
+
+  /// Accessible label of the input level meter.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone level'**
+  String get voiceMeterLabel;
+
+  /// Shown when the session is connected but no audio frames have been captured.
+  ///
+  /// In en, this message translates to:
+  /// **'The microphone is open but no sound is arriving.'**
+  String get voiceNoAudio;
+
+  /// Shown when the realtime socket dropped mid-session.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection lost — reconnecting…'**
+  String get voiceReconnecting;
+
+  /// Failure when a reminder's triggerAt is a wall-clock phrase Sprint 05 cannot resolve (DEC-025).
+  ///
+  /// In en, this message translates to:
+  /// **'This app cannot work out that time yet. Try \"in 20 minutes\".'**
+  String get voiceTimeUnsupported;
+
+  /// Status line when the voice session ended in a failure. The reason is on the line below it.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped'**
+  String get voiceFailed;
+
+  /// Placeholder of the Scribe key field. ElevenLabs keys start with sk_, unlike the Claude key's sk-ant-.
+  ///
+  /// In en, this message translates to:
+  /// **'sk_...'**
+  String get settingsScribeKeyHint;
 }
 
 class _AppLocalizationsDelegate

@@ -13,9 +13,17 @@ export 'fake_id_generator.dart';
 export 'fake_jira_credential_store.dart';
 export 'fake_jira_gateway.dart';
 export 'fake_meeting_repository.dart';
+export 'fake_microphone.dart';
 export 'fake_meeting_template_repository.dart';
 export 'fake_notification_scheduler.dart';
 export 'fake_outbox_repository.dart';
 export 'fake_realtime_transcription.dart';
+export 'fake_reminder_repository.dart';
 export 'fake_transcription_credential_store.dart';
-export 'ports/provisional_ports.dart';
+export 'fake_voice_settings_store.dart';
+
+// `ports/provisional_ports.dart` is gone as of Sprint 05: every port Sprint 00
+// could only sketch in primitives — `JiraGateway`, `AiEngine`,
+// `BatchTranscription`, and now `RealtimeTranscription` — has been promoted to
+// `lib/domain/ports/` with its real entity types, and every fake implements the
+// real thing (DEC-024).

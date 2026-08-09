@@ -834,5 +834,213 @@
   "settingsWhisperConfigured": "Key configured",
   "@settingsWhisperConfigured": {
     "description": "Shown when a Whisper key is stored."
+  },
+  "voiceConnecting": "Connecting…",
+  "@voiceConnecting": {
+    "description": "Voice overlay while the realtime session is opening."
+  },
+  "voiceListening": "Listening…",
+  "@voiceListening": {
+    "description": "Voice overlay while the user is speaking."
+  },
+  "voiceUnderstanding": "Understanding…",
+  "@voiceUnderstanding": {
+    "description": "Voice overlay while the utterance is being parsed."
+  },
+  "voiceStop": "Stop",
+  "@voiceStop": {
+    "description": "Ends the voice session."
+  },
+  "voiceNotUnderstood": "I did not catch a command. Try saying it another way.",
+  "@voiceNotUnderstood": {
+    "description": "Shown for an unknown intent — never an action."
+  },
+  "voiceConfirmTitle": "Confirm this action",
+  "@voiceConfirmTitle": {
+    "description": "Title of the intent confirmation sheet (BR-04)."
+  },
+  "voiceReasonJiraWrite": "Jira writes always ask first. You can change this in Settings.",
+  "@voiceReasonJiraWrite": {
+    "description": "Why a confident Jira intent still asks."
+  },
+  "voiceReasonLowConfidence": "I am not certain I understood. Check it before it runs.",
+  "@voiceReasonLowConfidence": {
+    "description": "Why a low-confidence intent asks (BR-04)."
+  },
+  "voiceConfidenceLabel": "Confidence {percent}%",
+  "@voiceConfidenceLabel": {
+    "description": "Label of the confidence bar on the confirmation sheet.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "voiceAskIssueKey": "Which ticket?",
+  "@voiceAskIssueKey": {
+    "description": "Question asked when the issueKey slot is missing."
+  },
+  "voiceAskTransition": "Which status?",
+  "@voiceAskTransition": {
+    "description": "Question asked when the transition slot is missing."
+  },
+  "voiceAskComment": "What should the comment say?",
+  "@voiceAskComment": {
+    "description": "Question asked when the comment slot is missing."
+  },
+  "voiceAskTitle": "What should the task be called?",
+  "@voiceAskTitle": {
+    "description": "Question asked when the title slot is missing."
+  },
+  "voiceAskText": "What should I remind you about?",
+  "@voiceAskText": {
+    "description": "Question asked when the reminder text slot is missing."
+  },
+  "voiceAskTriggerAt": "For when?",
+  "@voiceAskTriggerAt": {
+    "description": "Question asked when the reminder time slot is missing."
+  },
+  "voiceActionUpdateJira": "{issueKey} → {transition}",
+  "@voiceActionUpdateJira": {
+    "description": "The interpreted transition, shown in mono.",
+    "placeholders": {
+      "issueKey": {
+        "type": "String"
+      },
+      "transition": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceActionAddComment": "Comment on {issueKey}: {comment}",
+  "@voiceActionAddComment": {
+    "description": "The interpreted comment, shown in mono.",
+    "placeholders": {
+      "issueKey": {
+        "type": "String"
+      },
+      "comment": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceActionCreateTask": "New task: {title}",
+  "@voiceActionCreateTask": {
+    "description": "The interpreted task, shown in mono.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceActionCreateReminder": "Remind {text} — {triggerAt}",
+  "@voiceActionCreateReminder": {
+    "description": "The interpreted reminder, shown in mono.",
+    "placeholders": {
+      "text": {
+        "type": "String"
+      },
+      "triggerAt": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceActionQueryStatus": "Status of {issueKey}",
+  "@voiceActionQueryStatus": {
+    "description": "The interpreted status query, shown in mono.",
+    "placeholders": {
+      "issueKey": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceDoneTask": "Task created",
+  "@voiceDoneTask": {
+    "description": "Feedback after a spoken createTask."
+  },
+  "voiceDoneQueued": "Queued for Jira",
+  "@voiceDoneQueued": {
+    "description": "Feedback after a spoken Jira write reaches the outbox (BR-05)."
+  },
+  "voiceDoneReminder": "Reminder created",
+  "@voiceDoneReminder": {
+    "description": "Feedback after a spoken createReminder."
+  },
+  "voiceDoneStatus": "{issueKey} is {status}",
+  "@voiceDoneStatus": {
+    "description": "Feedback after a spoken queryStatus.",
+    "placeholders": {
+      "issueKey": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceErrorNotLinked": "No task here is linked to {issueKey}.",
+  "@voiceErrorNotLinked": {
+    "description": "Failure when a spoken issue key matches no linked task.",
+    "placeholders": {
+      "issueKey": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsVoiceSection": "Voice",
+  "@settingsVoiceSection": {
+    "description": "Title of the voice settings section."
+  },
+  "settingsVoiceDescription": "How spoken commands behave before they change anything.",
+  "@settingsVoiceDescription": {
+    "description": "Explains the voice settings section."
+  },
+  "settingsAlwaysConfirmJira": "Always confirm Jira writes",
+  "@settingsAlwaysConfirmJira": {
+    "description": "The always-confirm switch, on by default."
+  },
+  "settingsAlwaysConfirmJiraDescription": "Ask before every spoken transition or comment, however sure the app is. Low-confidence commands always ask, whatever this is set to.",
+  "@settingsAlwaysConfirmJiraDescription": {
+    "description": "Explains that BR-04 applies regardless of this switch."
+  },
+  "settingsScribeKeyField": "Realtime voice API key",
+  "@settingsScribeKeyField": {
+    "description": "Label of the Scribe key field."
+  },
+  "settingsScribeDescription": "Your ElevenLabs Scribe key, used only for voice commands. It is a different service from the transcription key above — meetings go to Whisper, spoken commands go to Scribe, and each keeps its own key.",
+  "@settingsScribeDescription": {
+    "description": "Explains that realtime and batch transcription are different providers with different keys."
+  },
+  "settingsScribeConfigured": "Realtime key configured",
+  "@settingsScribeConfigured": {
+    "description": "Shown when a Scribe key is stored."
+  },
+  "settingsScribeNotConfigured": "No realtime key — voice commands will not run",
+  "@settingsScribeNotConfigured": {
+    "description": "Shown when no Scribe key is stored."
+  },
+  "voiceMeterLabel": "Microphone level",
+  "@voiceMeterLabel": {
+    "description": "Accessible label of the input level meter."
+  },
+  "voiceNoAudio": "The microphone is open but no sound is arriving.",
+  "@voiceNoAudio": {
+    "description": "Shown when the session is connected but no audio frames have been captured."
+  },
+  "voiceReconnecting": "Connection lost — reconnecting…",
+  "@voiceReconnecting": {
+    "description": "Shown when the realtime socket dropped mid-session."
+  },
+  "voiceTimeUnsupported": "This app cannot work out that time yet. Try \"in 20 minutes\".",
+  "@voiceTimeUnsupported": {
+    "description": "Failure when a reminder's triggerAt is a wall-clock phrase Sprint 05 cannot resolve (DEC-025)."
+  },
+  "voiceFailed": "Stopped",
+  "@voiceFailed": {
+    "description": "Status line when the voice session ended in a failure. The reason is on the line below it."
+  },
+  "settingsScribeKeyHint": "sk_...",
+  "@settingsScribeKeyHint": {
+    "description": "Placeholder of the Scribe key field. ElevenLabs keys start with sk_, unlike the Claude key's sk-ant-."
   }
 }

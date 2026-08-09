@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:norte/domain/failures/failure.dart';
 import 'package:norte/domain/ports/clock.dart';
+import 'package:norte/domain/entities/intent_context.dart';
 import 'package:norte/domain/entities/meeting.dart';
 import 'package:norte/domain/entities/transcript.dart';
+import 'package:norte/domain/entities/voice_intent.dart';
 import 'package:norte/domain/ports/notification_scheduler.dart';
 import 'package:norte/domain/ports/transcription_engine.dart';
 
@@ -122,7 +125,11 @@ void main() {
     test('answers from fixtures and records every call', () async {
       final FakeAiEngine engine = FakeAiEngine(
         summaries: <String, String>{'transcript': answer},
-        intents: <String, String>{'cria tarefa': '{"intent":"createTask"}'},
+        intents: <String, String>{
+          'cria tarefa':
+              '{"intent":"createTask","slots":{"title":"revisar o PR"},'
+              '"confidence":0.9}',
+        },
       );
 
       final MeetingSummary summary = await engine.summarize(
@@ -130,10 +137,16 @@ void main() {
         retroTemplate,
       );
       expect(summary.sections['What went well'], 'Shipped.');
-      expect(
-        await engine.parseIntent('cria tarefa'),
-        '{"intent":"createTask"}',
+      // Read through the real `IntentCodec`, not handed back as text: the
+      // fake cannot be more forgiving than production (S05-CT-02).
+      final VoiceIntent intent = await engine.parseIntent(
+        'cria tarefa',
+        const IntentContext(),
       );
+      expect(intent.type, IntentType.createTask);
+      expect(intent.slots, <String, dynamic>{'title': 'revisar o PR'});
+      expect(intent.confidence, 0.9);
+      expect(engine.utterances, <String>['cria tarefa']);
 
       expect(engine.calls, hasLength(1));
       expect(engine.transcripts, <String>['transcript']);
@@ -349,7 +362,7 @@ void main() {
             FakeRealtimeTranscription.fromFixture();
 
         final List<TranscriptEvent> events = await engine
-            .start(Stream<List<int>>.value(<int>[0, 1, 2]))
+            .start(Stream<Uint8List>.value(Uint8List.fromList(<int>[0, 1, 2])))
             .toList();
 
         expect(events, hasLength(4));
@@ -359,8 +372,8 @@ void main() {
         );
         expect(events.last.isCommitted, isTrue);
         expect(events.last.text, 'muda o PROJ-123 pra concluído');
-        expect(engine.receivedChunks, <List<int>>[
-          <int>[0, 1, 2],
+        expect(engine.receivedChunks, <Uint8List>[
+          Uint8List.fromList(<int>[0, 1, 2]),
         ]);
       },
     );
@@ -376,7 +389,7 @@ void main() {
       // `asFuture` would intercept the error before onError sees it, so the
       // subscription is drained through an explicit onDone instead.
       engine
-          .start(const Stream<List<int>>.empty())
+          .start(const Stream<Uint8List>.empty())
           .listen(
             received.add,
             onError: (Object e) => error = e,

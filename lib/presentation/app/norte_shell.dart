@@ -31,11 +31,25 @@ class NorteShell extends StatelessWidget {
     required this.onDestinationSelected,
     required this.child,
     super.key,
+    this.onVoicePressed,
+    this.voicePanel,
   });
 
   final int currentIndex;
   final ValueChanged<int> onDestinationSelected;
   final Widget child;
+
+  /// Starts a voice session. `null` leaves the button inert, which is what the
+  /// navigation golden test renders.
+  final VoidCallback? onVoicePressed;
+
+  /// The `VoiceOverlay` or `ConfirmSheet`, when a session is running.
+  ///
+  /// Anchored to the bottom **over** the content rather than replacing it: a
+  /// voice command is something the user does while looking at their tasks,
+  /// and a full-screen takeover would hide the very list they are talking
+  /// about (`docs/design-system.md` §4).
+  final Widget? voicePanel;
 
   /// Destinations in branch order: Tasks, Meetings, Reminders, Settings.
   static List<NorteDestination> destinationsOf(AppLocalizations l10n) =>
@@ -54,6 +68,23 @@ class NorteShell extends StatelessWidget {
     final isDesktop =
         MediaQuery.sizeOf(context).width >= NorteSpacing.desktopBreakpoint;
 
+    // The Stack is always here, even with nothing to put in it. Wrapping the
+    // shell only when a panel exists would re-parent the whole navigation
+    // subtree the moment the user speaks — rebuilding every screen, dropping
+    // their scroll positions, and re-subscribing every database stream behind
+    // them. An empty second child costs one `SizedBox`.
+    final content = Stack(
+      children: <Widget>[
+        Positioned.fill(child: child),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: voicePanel ?? const SizedBox.shrink(),
+        ),
+      ],
+    );
+
     if (isDesktop) {
       return Scaffold(
         backgroundColor: colors.bg,
@@ -66,7 +97,10 @@ class NorteShell extends StatelessWidget {
               labelType: NavigationRailLabelType.all,
               leading: Padding(
                 padding: const EdgeInsets.symmetric(vertical: NorteSpacing.lg),
-                child: VoiceButton(semanticLabel: l10n.voiceCommandLabel),
+                child: VoiceButton(
+                  semanticLabel: l10n.voiceCommandLabel,
+                  onPressed: onVoicePressed,
+                ),
               ),
               destinations: <NavigationRailDestination>[
                 for (final destination in destinations)
@@ -81,7 +115,7 @@ class NorteShell extends StatelessWidget {
               thickness: NorteSpacing.borderWidth,
               color: colors.border,
             ),
-            Expanded(child: child),
+            Expanded(child: content),
           ],
         ),
       );
@@ -89,8 +123,11 @@ class NorteShell extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: colors.bg,
-      body: child,
-      floatingActionButton: VoiceButton(semanticLabel: l10n.voiceCommandLabel),
+      body: content,
+      floatingActionButton: VoiceButton(
+        semanticLabel: l10n.voiceCommandLabel,
+        onPressed: onVoicePressed,
+      ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: DecoratedBox(
         decoration: BoxDecoration(

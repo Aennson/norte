@@ -182,8 +182,11 @@ void main() {
       },
     );
 
-    test('the schema version is 3', () {
-      expect(database.schemaVersion, 3);
+    test('the schema version is 4', () {
+      // Bumped by Sprint 05, which adds `reminders` and `settings`. The
+      // assertion is deliberately literal: a migration added without moving
+      // this number is a migration that never runs on a user's device.
+      expect(database.schemaVersion, 4);
     });
   });
 

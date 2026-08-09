@@ -632,4 +632,145 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsWhisperConfigured => 'Key configured';
+
+  @override
+  String get voiceConnecting => 'Connecting…';
+
+  @override
+  String get voiceListening => 'Listening…';
+
+  @override
+  String get voiceUnderstanding => 'Understanding…';
+
+  @override
+  String get voiceStop => 'Stop';
+
+  @override
+  String get voiceNotUnderstood =>
+      'I did not catch a command. Try saying it another way.';
+
+  @override
+  String get voiceConfirmTitle => 'Confirm this action';
+
+  @override
+  String get voiceReasonJiraWrite =>
+      'Jira writes always ask first. You can change this in Settings.';
+
+  @override
+  String get voiceReasonLowConfidence =>
+      'I am not certain I understood. Check it before it runs.';
+
+  @override
+  String voiceConfidenceLabel(int percent) {
+    return 'Confidence $percent%';
+  }
+
+  @override
+  String get voiceAskIssueKey => 'Which ticket?';
+
+  @override
+  String get voiceAskTransition => 'Which status?';
+
+  @override
+  String get voiceAskComment => 'What should the comment say?';
+
+  @override
+  String get voiceAskTitle => 'What should the task be called?';
+
+  @override
+  String get voiceAskText => 'What should I remind you about?';
+
+  @override
+  String get voiceAskTriggerAt => 'For when?';
+
+  @override
+  String voiceActionUpdateJira(String issueKey, String transition) {
+    return '$issueKey → $transition';
+  }
+
+  @override
+  String voiceActionAddComment(String issueKey, String comment) {
+    return 'Comment on $issueKey: $comment';
+  }
+
+  @override
+  String voiceActionCreateTask(String title) {
+    return 'New task: $title';
+  }
+
+  @override
+  String voiceActionCreateReminder(String text, String triggerAt) {
+    return 'Remind $text — $triggerAt';
+  }
+
+  @override
+  String voiceActionQueryStatus(String issueKey) {
+    return 'Status of $issueKey';
+  }
+
+  @override
+  String get voiceDoneTask => 'Task created';
+
+  @override
+  String get voiceDoneQueued => 'Queued for Jira';
+
+  @override
+  String get voiceDoneReminder => 'Reminder created';
+
+  @override
+  String voiceDoneStatus(String issueKey, String status) {
+    return '$issueKey is $status';
+  }
+
+  @override
+  String voiceErrorNotLinked(String issueKey) {
+    return 'No task here is linked to $issueKey.';
+  }
+
+  @override
+  String get settingsVoiceSection => 'Voice';
+
+  @override
+  String get settingsVoiceDescription =>
+      'How spoken commands behave before they change anything.';
+
+  @override
+  String get settingsAlwaysConfirmJira => 'Always confirm Jira writes';
+
+  @override
+  String get settingsAlwaysConfirmJiraDescription =>
+      'Ask before every spoken transition or comment, however sure the app is. Low-confidence commands always ask, whatever this is set to.';
+
+  @override
+  String get settingsScribeKeyField => 'Realtime voice API key';
+
+  @override
+  String get settingsScribeDescription =>
+      'Your ElevenLabs Scribe key, used only for voice commands. It is a different service from the transcription key above — meetings go to Whisper, spoken commands go to Scribe, and each keeps its own key.';
+
+  @override
+  String get settingsScribeConfigured => 'Realtime key configured';
+
+  @override
+  String get settingsScribeNotConfigured =>
+      'No realtime key — voice commands will not run';
+
+  @override
+  String get voiceMeterLabel => 'Microphone level';
+
+  @override
+  String get voiceNoAudio => 'The microphone is open but no sound is arriving.';
+
+  @override
+  String get voiceReconnecting => 'Connection lost — reconnecting…';
+
+  @override
+  String get voiceTimeUnsupported =>
+      'This app cannot work out that time yet. Try \"in 20 minutes\".';
+
+  @override
+  String get voiceFailed => 'Stopped';
+
+  @override
+  String get settingsScribeKeyHint => 'sk_...';
 }
