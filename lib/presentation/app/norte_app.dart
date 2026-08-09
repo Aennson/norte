@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../l10n/generated/app_localizations.dart';
+import '../reminders/reminder_providers.dart';
 import '../shared/theme/norte_theme.dart';
 import 'norte_router.dart';
 
@@ -44,8 +46,45 @@ class _NorteAppState extends State<NorteApp> {
       supportedLocales: AppLocalizations.supportedLocales,
       localeResolutionCallback: resolveNorteLocale,
       routerConfig: _router,
+      builder: (BuildContext context, Widget? child) =>
+          _LocaleBinder(child: child ?? const SizedBox.shrink()),
     );
   }
+}
+
+/// Publishes the locale `MaterialApp` resolved into [appLocaleProvider].
+///
+/// This exists because the answer is only known *below* `MaterialApp`, and two
+/// things that live outside the widget tree need it — the reminder
+/// notification's title and the language the speech model is told to expect
+/// (BR-11).
+///
+/// The write is deferred to after the frame. Riverpod refuses a state change
+/// made while the tree is building, and `didChangeDependencies` runs inside
+/// that phase; one frame of the English fallback costs nothing, because
+/// nothing reads the locale before a user has done something.
+class _LocaleBinder extends ConsumerStatefulWidget {
+  const _LocaleBinder({required this.child});
+
+  final Widget child;
+
+  @override
+  ConsumerState<_LocaleBinder> createState() => _LocaleBinderState();
+}
+
+class _LocaleBinderState extends ConsumerState<_LocaleBinder> {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final Locale locale = Localizations.localeOf(context);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(appLocaleProvider.notifier).set(locale);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 /// Resolves [deviceLocale] against the supported locales, matching by language

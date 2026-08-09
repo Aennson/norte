@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:norte/application/usecases/add_jira_comment.dart';
 import 'package:norte/application/usecases/comment_task.dart';
-import 'package:norte/application/usecases/create_reminder.dart';
+import 'package:norte/application/usecases/create_voice_reminder.dart';
 import 'package:norte/application/usecases/create_task.dart';
 import 'package:norte/application/usecases/delete_task.dart';
 import 'package:norte/application/usecases/refresh_jira_status.dart';
@@ -29,7 +29,7 @@ class _SpyDeleteTask extends Mock implements DeleteTask {}
 
 class _SpyCommentTask extends Mock implements CommentTask {}
 
-class _SpyCreateReminder extends Mock implements CreateReminder {}
+class _SpyCreateReminder extends Mock implements CreateVoiceReminder {}
 
 class _SpyUpdateJiraStatus extends Mock implements UpdateJiraStatus {}
 

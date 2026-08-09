@@ -842,4 +842,70 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get settingsScribeKeyHint => 'sk_...';
+
+  @override
+  String get reminderNotificationTitle => 'Promemoria';
+
+  @override
+  String get remindersUpcoming => 'Prossimi';
+
+  @override
+  String get remindersPast => 'Passati';
+
+  @override
+  String get remindersHold => 'Tieni premuto per parlare';
+
+  @override
+  String get remindersListening => 'In ascolto…';
+
+  @override
+  String remindersSecondsLeft(int seconds) {
+    return '${seconds}s rimasti';
+  }
+
+  @override
+  String get remindersLimitReached =>
+      'Il limite è 15 secondi — è tutto quello che ho sentito.';
+
+  @override
+  String get remindersTypeInstead => 'Scrivilo invece';
+
+  @override
+  String get remindersTextLabel => 'Ricordami di…';
+
+  @override
+  String get remindersTimeLabel => 'Quando?';
+
+  @override
+  String get remindersTimeHint => 'tra 20 minuti';
+
+  @override
+  String get remindersCreate => 'Crea promemoria';
+
+  @override
+  String get remindersCancel => 'Annulla promemoria';
+
+  @override
+  String get remindersCancelled => 'Promemoria annullato';
+
+  @override
+  String get remindersTimePassed => 'Quell\'orario è già passato.';
+
+  @override
+  String get remindersTimeUnreadable =>
+      'Non sono riuscito a capire quell\'orario. Prova \"tra 20 minuti\".';
+
+  @override
+  String get remindersNotPermitted =>
+      'Le notifiche sono disattivate, quindi questo promemoria non suonerà. È stato salvato.';
+
+  @override
+  String get remindersLoadFailed =>
+      'Non è stato possibile caricare i promemoria.';
+
+  @override
+  String get remindersRetry => 'Riprova';
+
+  @override
+  String get remindersFired => 'Consegnato';
 }

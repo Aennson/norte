@@ -28,6 +28,7 @@ import 'presentation/app/norte_app.dart';
 import 'presentation/jira/jira_providers.dart';
 import 'presentation/meetings/meeting_providers.dart';
 import 'presentation/tasks/task_providers.dart';
+import 'presentation/reminders/reminder_providers.dart';
 import 'presentation/voice/voice_providers.dart';
 
 /// Composition root.

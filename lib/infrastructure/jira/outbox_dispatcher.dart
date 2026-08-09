@@ -221,6 +221,9 @@ class OutboxDispatcher {
     AlreadyConvertedFailure() ||
     TranscriptionFailure() ||
     MicrophonePermissionFailure() ||
-    RecordingFailure() => false,
+    RecordingFailure() ||
+    // Sprint 06's reminder failure lands here for the same reason: a queued
+    // Jira operation has no trigger time to be wrong about.
+    InvalidTriggerTimeFailure() => false,
   };
 }

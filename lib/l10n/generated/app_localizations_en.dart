@@ -834,4 +834,69 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsScribeKeyHint => 'sk_...';
+
+  @override
+  String get reminderNotificationTitle => 'Reminder';
+
+  @override
+  String get remindersUpcoming => 'Upcoming';
+
+  @override
+  String get remindersPast => 'Past';
+
+  @override
+  String get remindersHold => 'Hold to speak';
+
+  @override
+  String get remindersListening => 'Listening…';
+
+  @override
+  String remindersSecondsLeft(int seconds) {
+    return '${seconds}s left';
+  }
+
+  @override
+  String get remindersLimitReached =>
+      '15 seconds is the limit — that is all I heard.';
+
+  @override
+  String get remindersTypeInstead => 'Type it instead';
+
+  @override
+  String get remindersTextLabel => 'Remind me to…';
+
+  @override
+  String get remindersTimeLabel => 'When?';
+
+  @override
+  String get remindersTimeHint => 'in 20 minutes';
+
+  @override
+  String get remindersCreate => 'Create reminder';
+
+  @override
+  String get remindersCancel => 'Cancel reminder';
+
+  @override
+  String get remindersCancelled => 'Reminder cancelled';
+
+  @override
+  String get remindersTimePassed => 'That time has already passed.';
+
+  @override
+  String get remindersTimeUnreadable =>
+      'I could not work out that time. Try \"in 20 minutes\".';
+
+  @override
+  String get remindersNotPermitted =>
+      'Notifications are switched off, so this reminder will not sound. It is saved.';
+
+  @override
+  String get remindersLoadFailed => 'The reminders could not be loaded.';
+
+  @override
+  String get remindersRetry => 'Try again';
+
+  @override
+  String get remindersFired => 'Delivered';
 }

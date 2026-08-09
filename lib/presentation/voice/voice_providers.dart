@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../application/usecases/create_reminder.dart';
 import '../../application/voice/intent_parser.dart';
 import '../../application/voice/intent_router.dart';
 import '../../domain/entities/intent_context.dart';
@@ -13,12 +13,12 @@ import '../../domain/entities/voice_settings.dart';
 import '../../domain/failures/failure.dart';
 import '../../domain/failures/result.dart';
 import '../../domain/ports/microphone.dart';
-import '../../domain/ports/reminder_repository.dart';
 import '../../domain/ports/transcription_credential_store.dart';
 import '../../domain/ports/transcription_engine.dart';
 import '../../domain/ports/voice_settings_store.dart';
 import '../jira/jira_providers.dart';
 import '../meetings/meeting_providers.dart';
+import '../reminders/reminder_providers.dart';
 import '../tasks/task_providers.dart';
 import '../../domain/services/text_match.dart';
 import 'audio_level.dart';
@@ -61,12 +61,6 @@ final Provider<VoiceSettingsStore> voiceSettingsStoreProvider =
       (Ref ref) => throw UnimplementedError('wired in main.dart'),
     );
 
-/// Storage for reminders. Overridden in the composition root.
-final Provider<ReminderRepository> reminderRepositoryProvider =
-    Provider<ReminderRepository>(
-      (Ref ref) => throw UnimplementedError('wired in main.dart'),
-    );
-
 /// Where the session writes what it decided, for the manual pass.
 ///
 /// The engine and the microphone each got a log when their step turned out to
@@ -103,15 +97,6 @@ final FutureProvider<VoiceSettings> voiceSettingsProvider =
       (Ref ref) => ref.watch(voiceSettingsStoreProvider).read(),
     );
 
-final Provider<CreateReminder> createReminderProvider =
-    Provider<CreateReminder>(
-      (Ref ref) => CreateReminder(
-        repository: ref.watch(reminderRepositoryProvider),
-        clock: ref.watch(clockProvider),
-        idGenerator: ref.watch(idGeneratorProvider),
-      ),
-    );
-
 final Provider<IntentParser> intentParserProvider = Provider<IntentParser>(
   (Ref ref) => IntentParser(engine: ref.watch(aiEngineProvider)),
 );
@@ -123,7 +108,7 @@ final Provider<IntentRouter> intentRouterProvider = Provider<IntentRouter>(
     updateTask: ref.watch(updateTaskProvider),
     deleteTask: ref.watch(deleteTaskProvider),
     commentTask: ref.watch(commentTaskProvider),
-    createReminder: ref.watch(createReminderProvider),
+    createReminder: ref.watch(createVoiceReminderProvider),
     updateJiraStatus: ref.watch(updateJiraStatusProvider),
     addJiraComment: ref.watch(addJiraCommentProvider),
     refreshJiraStatus: ref.watch(refreshJiraStatusProvider),
@@ -691,13 +676,27 @@ class VoiceSession extends Notifier<VoiceSessionState> {
 
 /// BCP-47 tag of the language voice commands are expected in.
 ///
-/// Overridden by the widget layer with the resolved app locale. It is a
-/// provider rather than a `BuildContext` lookup because the session lives
-/// outside the widget tree, and a pipeline that read the locale from a context
-/// would be a pipeline that could not run without one.
-final Provider<String> voiceLocaleProvider = Provider<String>(
-  (Ref ref) => 'pt-BR',
-);
+/// Derived from [appLocaleProvider], which `NorteApp` overrides once
+/// `MaterialApp` has resolved the device locale (BR-11). It was a standalone
+/// provider defaulting to `pt-BR` and nothing ever overrode it, so a user
+/// running the app in English or Italian had their speech parsed as
+/// Portuguese — `sprint-05` handoff §6 recorded it open. Deriving it means
+/// there is one answer to "what language is this user in" rather than two that
+/// can disagree.
+/// The ARB files are per-language — `pt`, not `pt-BR` — but a speech model
+/// wants the region: "pt" and "pt-BR" are not the same accent, and Norte's
+/// Portuguese is Brazilian. These three tags are what the resolved language
+/// means when it is spoken.
+const Map<String, String> _spokenTags = <String, String>{
+  'en': 'en-US',
+  'it': 'it-IT',
+  'pt': 'pt-BR',
+};
+
+final Provider<String> voiceLocaleProvider = Provider<String>((Ref ref) {
+  final Locale locale = ref.watch(appLocaleProvider);
+  return _spokenTags[locale.languageCode] ?? locale.toLanguageTag();
+});
 
 final NotifierProvider<VoiceSession, VoiceSessionState> voiceSessionProvider =
     NotifierProvider<VoiceSession, VoiceSessionState>(VoiceSession.new);

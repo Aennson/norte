@@ -95,6 +95,24 @@ final class ValidationFailure extends Failure {
   final String? field;
 }
 
+/// A reminder was asked for at an instant that has already passed.
+///
+/// Distinct from [ValidationFailure] because the input was *understood* — the
+/// slot parsed, the zone applied, the instant is real — and the user's next
+/// move is to say a different time rather than to say it differently
+/// (`sprint-06` validation rules, S06-UT-02). Nothing is persisted and nothing
+/// is scheduled when this is returned.
+final class InvalidTriggerTimeFailure extends Failure {
+  const InvalidTriggerTimeFailure({required this.triggerAt, required this.now})
+    : super('the reminder time has already passed');
+
+  /// The instant that was asked for, in UTC.
+  final DateTime triggerAt;
+
+  /// What the clock read when it was judged, in UTC.
+  final DateTime now;
+}
+
 /// The local database could not complete an operation.
 final class StorageFailure extends Failure {
   const StorageFailure([super.message = 'local storage failure']);

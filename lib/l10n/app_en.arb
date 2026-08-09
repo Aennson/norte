@@ -1148,5 +1148,90 @@
   "settingsScribeKeyHint": "sk_...",
   "@settingsScribeKeyHint": {
     "description": "Placeholder of the Scribe key field. ElevenLabs keys start with sk_, unlike the Claude key's sk-ant-."
+  },
+  "reminderNotificationTitle": "Reminder",
+  "@reminderNotificationTitle": {
+    "description": "Title of a reminder's local notification. Short: some platforms truncate it hard."
+  },
+  "remindersUpcoming": "Upcoming",
+  "@remindersUpcoming": {
+    "description": "Section header for reminders whose time has not come."
+  },
+  "remindersPast": "Past",
+  "@remindersPast": {
+    "description": "Section header for reminders whose time has passed."
+  },
+  "remindersHold": "Hold to speak",
+  "@remindersHold": {
+    "description": "Label of the push-to-talk button on the reminders screen."
+  },
+  "remindersListening": "Listening…",
+  "@remindersListening": {
+    "description": "Shown while a push-to-talk capture is running."
+  },
+  "remindersSecondsLeft": "{seconds}s left",
+  "@remindersSecondsLeft": {
+    "description": "Countdown of the 15s push-to-talk limit.",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "remindersLimitReached": "15 seconds is the limit — that is all I heard.",
+  "@remindersLimitReached": {
+    "description": "Shown when push-to-talk cut the capture off at its limit."
+  },
+  "remindersTypeInstead": "Type it instead",
+  "@remindersTypeInstead": {
+    "description": "Opens the manual fallback for creating a reminder without speaking."
+  },
+  "remindersTextLabel": "Remind me to…",
+  "@remindersTextLabel": {
+    "description": "Label of the reminder text field."
+  },
+  "remindersTimeLabel": "When?",
+  "@remindersTimeLabel": {
+    "description": "Label of the reminder time field."
+  },
+  "remindersTimeHint": "in 20 minutes",
+  "@remindersTimeHint": {
+    "description": "Placeholder of the reminder time field."
+  },
+  "remindersCreate": "Create reminder",
+  "@remindersCreate": {
+    "description": "Confirms manual creation of a reminder."
+  },
+  "remindersCancel": "Cancel reminder",
+  "@remindersCancel": {
+    "description": "Cancels a reminder and its notification."
+  },
+  "remindersCancelled": "Reminder cancelled",
+  "@remindersCancelled": {
+    "description": "Feedback after a reminder was cancelled."
+  },
+  "remindersTimePassed": "That time has already passed.",
+  "@remindersTimePassed": {
+    "description": "Shown when the requested reminder time is in the past."
+  },
+  "remindersTimeUnreadable": "I could not work out that time. Try \"in 20 minutes\".",
+  "@remindersTimeUnreadable": {
+    "description": "Shown when the reminder time could not be read at all."
+  },
+  "remindersNotPermitted": "Notifications are switched off, so this reminder will not sound. It is saved.",
+  "@remindersNotPermitted": {
+    "description": "Shown when the platform refused to schedule, after the reminder was stored."
+  },
+  "remindersLoadFailed": "The reminders could not be loaded.",
+  "@remindersLoadFailed": {
+    "description": "Error state of the reminders screen."
+  },
+  "remindersRetry": "Try again",
+  "@remindersRetry": {
+    "description": "Retries loading the reminders."
+  },
+  "remindersFired": "Delivered",
+  "@remindersFired": {
+    "description": "Badge on a reminder whose notification has already fired."
   }
 }

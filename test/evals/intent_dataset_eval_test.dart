@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:norte/application/usecases/add_jira_comment.dart';
 import 'package:norte/application/usecases/comment_task.dart';
-import 'package:norte/application/usecases/create_reminder.dart';
+import 'package:norte/application/usecases/create_voice_reminder.dart';
 import 'package:norte/application/usecases/create_task.dart';
 import 'package:norte/application/usecases/delete_task.dart';
 import 'package:norte/application/usecases/refresh_jira_status.dart';
@@ -17,6 +17,7 @@ import 'package:norte/domain/entities/task.dart';
 import 'package:norte/domain/entities/voice_intent.dart';
 import 'package:norte/domain/entities/voice_settings.dart';
 import 'package:norte/domain/failures/result.dart';
+import 'package:norte/domain/ports/time_zone.dart';
 
 import '../fakes/fakes.dart';
 import '../support/task_fixtures.dart';
@@ -51,10 +52,13 @@ IntentRouter _routerOver(FakeTaskRepository tasks) {
     updateTask: UpdateTask(repository: tasks, clock: clock),
     deleteTask: DeleteTask(repository: tasks),
     commentTask: CommentTask(repository: tasks, clock: clock, idGenerator: ids),
-    createReminder: CreateReminder(
+    createReminder: CreateVoiceReminder(
       repository: FakeReminderRepository(),
+      scheduler: FakeNotificationScheduler(),
       clock: clock,
+      zone: const FixedOffsetTimeZone.utc(),
       idGenerator: ids,
+      copy: const FakeReminderNotificationCopy(),
     ),
     updateJiraStatus: UpdateJiraStatus(
       outbox: outbox,

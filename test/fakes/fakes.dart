@@ -18,6 +18,7 @@ export 'fake_meeting_template_repository.dart';
 export 'fake_notification_scheduler.dart';
 export 'fake_outbox_repository.dart';
 export 'fake_realtime_transcription.dart';
+export 'fake_reminder_notification_copy.dart';
 export 'fake_reminder_repository.dart';
 export 'fake_transcription_credential_store.dart';
 export 'fake_voice_settings_store.dart';
