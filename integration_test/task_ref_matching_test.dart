@@ -23,6 +23,7 @@ import 'package:norte/presentation/voice/widgets/voice_overlay.dart';
 
 import '../test/fakes/fake_ai_engine.dart';
 import '../test/fakes/fake_clock.dart';
+import '../test/fakes/fake_notification_scheduler.dart';
 import '../test/fakes/fake_jira_gateway.dart';
 import '../test/fakes/fake_microphone.dart';
 import '../test/fakes/fake_realtime_transcription.dart';
@@ -88,6 +89,9 @@ void main() {
           microphoneProvider.overrideWithValue(microphone),
           realtimeTranscriptionProvider.overrideWithValue(realtime),
           reminderRepositoryProvider.overrideWithValue(reminders),
+          notificationSchedulerProvider.overrideWithValue(
+            FakeNotificationScheduler(),
+          ),
           voiceSettingsStoreProvider.overrideWithValue(voiceSettings),
           clockProvider.overrideWithValue(FakeClock(t0)),
         ],

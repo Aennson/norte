@@ -1,9 +1,15 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:windows_notification/windows_notification.dart';
 
 import 'domain/ports/clock.dart';
+import 'domain/ports/notification_scheduler.dart';
 import 'infrastructure/ai/claude_api_engine.dart';
 import 'infrastructure/ai/secure_ai_credential_store.dart';
 import 'infrastructure/jira/jira_rest_adapter.dart';
@@ -17,9 +23,12 @@ import 'infrastructure/persistence/drift_task_repository.dart';
 import 'infrastructure/persistence/drift_voice_settings_store.dart';
 import 'infrastructure/persistence/norte_database.dart';
 import 'infrastructure/persistence/norte_database_factory.dart';
+import 'infrastructure/platform/local_notification_scheduler.dart';
+import 'infrastructure/platform/platform_time_zone.dart';
 import 'infrastructure/platform/record_audio_recorder.dart';
 import 'infrastructure/platform/record_pcm_microphone.dart';
 import 'infrastructure/platform/temp_audio_store.dart';
+import 'infrastructure/platform/windows_toast_scheduler.dart';
 import 'infrastructure/transcription/scribe_realtime_engine.dart';
 import 'infrastructure/transcription/secure_transcription_credential_store.dart';
 import 'infrastructure/transcription/whisper_batch_engine.dart';
@@ -30,6 +39,10 @@ import 'presentation/meetings/meeting_providers.dart';
 import 'presentation/tasks/task_providers.dart';
 import 'presentation/reminders/reminder_providers.dart';
 import 'presentation/voice/voice_providers.dart';
+
+/// Application User Model ID for the Windows toast (`docs/architecture.md`
+/// §12).
+const String _windowsApplicationId = 'com.norte.app';
 
 /// Composition root.
 ///
@@ -111,6 +124,50 @@ Future<void> main() async {
     database,
   );
 
+  // The zone the reminder grammar resolves against, and the one
+  // `flutter_local_notifications` schedules in — the same database, so the row
+  // and the toast can never land an hour apart (`docs/architecture.md` §8).
+  final PlatformTimeZone zone = await PlatformTimeZone.load();
+
+  // The container is built below, and the tap callbacks need to reach it, so
+  // they are given a late reference rather than the container itself: a
+  // notification cannot be tapped before the app has started.
+  late final ProviderContainer container;
+  void openReminder(String id) =>
+      container.read(reminderDeepLinkProvider.notifier).open(id);
+
+  // §12 — `flutter_local_notifications` on Android and iOS, a WinRT toast on
+  // Windows. Only one of the two is ever constructed: the mobile plugin has no
+  // Windows implementation to resolve and the toast adapter's timers are
+  // pointless where the OS keeps the schedule itself.
+  final NotificationScheduler notifications;
+  LocalNotificationScheduler? mobileNotifications;
+  if (Platform.isWindows) {
+    final WindowsToastScheduler toasts = WindowsToastScheduler(
+      // The AUMID Windows files toasts under. It has to match the shortcut
+      // the installer creates, or WinRT accepts the toast and shows nothing —
+      // a failure with no error attached, which is why it is a named constant
+      // rather than a literal three call-sites deep.
+      notifier: WindowsNotification(applicationId: _windowsApplicationId),
+      clock: const SystemClock(),
+      onTapped: openReminder,
+    );
+    await toasts.initialize();
+    notifications = toasts;
+  } else {
+    mobileNotifications = LocalNotificationScheduler(
+      plugin: FlutterLocalNotificationsPlugin(),
+      channelId: 'norte.reminders',
+      // Not a user-facing string in the ARB sense: Android shows it in the
+      // system's notification settings, which the app cannot re-render when
+      // the locale changes, so a stable name beats a translated one.
+      channelName: 'Norte',
+      onTapped: openReminder,
+    );
+    await mobileNotifications.initialize(androidIcon: '@mipmap/ic_launcher');
+    notifications = mobileNotifications;
+  }
+
   final OutboxDispatcher dispatcher = OutboxDispatcher(
     outbox: outbox,
     gateway: jira,
@@ -122,7 +179,7 @@ Future<void> main() async {
   // in-app timer started below (`docs/architecture.md` §12).
   await registerJiraBackgroundSync();
 
-  final ProviderContainer container = ProviderContainer(
+  container = ProviderContainer(
     overrides: <Override>[
       taskRepositoryProvider.overrideWithValue(tasks),
       outboxRepositoryProvider.overrideWithValue(outbox),
@@ -144,10 +201,24 @@ Future<void> main() async {
       realtimeTranscriptionProvider.overrideWithValue(scribe),
       realtimeCredentialStoreProvider.overrideWithValue(scribeCredentials),
       reminderRepositoryProvider.overrideWithValue(reminders),
+      notificationSchedulerProvider.overrideWithValue(notifications),
+      timeZoneProvider.overrideWithValue(zone),
       voiceSettingsStoreProvider.overrideWithValue(voiceSettings),
     ],
   );
   container.read(jiraSyncControllerProvider).start();
+
+  // §12 — the check when the app opens. Everything that fell due while Norte
+  // was shut is delivered now, and everything still to come is re-registered.
+  // Unawaited: the first frame does not wait on the notification platform.
+  unawaited(container.read(checkDueRemindersProvider)());
+
+  // A notification tapped while the app was **closed** never reaches the
+  // callback above — it launches the process instead, and the tap is only
+  // recorded here. Missing it is how a deep link works perfectly in testing
+  // and never once from a cold start.
+  final String? launchedBy = await mobileNotifications?.launchedByReminder();
+  if (launchedBy != null) openReminder(launchedBy);
 
   runApp(
     UncontrolledProviderScope(container: container, child: const NorteApp()),

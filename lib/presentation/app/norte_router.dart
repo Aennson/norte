@@ -5,6 +5,7 @@ import '../meetings/meetings_screen.dart';
 import '../meetings/new_meeting_screen.dart';
 import '../meetings/record_meeting_screen.dart';
 import '../meetings/summary_screen.dart';
+import '../reminders/reminder_detail_screen.dart';
 import '../reminders/reminders_screen.dart';
 import '../settings/settings_screen.dart';
 import '../tasks/tasks_screen.dart';
@@ -86,6 +87,19 @@ GoRouter buildNorteRouter({String initialLocation = NorteRoutes.tasks}) {
               GoRoute(
                 path: NorteRoutes.reminders,
                 builder: (_, _) => const RemindersScreen(),
+                // Nested, so a notification tapped from another destination
+                // lands inside the reminders branch with the list behind it —
+                // a deep link that left the user nowhere to go back to would
+                // be a dead end, which is the same reasoning as the meeting
+                // composer above.
+                routes: <RouteBase>[
+                  GoRoute(
+                    path: ReminderDetailScreen.routeSegment,
+                    builder: (_, GoRouterState state) => ReminderDetailScreen(
+                      reminderId: state.pathParameters['id']!,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

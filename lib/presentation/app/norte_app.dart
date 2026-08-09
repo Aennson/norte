@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../l10n/generated/app_localizations.dart';
+import '../reminders/reminder_detail_screen.dart';
 import '../reminders/reminder_providers.dart';
 import '../shared/theme/norte_theme.dart';
 import 'norte_router.dart';
@@ -46,8 +47,12 @@ class _NorteAppState extends State<NorteApp> {
       supportedLocales: AppLocalizations.supportedLocales,
       localeResolutionCallback: resolveNorteLocale,
       routerConfig: _router,
-      builder: (BuildContext context, Widget? child) =>
-          _LocaleBinder(child: child ?? const SizedBox.shrink()),
+      builder: (BuildContext context, Widget? child) => _LocaleBinder(
+        child: _ReminderDeepLinkListener(
+          router: _router,
+          child: child ?? const SizedBox.shrink(),
+        ),
+      ),
     );
   }
 }
@@ -85,6 +90,30 @@ class _LocaleBinderState extends ConsumerState<_LocaleBinder> {
 
   @override
   Widget build(BuildContext context) => widget.child;
+}
+
+/// Navigates to the reminder a notification asked for (`sprint-06` scope).
+///
+/// It watches a provider rather than being called by the scheduler, because
+/// the tap can arrive before there is a router to call: from a toast raised
+/// during startup, or from the tap that launched the process. The mailbox
+/// holds the request until something can act on it, and is cleared once
+/// something has — so a rebuild cannot navigate twice.
+class _ReminderDeepLinkListener extends ConsumerWidget {
+  const _ReminderDeepLinkListener({required this.router, required this.child});
+
+  final GoRouter router;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen<String?>(reminderDeepLinkProvider, (String? _, String? next) {
+      if (next == null) return;
+      router.go(ReminderDetailScreen.locationOf(next));
+      ref.read(reminderDeepLinkProvider.notifier).clear();
+    });
+    return child;
+  }
 }
 
 /// Resolves [deviceLocale] against the supported locales, matching by language

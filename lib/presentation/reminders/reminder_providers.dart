@@ -104,6 +104,27 @@ final Provider<CheckDueReminders> checkDueRemindersProvider =
       ),
     );
 
+/// The reminder a notification asked the app to open, until it has been.
+///
+/// A one-shot mailbox rather than a navigation call, because the tap arrives
+/// from a platform callback that has no `BuildContext` and may fire before the
+/// router exists at all — a toast raised during startup, or the tap that
+/// launched the process. `NorteApp` drains it and navigates.
+final NotifierProvider<ReminderDeepLink, String?> reminderDeepLinkProvider =
+    NotifierProvider<ReminderDeepLink, String?>(ReminderDeepLink.new);
+
+/// Holder for [reminderDeepLinkProvider].
+class ReminderDeepLink extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  /// Asks for the reminder with [id] to be opened.
+  void open(String id) => state = id;
+
+  /// Marks the request as handled, so a rebuild does not navigate twice.
+  void clear() => state = null;
+}
+
 /// Every stored reminder, live.
 ///
 /// Unsorted, as the port's contract says: the screen splits them into upcoming

@@ -119,6 +119,9 @@ void main() {
       microphoneProvider.overrideWithValue(microphone),
       realtimeTranscriptionProvider.overrideWithValue(realtime),
       reminderRepositoryProvider.overrideWithValue(reminders),
+      notificationSchedulerProvider.overrideWithValue(
+        FakeNotificationScheduler(),
+      ),
       voiceSettingsStoreProvider.overrideWithValue(settings),
       realtimeCredentialStoreProvider.overrideWithValue(scribeKey),
       clockProvider.overrideWithValue(clock),
