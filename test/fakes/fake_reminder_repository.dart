@@ -13,6 +13,21 @@ import 'package:norte/domain/ports/reminder_repository.dart';
 /// pass every unit test and fail only in production, which is the one place
 /// nobody is watching for it.
 class FakeReminderRepository implements ReminderRepository {
+  FakeReminderRepository([List<Reminder> initial = const <Reminder>[]])
+    : _mode = _Mode.data {
+    for (final Reminder reminder in initial) {
+      reminders[reminder.id] = reminder;
+    }
+  }
+
+  /// Every read fails — drives the screen's error state.
+  FakeReminderRepository.failing() : _mode = _Mode.failing;
+
+  /// Never emits — drives the screen's loading state.
+  FakeReminderRepository.pending() : _mode = _Mode.pending;
+
+  final _Mode _mode;
+
   /// Every reminder stored, keyed by id.
   final Map<String, Reminder> reminders = <String, Reminder>{};
 
@@ -30,8 +45,19 @@ class FakeReminderRepository implements ReminderRepository {
 
   @override
   Stream<List<Reminder>> watchAll() {
-    scheduleMicrotask(_emit);
-    return _controller.stream;
+    switch (_mode) {
+      case _Mode.pending:
+        // Never emits and never closes — the screen stays in its loading
+        // state for as long as the test needs it to.
+        return _controller.stream;
+      case _Mode.failing:
+        return Stream<List<Reminder>>.error(
+          const StorageFailure('fake repository failure'),
+        );
+      case _Mode.data:
+        scheduleMicrotask(_emit);
+        return _controller.stream;
+    }
   }
 
   @override
@@ -75,3 +101,6 @@ class FakeReminderRepository implements ReminderRepository {
     if (failure != null) throw failure;
   }
 }
+
+/// Which of the three list states this fake is standing in for.
+enum _Mode { data, failing, pending }
