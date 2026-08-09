@@ -175,9 +175,9 @@ class VoiceSessionState {
   /// `true` when the utterance was not understood — a state, not an error.
   final bool notUnderstood;
 
-  /// Committed speech → intent ready, for the diagnostics log
+  /// The last command's latency, broken down by the service that spent it
   /// (`sprint-05` validation rules).
-  final Duration? latency;
+  final VoiceLatencySample? latency;
 
   /// Input level in `0.0..1.0`, measured from the PCM actually captured.
   ///
@@ -208,7 +208,7 @@ class VoiceSessionState {
     IntentExecuted? executed,
     Failure? failure,
     bool? notUnderstood,
-    Duration? latency,
+    VoiceLatencySample? latency,
     double? level,
     int? framesHeard,
     bool clearPartial = false,
@@ -249,6 +249,19 @@ class VoiceSession extends Notifier<VoiceSessionState> {
   /// When the last committed segment arrived, for the latency measurement.
   DateTime? _committedAt;
 
+  /// When the most recent partial of the segment being spoken arrived.
+  ///
+  /// The only anchor this side of the socket has for "the user had finished
+  /// speaking", and therefore the only way to charge Scribe's silence window
+  /// to Scribe rather than to Claude. Snapshotted and cleared the moment a
+  /// commit arrives — the session listens continuously, so partials of the
+  /// *next* utterance start landing while this one is still being parsed, and
+  /// reading it at record time would measure the wrong sentence.
+  DateTime? _lastPartialAt;
+
+  /// The last partial of the segment currently in flight, taken at commit.
+  DateTime? _heardAt;
+
   /// `true` while a segment is being parsed or routed.
   ///
   /// The session listens continuously and executes commands as they are
@@ -284,6 +297,16 @@ class VoiceSession extends Notifier<VoiceSessionState> {
       phase: VoicePhase.connecting,
     );
     _busy = false;
+    _committedAt = null;
+    _lastPartialAt = null;
+    _heardAt = null;
+
+    // Warm the intent cache while the socket dials and the user draws breath.
+    // The first command of a session used to write the cache rather than read
+    // it — 7406 ms against ~2900 ms warm — which put the worst request the app
+    // makes on the command the user judges the feature by. Unawaited on
+    // purpose: nothing here waits for it, and it cannot fail loudly.
+    unawaited(ref.read(intentParserProvider).primeCache());
 
     final Microphone microphone = ref.read(microphoneProvider);
     final RealtimeTranscription engine = ref.read(
@@ -399,9 +422,22 @@ class VoiceSession extends Notifier<VoiceSessionState> {
 
   void _onEvent(TranscriptEvent event) {
     if (!event.isCommitted) {
+      // The clock is read here and nowhere else for this stage: an empty
+      // partial is the service clearing its buffer, not a word heard, and
+      // anchoring on it would charge Scribe's silence window to itself twice.
+      if (event.text.trim().isNotEmpty) {
+        _lastPartialAt = ref.read(clockProvider).now();
+      }
       state = state.copyWith(partial: event.text);
       return;
     }
+
+    // Whatever this commit turns out to be — an utterance, a filler, or a
+    // segment dropped below — it consumes the partials that preceded it. The
+    // anchor is taken and cleared here so that a dropped commit cannot leave a
+    // stale one behind to inflate the next measurement.
+    final DateTime? heardAt = _lastPartialAt;
+    _lastPartialAt = null;
 
     // An empty commit is the service closing a segment, not an utterance.
     // Parsing it started a race the real segment could lose — and did: the
@@ -440,6 +476,7 @@ class VoiceSession extends Notifier<VoiceSessionState> {
     _busy = true;
 
     _committedAt = ref.read(clockProvider).now();
+    _heardAt = heardAt;
     _log('committed segment: ${event.text.length} chars');
     state = state.copyWith(
       committed: event.text,
@@ -480,9 +517,14 @@ class VoiceSession extends Notifier<VoiceSessionState> {
     String utterance, {
     required IntentContext context,
   }) async {
+    // The two readings that bracket Claude. Everything between the commit and
+    // the first of them — the known-issue-key read that grounds the prompt —
+    // is ours, and is charged to us.
+    final DateTime requestedAt = ref.read(clockProvider).now();
     final Result<VoiceIntent> parsed = await ref
         .read(intentParserProvider)
         .parse(utterance, context: context);
+    final DateTime answeredAt = ref.read(clockProvider).now();
 
     switch (parsed) {
       case Err<VoiceIntent>(:final Failure failure):
@@ -490,7 +532,7 @@ class VoiceSession extends Notifier<VoiceSessionState> {
         _onFailure(failure);
         return;
       case Ok<VoiceIntent>(:final VoiceIntent value):
-        _recordLatency();
+        _recordLatency(requestedAt: requestedAt, answeredAt: answeredAt);
         _log(
           'parsed ${value.type.name} at ${value.confidence.toStringAsFixed(2)}'
           ', slots ${value.slots.keys.toList()}',
@@ -544,17 +586,29 @@ class VoiceSession extends Notifier<VoiceSessionState> {
     );
   }
 
-  /// Records committed-speech → intent-ready, the p95 the sprint measures.
-  void _recordLatency() {
+  /// Records one command's latency, split across the three parties that spent
+  /// it: Scribe, us, and Claude.
+  ///
+  /// Sprint 05 recorded commit → intent-ready as one number and the report had
+  /// to say "3973 ms" without being able to say whose. Three fields, three
+  /// answerable questions.
+  void _recordLatency({
+    required DateTime requestedAt,
+    required DateTime answeredAt,
+  }) {
     final DateTime? committedAt = _committedAt;
     if (committedAt == null) return;
+    final DateTime? heardAt = _heardAt;
     _committedAt = null;
-    final Duration latency = ref
-        .read(clockProvider)
-        .now()
-        .difference(committedAt);
-    ref.read(voiceLatencyLogProvider).record(latency);
-    state = state.copyWith(latency: latency);
+    _heardAt = null;
+
+    final VoiceLatencySample sample = VoiceLatencySample(
+      transcription: heardAt == null ? null : committedAt.difference(heardAt),
+      grounding: requestedAt.difference(committedAt),
+      parse: answeredAt.difference(requestedAt),
+    );
+    ref.read(voiceLatencyLogProvider).record(sample);
+    state = state.copyWith(latency: sample);
   }
 
   /// The issue keys the user has actually linked, as grounding for the parser.

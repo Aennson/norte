@@ -22,6 +22,7 @@ import 'package:norte/presentation/shared/theme/norte_theme.dart';
 import 'package:norte/presentation/tasks/task_providers.dart';
 import 'package:norte/presentation/voice/voice_host.dart';
 import 'package:norte/presentation/voice/voice_labels.dart';
+import 'package:norte/presentation/voice/voice_latency_log.dart';
 import 'package:norte/presentation/voice/voice_providers.dart';
 import 'package:norte/presentation/voice/widgets/confirm_sheet.dart';
 import 'package:norte/presentation/voice/widgets/voice_overlay.dart';
@@ -61,6 +62,10 @@ void main() {
   late FakeReminderRepository reminders;
   late FakeTranscriptionCredentialStore scribeKey;
 
+  /// Frozen unless a test moves it. The latency split is the only thing here
+  /// that needs time to pass, and it says so by advancing this itself.
+  late FakeClock clock;
+
   final Task linked = Task(
     id: 'task-1',
     title: 'revisar o conector',
@@ -81,6 +86,7 @@ void main() {
     settings = FakeVoiceSettingsStore();
     reminders = FakeReminderRepository();
     scribeKey = FakeTranscriptionCredentialStore();
+    clock = FakeClock(t0);
   });
 
   tearDown(() async {
@@ -114,7 +120,7 @@ void main() {
       reminderRepositoryProvider.overrideWithValue(reminders),
       voiceSettingsStoreProvider.overrideWithValue(settings),
       realtimeCredentialStoreProvider.overrideWithValue(scribeKey),
-      clockProvider.overrideWithValue(FakeClock(t0)),
+      clockProvider.overrideWithValue(clock),
     ],
     child: MaterialApp(
       theme: NorteTheme.dark,
@@ -447,6 +453,119 @@ void main() {
       // asserted is that the pipeline measures at all, which is what the
       // sprint's p95 evidence rests on.
       expect(container.read(voiceLatencyLogProvider).count, 1);
+    });
+
+    testWidgets('opening the microphone warms the intent cache', (
+      WidgetTester tester,
+    ) async {
+      // The first command of a session used to write the prompt cache rather
+      // than read it — 7406 ms against ~2900 ms warm — so the worst request
+      // the app makes landed on the command the user judges the feature by.
+      // The dialling and the drawing of breath are free seconds; spend them.
+      useDesktopViewport(tester);
+      await tester.pumpWidget(host());
+      await tester.pumpAndSettle();
+
+      final ProviderContainer container = ProviderScope.containerOf(
+        tester.element(find.byType(VoiceHost)),
+      );
+      expect(ai.primeCalls, 0, reason: 'not before the button is pressed');
+
+      await container.read(voiceSessionProvider.notifier).start();
+      await tester.pumpAndSettle();
+
+      expect(ai.primeCalls, 1);
+      // A warm-up is not a command: it must not look like one to the parser.
+      expect(ai.intentCalls, isEmpty);
+    });
+
+    testWidgets('the wait is charged to Scribe and to Claude separately', (
+      WidgetTester tester,
+    ) async {
+      // Sprint 05 measured one number and the report could not say which
+      // service owned the 3973 ms. Here the two halves are made to differ, and
+      // each must land in its own field — a pipeline that added them up would
+      // pass the old test and still leave the next hour of optimisation a
+      // guess.
+      ai
+        ..alwaysParseAs(
+          '{"intent":"createTask","slots":{"title":"algo"},"confidence":0.9}',
+        )
+        // The measured clock moves *inside* the call, which is what makes this
+        // 2300ms Claude's and not anyone else's.
+        ..onParseIntent = () =>
+            clock.advance(const Duration(milliseconds: 2300));
+      useDesktopViewport(tester);
+      await tester.pumpWidget(host());
+      await tester.pumpAndSettle();
+
+      final ProviderContainer container = ProviderScope.containerOf(
+        tester.element(find.byType(VoiceHost)),
+      );
+      await container.read(voiceSessionProvider.notifier).start();
+      await tester.pumpAndSettle();
+
+      // The user's last word, then Scribe's silence window before it decides
+      // the sentence is over.
+      realtime.emitPartial('cria tarefa');
+      await tester.pumpAndSettle();
+      clock.advance(const Duration(milliseconds: 700));
+      realtime.emitCommitted('cria tarefa algo');
+      await tester.pumpAndSettle();
+
+      final VoiceLatencyLog log = container.read(voiceLatencyLogProvider);
+      expect(log.count, 1);
+      expect(
+        log.samples.single.transcription,
+        const Duration(milliseconds: 700),
+      );
+      expect(log.samples.single.parse, const Duration(milliseconds: 2300));
+      // The local read between them is ours, and is small — a fact rather than
+      // an assumption now that it has a field.
+      expect(log.samples.single.grounding, Duration.zero);
+      expect(log.samples.single.total, const Duration(milliseconds: 3000));
+    });
+
+    testWidgets('a dropped segment does not inflate the next Scribe number', (
+      WidgetTester tester,
+    ) async {
+      // Continuous listening (DEC-031) means partials of the next utterance
+      // arrive while this one is still in flight, and filler commits are
+      // dropped without ever being measured. An anchor left behind by either
+      // would charge Scribe for the pause between two sentences.
+      ai.alwaysParseAs(
+        '{"intent":"createTask","slots":{"title":"algo"},"confidence":0.9}',
+      );
+      useDesktopViewport(tester);
+      await tester.pumpWidget(host());
+      await tester.pumpAndSettle();
+
+      final ProviderContainer container = ProviderScope.containerOf(
+        tester.element(find.byType(VoiceHost)),
+      );
+      await container.read(voiceSessionProvider.notifier).start();
+      await tester.pumpAndSettle();
+
+      realtime.emitPartial('hum');
+      await tester.pumpAndSettle();
+      realtime.emitCommitted('hum'); // filler — dropped, never measured
+      await tester.pumpAndSettle();
+
+      // A long think between the two sentences. It belongs to nobody.
+      clock.advance(const Duration(seconds: 9));
+
+      realtime.emitPartial('cria tarefa');
+      await tester.pumpAndSettle();
+      clock.advance(const Duration(milliseconds: 400));
+      realtime.emitCommitted('cria tarefa algo');
+      await tester.pumpAndSettle();
+
+      final VoiceLatencyLog log = container.read(voiceLatencyLogProvider);
+      expect(log.count, 1);
+      expect(
+        log.samples.single.transcription,
+        const Duration(milliseconds: 400),
+      );
     });
   });
 

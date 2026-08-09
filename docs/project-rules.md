@@ -58,6 +58,7 @@ These rules come from the architecture (`docs/architecture.md`) and **must each 
 | BR-09 | The app never mirrors Jira: it stores only `issueKey`, `siteUrl`, `lastKnownStatus` (display cache), and `lastSyncedAt` | Sprint 02 |
 | BR-10 | Primary AI engine failure: 1 retry → fallback (if enabled) → clear error to the user; every switch is logged | Sprint 07 |
 | BR-11 | The system supports **English (en), Brazilian Portuguese (pt-BR), and Italian (it)**: every user-facing string comes from localized ARB resources (no hardcoded UI literals); the three locales stay in key parity; unsupported device locales fall back to English | Sprint 00 onward (parity test runs in every sprint) |
+| BR-12 | The audit log records **facts about actions, never their content**: entity type and id, actor, action, outcome, and scalars (counts, lengths, durations, enum values, confidences). Never a title, description, comment, utterance, transcript, summary, Jira payload, or credential — nor a prefix or the length of a secret (BR-08 is not relaxed). Enforced by `tool/check_audit.dart`, not by review | Sprint 10 |
 
 ## 5. Testing rules
 
@@ -139,3 +140,4 @@ Rules:
 - ❌ Call real APIs in tests or commit keys/fixtures containing real data.
 - ❌ Resolve a local×Jira conflict automatically (violates BR-02).
 - ❌ Persist an ephemeral transcript or voice audio (violates BR-03/BR-06).
+- ❌ Put a title, an utterance, a payload or any other authored text into an audit entry (violates BR-12).

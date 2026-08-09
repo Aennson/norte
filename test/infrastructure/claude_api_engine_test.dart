@@ -288,4 +288,191 @@ void main() {
       },
     );
   });
+
+  group('the latency levers', () {
+    // Not documented sprint cases — added under `docs/project-rules.md` §5.4,
+    // after the manual pass of 2026-08-09 measured Claude at 3292–5700 ms per
+    // command against a 3 s budget for the whole pipeline (`architecture.md`
+    // §15). These pin the two request fields that number turns on.
+
+    test('parsing an intent asks for no thinking', () async {
+      server.answer =
+          '{"intent":"createTask","slots":{"title":"algo"},"confidence":0.9}';
+
+      await engineWith().parseIntent('cria tarefa algo', const IntentContext());
+
+      // On this model thinking is **on by default** — an absent field is not
+      // "off", and `effort: 'low'` does not turn it off either. Asserting the
+      // field is present and disabled is the difference between the target
+      // being reachable and not.
+      expect(server.bodies.last['thinking'], <String, Object?>{
+        'type': 'disabled',
+      });
+      // Legal only at `high` effort or below, which is why these two belong in
+      // one assertion: raising the effort would start returning 400.
+      final Map<String, Object?> output =
+          server.bodies.last['output_config']! as Map<String, Object?>;
+      expect(output['effort'], 'low');
+    });
+
+    test('summarizing still thinks', () async {
+      // The opposite call, and the reason the field is set per request rather
+      // than on the adapter: a meeting summary is not latency-bound and is
+      // exactly the kind of work deliberation improves.
+      await engineWith().summarize(retroTranscript, retroTemplate);
+
+      expect(server.bodies.last.containsKey('thinking'), isFalse);
+    });
+
+    test('the token counts and cache reads are reported', () async {
+      // A prompt marked `cache_control` that silently never hits looks
+      // identical to one that always does. This line is what tells them apart
+      // during a manual pass — and what decides whether shortening the prompt
+      // would help or push it under the cacheable floor.
+      final List<String> lines = <String>[];
+      server
+        ..answer =
+            '{"intent":"createTask","slots":{"title":"algo"},"confidence":0.9}'
+        ..cacheReadTokens = 431;
+
+      await ClaudeApiEngine(
+        dio: Dio(),
+        credentialStore: _FakeAiCredentialStore('synthetic-key'),
+        clock: FakeClock(DateTime.utc(2026, 8, 8, 11)),
+        baseUrl: server.baseUrl,
+        log: lines.add,
+      ).parseIntent('cria tarefa algo', const IntentContext());
+
+      expect(lines.single, contains('cache read 431'));
+      expect(lines.single, contains('out 34'));
+      // Counts only — the utterance is not a token count (BR-06).
+      expect(lines.single, isNot(contains('cria tarefa')));
+    });
+
+    test('a cache that never hits reads as zero, not as absent', () async {
+      final List<String> lines = <String>[];
+      server
+        ..answer =
+            '{"intent":"createTask","slots":{"title":"algo"},"confidence":0.9}'
+        ..cacheReadTokens = 0;
+
+      await ClaudeApiEngine(
+        dio: Dio(),
+        credentialStore: _FakeAiCredentialStore('synthetic-key'),
+        clock: FakeClock(DateTime.utc(2026, 8, 8, 11)),
+        baseUrl: server.baseUrl,
+        log: lines.add,
+      ).parseIntent('cria tarefa algo', const IntentContext());
+
+      // The whole point of the diagnostic: a zero must be *said*. A line that
+      // omitted the field when it was zero would hide the only case worth
+      // reading it for.
+      expect(lines.single, contains('cache read 0'));
+    });
+  });
+
+  group('priming the intent cache', () {
+    // The manual pass of 2026-08-09: the first command of a session wrote the
+    // cache (1509 tokens, `cache read 0`) and took 7406 ms; the four that read
+    // it took 2676–3160 ms. The warm-up moves that write off the user's first
+    // spoken command.
+
+    test('sends the same cached prefix, and generates nothing', () async {
+      await engineWith().primeCache();
+
+      final Map<String, Object?> body = server.bodies.last;
+      // The prefix has to match byte for byte or the real call writes its own
+      // entry and the warm-up bought nothing.
+      final Map<String, Object?> block =
+          (body['system']! as List<Object?>).single! as Map<String, Object?>;
+      expect(block['text'], const IntentCodec().systemPrompt);
+      expect(block['cache_control'], <String, Object?>{'type': 'ephemeral'});
+
+      expect(body['max_tokens'], 0);
+      // Both are refused alongside `max_tokens: 0`, and both belong to
+      // generating an answer this request does not generate.
+      expect(body.containsKey('stream'), isFalse);
+      expect(body.containsKey('output_config'), isFalse);
+    });
+
+    test('a warm-up says whether it actually warmed anything', () async {
+      // The manual pass of 2026-08-09 showed the first command still writing
+      // the cache — and the warm-up had no way to say whether it had run,
+      // failed, or written a different entry. Three states, one silence.
+      final List<String> lines = <String>[];
+      server.primeWroteTokens = 1509;
+
+      await ClaudeApiEngine(
+        dio: Dio(),
+        credentialStore: _FakeAiCredentialStore('synthetic-key'),
+        clock: FakeClock(DateTime.utc(2026, 8, 8, 11)),
+        baseUrl: server.baseUrl,
+        log: lines.add,
+      ).primeCache();
+
+      expect(lines.single, contains('cache written 1509'));
+    });
+
+    test('a warm-up that wrote nothing says zero', () async {
+      // The case the whole diagnostic exists for: HTTP 200, nothing warmed.
+      final List<String> lines = <String>[];
+      server.primeWroteTokens = 0;
+
+      await ClaudeApiEngine(
+        dio: Dio(),
+        credentialStore: _FakeAiCredentialStore('synthetic-key'),
+        clock: FakeClock(DateTime.utc(2026, 8, 8, 11)),
+        baseUrl: server.baseUrl,
+        log: lines.add,
+      ).primeCache();
+
+      expect(lines.single, contains('cache written 0'));
+    });
+
+    test('a refused warm-up reports the API\'s own reason', () async {
+      // Every schema mistake in this project was solved by reading the API's
+      // message and prolonged by guessing instead. A 4xx here must not be
+      // swallowed into silence the way the first version swallowed it.
+      final List<String> lines = <String>[];
+      server.forceStatus = 400;
+
+      await ClaudeApiEngine(
+        dio: Dio(),
+        credentialStore: _FakeAiCredentialStore('synthetic-key'),
+        clock: FakeClock(DateTime.utc(2026, 8, 8, 11)),
+        baseUrl: server.baseUrl,
+        log: lines.add,
+      ).primeCache();
+
+      expect(lines.single, contains('HTTP 400'));
+      expect(lines.single, contains('invalid_request_error'));
+    });
+
+    test('a warm-up costs nothing when there is no key', () async {
+      // The user has not been to Settings yet. Pressing the microphone must
+      // not spend a request, and must not raise.
+      await expectLater(engineWith(apiKey: null).primeCache(), completes);
+      expect(server.requests, isEmpty);
+    });
+
+    test('a refused warm-up is swallowed, not thrown', () async {
+      // Every failure mode lands here: a rejected key, a malformed body, a
+      // rate limit. The worst outcome allowed is the cold request the app
+      // would have made anyway — never a session that fails to start.
+      server.forceStatus = 429;
+
+      await expectLater(engineWith().primeCache(), completes);
+    });
+
+    test('an unreachable host is swallowed too', () async {
+      final ClaudeApiEngine engine = ClaudeApiEngine(
+        dio: Dio(),
+        credentialStore: _FakeAiCredentialStore('synthetic-key'),
+        clock: FakeClock(DateTime.utc(2026, 8, 8, 11)),
+        baseUrl: 'http://127.0.0.1:1',
+      );
+
+      await expectLater(engine.primeCache(), completes);
+    });
+  });
 }

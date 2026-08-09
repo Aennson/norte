@@ -26,6 +26,18 @@ class IntentParser {
 
   final AiEngine engine;
 
+  /// Warms the engine's intent cache, so the user's *first* command does not
+  /// pay to write it (measured at 7406 ms against ~2900 ms warm).
+  ///
+  /// Sits here rather than being called on the engine directly because the
+  /// presentation layer may not reach into `infrastructure/`, and because the
+  /// decision of *when* a warm-up is worth making is an application one: at
+  /// the moment the microphone opens, there are a few seconds of dialling and
+  /// speaking before the first command needs the cache.
+  ///
+  /// Never throws — see [AiEngine.primeCache].
+  Future<void> primeCache() => engine.primeCache();
+
   /// Parses [utterance], optionally within [context].
   Future<Result<VoiceIntent>> parse(
     String utterance, {
