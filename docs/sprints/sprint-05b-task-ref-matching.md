@@ -155,12 +155,22 @@ updated with it.
 
 #### S05b-UT-07 — A short reference never reaches the approximate tier
 - **What it validates:** `minApproximateLength`.
-- **Entry criteria:** tasks `Revisar PR` and `Preparar a demo`; the reference
+- **Entry criteria:** tasks `Revisar PR` and `Fazer a demo`; the reference
   `PR`.
 - **Action:** resolve.
 - **Exit criteria:** tier 2 finds `Revisar PR` by containment. With only
-  `Preparar a demo` stored, `PR` returns `TaskNotFound` rather than
-  approximating its way to it.
+  `Fazer a demo` stored, `PR` returns `TaskNotFound` rather than approximating
+  its way to it.
+
+> **Fixture amended during execution (2026-08-09).** This test was specified
+> with `Preparar a demo` as the second task. The fold of that title *contains*
+> `pr` — "**pr**eparar" — so tier 2 returns two matches and both halves of the
+> exit criteria become unreachable: the first would be a `TaskAmbiguous`, and
+> the second would resolve rather than return `TaskNotFound`. The rule under
+> test is `minApproximateLength`, not containment, so the title was changed to
+> one that does not contain the reference. Nothing about the assertions
+> changed and no test was weakened — a title containing the reference is
+> already tier 2's subject in S05b-UT-02.
 
 #### S05b-UT-08 — The exact tier is never beaten by a better score
 - **What it validates:** the ordering.
