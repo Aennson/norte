@@ -72,6 +72,13 @@ class FakeClaudeServer {
   /// expects.
   int cacheReadTokens = 0;
 
+  /// Tokens a warm-up (`max_tokens: 0`) reports as written to the cache.
+  ///
+  /// Zero is the interesting case, not the boring one: a warm-up that returns
+  /// 200 and writes nothing is indistinguishable from one that worked, unless
+  /// the adapter reads this and says so.
+  int primeWroteTokens = 1509;
+
   /// Base URL to hand the adapter.
   String get baseUrl => 'http://${_server.address.host}:${_server.port}';
 
@@ -129,6 +136,28 @@ class FakeClaudeServer {
         jsonEncode(<String, Object?>{
           'type': 'error',
           'error': <String, Object?>{'type': 'authentication_error'},
+        }),
+      );
+      return;
+    }
+
+    // A warm-up: no stream, nothing generated, and a normal JSON body whose
+    // `usage` says what the prefill wrote. The real service answers this shape
+    // and the adapter reads it to report whether the cache was warmed at all.
+    if (bodies.isNotEmpty && bodies.last['max_tokens'] == 0) {
+      request.response.statusCode = 200;
+      request.response.headers.contentType = ContentType.json;
+      request.response.write(
+        jsonEncode(<String, Object?>{
+          'id': 'msg_fake_warm',
+          'content': <Object?>[],
+          'stop_reason': 'max_tokens',
+          'usage': <String, Object?>{
+            'input_tokens': 0,
+            'cache_creation_input_tokens': primeWroteTokens,
+            'cache_read_input_tokens': 0,
+            'output_tokens': 0,
+          },
         }),
       );
       return;

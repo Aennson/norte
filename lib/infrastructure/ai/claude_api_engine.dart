@@ -214,7 +214,7 @@ class ClaudeApiEngine implements AiEngine {
   Future<void> primeCache() async {
     try {
       final String key = await _apiKey();
-      await dio.post<void>(
+      final Response<Object?> response = await dio.post<Object?>(
         '$baseUrl/v1/messages',
         // Byte-identical `system` to the one [parseIntent] sends, because that
         // is the entire cached prefix: nothing is rendered before it, and the
@@ -246,15 +246,53 @@ class ClaudeApiEngine implements AiEngine {
             'anthropic-version': apiVersion,
             'content-type': 'application/json',
           },
+          // 4xx bodies are read, not thrown: the API explains a refusal there,
+          // and a refused warm-up that said nothing is what made the first
+          // attempt at this undiagnosable.
           validateStatus: (int? status) => true,
         ),
       );
-    } catch (_) {
-      // Deliberately silent, and the contract says so. The worst outcome of a
-      // failed warm-up is the cold request the app would have made anyway;
-      // the worst outcome of letting this throw is a session that never
-      // starts because the cache could not be primed.
+      _reportPrime(response);
+    } on Failure catch (failure) {
+      log?.call('prime: skipped — ${failure.runtimeType}');
+    } catch (error) {
+      // Never throws — the contract, and the reason for it, are on the port.
+      // But "never throws" is not "never speaks": the first version of this
+      // swallowed the outcome as well as the error, and a warm-up that cannot
+      // report whether it warmed anything is not a diagnostic, it is a hope.
+      log?.call('prime: failed — ${error.runtimeType}');
     }
+  }
+
+  /// Says whether the warm-up actually wrote the cache the parse will read.
+  ///
+  /// **The one question worth asking.** A warm-up that returns 200 and writes
+  /// nothing, and one that writes an entry the real request then fails to
+  /// match, look identical from outside — and both look identical to success.
+  /// `cache written N` here followed by `cache read N` on the next command is
+  /// the only evidence the mechanism works end to end.
+  void _reportPrime(Response<Object?> response) {
+    if (log == null) return;
+    final int status = response.statusCode ?? 0;
+    final Object? body = response.data;
+    final Map<String, Object?>? decoded = body is Map<String, Object?>
+        ? body
+        : (body is String ? _tryDecode(body) as Map<String, Object?>? : null);
+
+    if (status >= 400) {
+      // The API's own words. Every schema mistake this project has made was
+      // solved by reading them and prolonged by guessing instead.
+      log!.call(
+        'prime: HTTP $status — ${jsonEncode(decoded?['error'] ?? body)}',
+      );
+      return;
+    }
+
+    final Object? usage = decoded?['usage'];
+    final int written = usage is Map<String, Object?>
+        ? (usage['cache_creation_input_tokens'] as num?)?.toInt() ?? 0
+        : 0;
+    log!.call('prime: HTTP $status — cache written $written');
   }
 
   /// The user's key, or [MissingApiKeyFailure].

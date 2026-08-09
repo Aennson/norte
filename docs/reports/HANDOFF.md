@@ -159,6 +159,43 @@ every command after the first, and cached reads are the cheap part. The
 measurement moved this from "the largest remaining variable" to "measured, and
 small".
 
+### Third measurement — the warm-up did not take, and the number that justified it did not reproduce
+
+| # | Scribe | Claude | cache |
+|---|---|---|---|
+| 1 | 697 ms | 3002 ms | written 1509, **read 0** |
+| 2 | 434 ms | 2800 ms | read 1509 |
+
+Two things went wrong, and the second is the more important one.
+
+**The warm-up did not take.** The first command still *wrote* the cache, so
+either `primeCache()` never completed, or it wrote an entry the parse request
+could not match. It reported neither, because the first version swallowed the
+outcome along with the error — a diagnostic that cannot say what it observed,
+which is the §5.3 lesson of sprint 05 committed a second time by the person who
+wrote it down. It now logs `prime: HTTP 200 — cache written N`, the API's own
+message on a 4xx, and the failure type on anything else.
+
+**The 7406 ms did not reproduce.** The cold command this time cost 3002 ms
+against 2800 ms warm — a penalty of roughly 200 ms, not the 4500 ms measured
+once before. So the case for the warm-up is currently *unproven*: `n = 2`, and
+the two runs disagree by more than the effect. The 7406 ms was probably
+connection setup or model-side variance, not the cache write. **Do not quote it
+as the cost of a cold cache** until a third pass says so.
+
+What the next pass answers, from one line:
+
+| `prime:` says | Meaning | Next |
+|---|---|---|
+| `cache written 1509` | It warmed, and the parse still missed it | The two requests do not share a cache key — most likely because the warm-up omits `output_config.format` (`max_tokens: 0` forbids it) and that field is part of the system-cache key. A warm-up shaped like the real request — `max_tokens: 1`, format present — would be the thing to try |
+| `cache written 0` | It ran, it warmed nothing | `max_tokens: 0` does not write on this model; same alternative as above |
+| `HTTP 4xx …` | Refused | Read the message. It names the field |
+| nothing at all | It never ran | The session is not calling it, or the future is being dropped |
+
+If the cold penalty stays near 200 ms, the honest answer may be to **delete the
+warm-up** rather than fix it: 200 ms once per session is not worth a port
+method and a request the user pays for.
+
 ### What is left, and what it would take
 
 Warm totals now run 3185–3853 ms against the 3 s target — the gap is roughly

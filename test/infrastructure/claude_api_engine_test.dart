@@ -395,6 +395,59 @@ void main() {
       expect(body.containsKey('output_config'), isFalse);
     });
 
+    test('a warm-up says whether it actually warmed anything', () async {
+      // The manual pass of 2026-08-09 showed the first command still writing
+      // the cache — and the warm-up had no way to say whether it had run,
+      // failed, or written a different entry. Three states, one silence.
+      final List<String> lines = <String>[];
+      server.primeWroteTokens = 1509;
+
+      await ClaudeApiEngine(
+        dio: Dio(),
+        credentialStore: _FakeAiCredentialStore('synthetic-key'),
+        clock: FakeClock(DateTime.utc(2026, 8, 8, 11)),
+        baseUrl: server.baseUrl,
+        log: lines.add,
+      ).primeCache();
+
+      expect(lines.single, contains('cache written 1509'));
+    });
+
+    test('a warm-up that wrote nothing says zero', () async {
+      // The case the whole diagnostic exists for: HTTP 200, nothing warmed.
+      final List<String> lines = <String>[];
+      server.primeWroteTokens = 0;
+
+      await ClaudeApiEngine(
+        dio: Dio(),
+        credentialStore: _FakeAiCredentialStore('synthetic-key'),
+        clock: FakeClock(DateTime.utc(2026, 8, 8, 11)),
+        baseUrl: server.baseUrl,
+        log: lines.add,
+      ).primeCache();
+
+      expect(lines.single, contains('cache written 0'));
+    });
+
+    test('a refused warm-up reports the API\'s own reason', () async {
+      // Every schema mistake in this project was solved by reading the API's
+      // message and prolonged by guessing instead. A 4xx here must not be
+      // swallowed into silence the way the first version swallowed it.
+      final List<String> lines = <String>[];
+      server.forceStatus = 400;
+
+      await ClaudeApiEngine(
+        dio: Dio(),
+        credentialStore: _FakeAiCredentialStore('synthetic-key'),
+        clock: FakeClock(DateTime.utc(2026, 8, 8, 11)),
+        baseUrl: server.baseUrl,
+        log: lines.add,
+      ).primeCache();
+
+      expect(lines.single, contains('HTTP 400'));
+      expect(lines.single, contains('invalid_request_error'));
+    });
+
     test('a warm-up costs nothing when there is no key', () async {
       // The user has not been to Settings yet. Pressing the microphone must
       // not spend a request, and must not raise.
