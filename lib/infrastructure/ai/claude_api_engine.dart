@@ -155,6 +155,25 @@ class ClaudeApiEngine implements AiEngine {
       // An intent is three fields. The ceiling exists to stop a runaway
       // answer, not to leave room for one.
       'max_tokens': intentMaxTokens,
+      // **Thinking off, and this is the largest lever there is.** On this
+      // model thinking is *on by default* — omitting the field does not mean
+      // "no thinking", and `effort: 'low'` does not turn it off either. The
+      // manual pass measured Claude at 3292–5700 ms per command with it on,
+      // against a 3 s budget for the whole pipeline (§15): the target was
+      // unreachable without this line.
+      //
+      // Deliberating is the wrong shape of work here. The utterance is one
+      // spoken sentence and the answer is a six-way choice with a handful of
+      // string slots, constrained by a schema — the model is classifying, not
+      // reasoning. Legal at `effort: 'low'`; the API refuses this combination
+      // only above `high`.
+      //
+      // The two known hazards of disabling thinking do not reach this call:
+      // a tool call written as prose (there are no tools here) and `<thinking>`
+      // tags leaking into the answer (`output_config.format` constrains the
+      // response to the codec's schema, and `IntentCodec` refuses anything it
+      // cannot read rather than acting on it).
+      'thinking': <String, Object?>{'type': 'disabled'},
       // The cached half, and this one earns the cache far better than the
       // summarizer's: the intent prompt is byte-identical on every voice
       // command the user ever speaks.
@@ -252,6 +271,7 @@ class ClaudeApiEngine implements AiEngine {
   Future<String> _readSse(ResponseBody body) async {
     final StringBuffer answer = StringBuffer();
     Failure? failure;
+    final Map<String, int> usage = <String, int>{};
 
     await for (final String line
         in utf8.decoder.bind(body.stream).transform(const LineSplitter())) {
@@ -265,6 +285,14 @@ class ClaudeApiEngine implements AiEngine {
       if (event is! Map<String, Object?>) continue;
 
       switch (event['type']) {
+        case 'message_start':
+          // Input and cache counts ride on the opening event; the output
+          // count arrives on `message_delta` at the end.
+          if (event['message'] case final Map<String, Object?> message) {
+            _collectUsage(message['usage'], into: usage);
+          }
+        case 'message_delta':
+          _collectUsage(event['usage'], into: usage);
         case 'content_block_delta':
           final Object? delta = event['delta'];
           if (delta is Map<String, Object?> && delta['type'] == 'text_delta') {
@@ -278,11 +306,42 @@ class ClaudeApiEngine implements AiEngine {
       }
     }
 
+    _reportUsage(usage);
+
     if (failure != null) throw failure;
     if (answer.isEmpty) {
       throw const AiResponseFailure('the engine returned an empty summary');
     }
     return answer.toString();
+  }
+
+  /// Copies the token counts off one `usage` object.
+  void _collectUsage(Object? raw, {required Map<String, int> into}) {
+    if (raw is! Map<String, Object?>) return;
+    for (final MapEntry<String, Object?> entry in raw.entries) {
+      if (entry.value case final num value) into[entry.key] = value.toInt();
+    }
+  }
+
+  /// Says what the request cost, in tokens, and **whether the cache was read**.
+  ///
+  /// The prompt is marked `cache_control` and is byte-identical on every voice
+  /// command, so it ought to be served from cache after the first — but "ought
+  /// to" is the part nobody could check: a cache that silently never hits looks
+  /// exactly like one that always does. `cache_read_input_tokens` at zero
+  /// across a session is the answer, and it is the number that decides whether
+  /// shortening the prompt would help or would push it under the cacheable
+  /// floor and make things worse.
+  ///
+  /// Counts only — no transcript, no utterance, no key (BR-06).
+  void _reportUsage(Map<String, int> usage) {
+    if (log == null || usage.isEmpty) return;
+    log!.call(
+      'usage: in ${usage['input_tokens'] ?? 0} '
+      '(cache read ${usage['cache_read_input_tokens'] ?? 0}, '
+      'written ${usage['cache_creation_input_tokens'] ?? 0}) '
+      '· out ${usage['output_tokens'] ?? 0}',
+    );
   }
 
   /// The API's explanation of a refusal, as text.

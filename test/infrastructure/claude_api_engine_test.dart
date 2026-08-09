@@ -288,4 +288,86 @@ void main() {
       },
     );
   });
+
+  group('the latency levers', () {
+    // Not documented sprint cases — added under `docs/project-rules.md` §5.4,
+    // after the manual pass of 2026-08-09 measured Claude at 3292–5700 ms per
+    // command against a 3 s budget for the whole pipeline (`architecture.md`
+    // §15). These pin the two request fields that number turns on.
+
+    test('parsing an intent asks for no thinking', () async {
+      server.answer =
+          '{"intent":"createTask","slots":{"title":"algo"},"confidence":0.9}';
+
+      await engineWith().parseIntent('cria tarefa algo', const IntentContext());
+
+      // On this model thinking is **on by default** — an absent field is not
+      // "off", and `effort: 'low'` does not turn it off either. Asserting the
+      // field is present and disabled is the difference between the target
+      // being reachable and not.
+      expect(server.bodies.last['thinking'], <String, Object?>{
+        'type': 'disabled',
+      });
+      // Legal only at `high` effort or below, which is why these two belong in
+      // one assertion: raising the effort would start returning 400.
+      final Map<String, Object?> output =
+          server.bodies.last['output_config']! as Map<String, Object?>;
+      expect(output['effort'], 'low');
+    });
+
+    test('summarizing still thinks', () async {
+      // The opposite call, and the reason the field is set per request rather
+      // than on the adapter: a meeting summary is not latency-bound and is
+      // exactly the kind of work deliberation improves.
+      await engineWith().summarize(retroTranscript, retroTemplate);
+
+      expect(server.bodies.last.containsKey('thinking'), isFalse);
+    });
+
+    test('the token counts and cache reads are reported', () async {
+      // A prompt marked `cache_control` that silently never hits looks
+      // identical to one that always does. This line is what tells them apart
+      // during a manual pass — and what decides whether shortening the prompt
+      // would help or push it under the cacheable floor.
+      final List<String> lines = <String>[];
+      server
+        ..answer =
+            '{"intent":"createTask","slots":{"title":"algo"},"confidence":0.9}'
+        ..cacheReadTokens = 431;
+
+      await ClaudeApiEngine(
+        dio: Dio(),
+        credentialStore: _FakeAiCredentialStore('synthetic-key'),
+        clock: FakeClock(DateTime.utc(2026, 8, 8, 11)),
+        baseUrl: server.baseUrl,
+        log: lines.add,
+      ).parseIntent('cria tarefa algo', const IntentContext());
+
+      expect(lines.single, contains('cache read 431'));
+      expect(lines.single, contains('out 34'));
+      // Counts only — the utterance is not a token count (BR-06).
+      expect(lines.single, isNot(contains('cria tarefa')));
+    });
+
+    test('a cache that never hits reads as zero, not as absent', () async {
+      final List<String> lines = <String>[];
+      server
+        ..answer =
+            '{"intent":"createTask","slots":{"title":"algo"},"confidence":0.9}'
+        ..cacheReadTokens = 0;
+
+      await ClaudeApiEngine(
+        dio: Dio(),
+        credentialStore: _FakeAiCredentialStore('synthetic-key'),
+        clock: FakeClock(DateTime.utc(2026, 8, 8, 11)),
+        baseUrl: server.baseUrl,
+        log: lines.add,
+      ).parseIntent('cria tarefa algo', const IntentContext());
+
+      // The whole point of the diagnostic: a zero must be *said*. A line that
+      // omitted the field when it was zero would hide the only case worth
+      // reading it for.
+      expect(lines.single, contains('cache read 0'));
+    });
+  });
 }

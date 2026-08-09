@@ -63,6 +63,15 @@ class FakeClaudeServer {
   /// stream — what a proxy that strips SSE, or a misconfigured gateway, does.
   bool answerWithoutSse = false;
 
+  /// Tokens the API reports as served from the prompt cache.
+  ///
+  /// The real service reports this on `message_start` and the adapter reads it
+  /// to say whether caching is working at all. A fake that never sent it would
+  /// let an adapter which drops the field pass — the sprint-05 lesson, applied:
+  /// a fake is written from what the service does, not from what the code
+  /// expects.
+  int cacheReadTokens = 0;
+
   /// Base URL to hand the adapter.
   String get baseUrl => 'http://${_server.address.host}:${_server.port}';
 
@@ -149,7 +158,15 @@ class FakeClaudeServer {
 
     event('message_start', <String, Object?>{
       'type': 'message_start',
-      'message': <String, Object?>{'id': 'msg_fake', 'model': 'fake'},
+      'message': <String, Object?>{
+        'id': 'msg_fake',
+        'model': 'fake',
+        'usage': <String, Object?>{
+          'input_tokens': 12,
+          'cache_read_input_tokens': cacheReadTokens,
+          'cache_creation_input_tokens': 0,
+        },
+      },
     });
     event('content_block_start', <String, Object?>{
       'type': 'content_block_start',
@@ -196,6 +213,7 @@ class FakeClaudeServer {
     event('message_delta', <String, Object?>{
       'type': 'message_delta',
       'delta': <String, Object?>{'stop_reason': 'end_turn'},
+      'usage': <String, Object?>{'output_tokens': 34},
     });
     event('message_stop', <String, Object?>{'type': 'message_stop'});
   }

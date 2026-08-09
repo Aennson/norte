@@ -85,8 +85,59 @@ when the user stopped speaking; the last partial is the closest observable, and
 it trails the speech slightly, so `transcription` under-reports. That is the
 safe direction for a number used to blame a service.
 
-Next: one manual pass with the real engine, read the three p95s off the
-console, *then* decide which half to attack.
+### The measurement — 2026-08-09, real Scribe, real Claude, 7 commands
+
+| # | Scribe | local | Claude | total | result |
+|---|---|---|---|---|---|
+| 1 | 977 ms | 9 ms | 3891 ms | 4877 ms | createTask 0.82 |
+| 2 | 134 ms | 0 ms | 4505 ms | 4639 ms | **unknown** |
+| 3 | 136 ms | 1 ms | 5700 ms | 5837 ms | **unknown** |
+| 4 | 290 ms | 1 ms | 3292 ms | 3583 ms | createTask 0.93 |
+| 5 | 353 ms | 1 ms | 3312 ms | 3666 ms | createTask 0.92 |
+| 6 | 926 ms | 1 ms | 3430 ms | 4357 ms | createTask 0.92 |
+| 7 | 373 ms | 2 ms | 3661 ms | 4036 ms | createTask 0.82 |
+
+**Claude is ~90% of every command** (median 91%). Scribe's median is 353 ms and
+its worst is 977 ms; the local read never exceeded 9 ms.
+
+**The decisive number is Claude's fastest call: 3292 ms.** Every one of the
+seven missed the 3 s target on Claude's share *alone*. Scribe's entire
+contribution, at its worst, is smaller than the gap between Claude's median and
+the target — so no amount of work on transcription could have reached it, and
+the split is what makes that provable rather than arguable.
+
+Two of the seven are worth reading twice: the slowest calls, 4505 ms and
+5700 ms, are the two that came back `unknown`. Two samples is not a finding,
+but "the model spent the longest on the utterance it could not map" is the
+shape you would expect if it were deliberating.
+
+### What was done about it
+
+**`thinking: {type: 'disabled'}` on the intent request** — the one line the
+numbers pointed at. On this model thinking is **on by default**: omitting the
+field is not "off", and the `effort: 'low'` already in place does not turn it
+off either. Every one of those seven commands was paying for deliberation on a
+six-way classification of one spoken sentence.
+
+**Token and cache-read logging** — `[ai] usage: in N (cache read R, written W)
+· out M` on every call. The system prompt is marked `cache_control` and is
+byte-identical per command, but nothing ever checked that it *hits*, and a
+cache that silently never hits looks exactly like one that always does.
+
+**That check has to happen before anyone shortens the prompt.** The cacheable
+floor on this model is 512 tokens and `IntentCodec.systemPrompt` is roughly
+450–500 — near enough that shortening it could drop the prefix below the floor
+and lose caching altogether, making every command slower. The handoff's
+original candidate lever is the one that most needs a measurement first.
+
+Next: a manual pass to confirm the drop and read the cache line. If Claude is
+still over budget with thinking off, the remaining levers are the **model**
+(`ClaudeApiEngine.model` is a constructor argument; a six-way classification
+does not obviously need the largest one — the Developer's call, since the key
+is theirs and the eval thresholds would need re-running) and the **eight
+required nullable slots** in `IntentCodec.schema`, which force ~40 tokens of
+`null` into every answer and whose strictness the codec's own dartdoc labels
+unverified.
 
 Then execute `docs/sprints/sprint-05a-task-commands.md` in order. Its entry
 criteria require Sprint 05 merged.
@@ -138,9 +189,11 @@ Three habits came out of it, and they are worth keeping:
 
 ## 6. Open, and deliberately not closed
 
-- **p95 above target** — §3 above. Now instrumented per stage, but **not yet
-  re-measured against the real Scribe and the real Claude**: every number in
-  the sprint-05 report predates the split, and none of them includes Scribe.
+- **p95 above target** — §3 above. Measured per stage on 2026-08-09: p95 total
+  5837 ms, of which Claude is 5700 ms. `thinking` is now disabled on the intent
+  request; **the effect is unverified** — it needs one manual pass, and it is
+  one line to revert. No automated test can validate it: the evals run against
+  `FakeAiEngine`, so they cannot see a change in the real model's behaviour.
 - **iOS never built or tested**, no `macos/` golden set (DEC-020). Sprint 08
   has to decide a two- or three-platform v1.0.
 - **The name of a transcript frame** is matched by substring rather than
