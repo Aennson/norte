@@ -41,8 +41,8 @@ machine, and again on `ubuntu-latest` in CI.
 |---|---|---|
 | G1 — static analysis | `flutter analyze` | `No issues found! (ran in 4.5s)` — 0 errors, 0 warnings, 0 infos ✅ |
 | G2 — formatting | `dart format --output=none --set-exit-if-changed .` | exit 0 ✅ |
-| G3 — tests | `flutter test` | `00:39 +636: All tests passed!` ✅ |
-| G4 — coverage | `flutter test --coverage` + `dart run tool/check_coverage.dart` | domain+application **93.2%** (517/555) · project **83.9%** (3840/4577) — `gate G4: OK` ✅ |
+| G3 — tests | `flutter test` | `00:36 +644: All tests passed!` ✅ |
+| G4 — coverage | `flutter test --coverage` + `dart run tool/check_coverage.dart` | domain+application **93.2%** (517/555) · project **84.1%** (3995/4753) — `gate G4: OK` ✅ |
 | G5 — dependency rule | `dart run tool/check_imports.dart` | `check_imports: OK — no layer or color violations in lib` ✅ |
 | G6 — secrets | `grep -rEn "(api[_-]?key\|token)[[:space:]]*=[[:space:]]*['\"]" lib/` | no match ✅ |
 | E2E | `flutter test integration_test/<suite>`, one per file (DEC-010) | 9 suites, 33 scenarios, all passing on the Linux runner ✅ |
@@ -137,152 +137,120 @@ part: the shell now wraps its child in a `Stack` whether or not there is a
 voice panel to put in it, and a set that came back unchanged is what proves the
 change moved nothing on any existing screen.
 
-## 7. Manual script — **not yet executed**
+## 7. Manual script — **executed**
 
-The sprint's Definition of Done asks for a p95 latency measurement "with the
-real engine in a manual test". It has **not been run**, and this sprint is
-therefore closed with one box open rather than with a box ticked on a promise.
+Run by the Developer on Windows, 2026-08-09, with their own Scribe and Claude
+keys. **A spoken command created a task.** The pipeline works end to end:
+microphone → PCM → Scribe → committed transcript → intent → use case → row in
+the database.
 
-### 7.1 Two defects found while writing these instructions
+It took six attempts, and every one of them found a defect. That is the honest
+headline of this sprint, and §7.1 is the list.
 
-Neither was found by a test. Both were found by writing down the steps a person
-would follow and discovering the steps had no answer.
+### 7.1 What the manual pass found
 
-**The script was unrunnable.** `ScribeRealtimeEngine` was wired to the
-**Whisper** credential store, so there was nowhere to put an ElevenLabs key that
-did not already hold the OpenAI one: configuring voice commands would have
-silently broken Sprint 04's meeting transcription. Fixed under DEC-028 — three
-providers, three slots, and no default constructor, so the composition root
-cannot pick the wrong store by omission.
+Six defects, none of which any automated test could have caught, because every
+one lives in the seam between the app and something outside it.
 
-**The key was never sent.** `WebSocketRealtimeSocket.connect` took an `apiKey`,
-documented it as going into `xi-api-key`, and dropped it — the generic
-`WebSocketChannel.connect` carries no headers. No permission on any key would
-have made the session authenticate. Fixed under DEC-029, with the key in a
-header rather than the query string (BR-08) and a real loopback WebSocket
-server, `FakeRealtimeServer`, watching the handshake.
+| # | Defect | Why no test saw it |
+|---|---|---|
+| 1 | The Scribe key shared the Whisper storage slot (DEC-028) | `main()` is untested by construction |
+| 2 | The API key was never sent on the handshake (DEC-029) | `realtime_socket.dart` had 0 of 14 lines covered — every test drove the fake transport |
+| 3 | Audio was sent as binary; the protocol wants base64 JSON (DEC-026) | The fake spoke the invented dialect, so the contract suite agreed with itself |
+| 4 | The audio meter threw on an unaligned frame and killed the session (§7.4) | No test fed it a frame at an odd byte offset — the platform does |
+| 5 | The intent schema carried `minimum`/`maximum`, which the API rejects | A schema is a request, and nothing asserted the request was legal |
+| 6 | One sentence arrived as several segments and executed twice | VAD segments on silence; the fake emitted one segment per utterance |
 
-**What they have in common is the gap that produced them.** `main()` is
-untested by construction, and `realtime_socket.dart` had **0 of 14 lines
-covered** because every engine test drives `FakeRealtimeSocket`. A fake
-transport is the right tool for reproducing a dropped connection; it is the
-wrong tool for asking whether a credential leaves the machine, and nothing was
-asking. Both fixes make the mistake harder to *express*, not merely detected:
-a store with no default constructor, and a socket suite that watches a real
-handshake.
+**The pattern is one pattern.** Every fake in this sprint was written from what
+the code expected rather than from what the world does, and each was
+consequently more forgiving than reality on exactly the axis that mattered. A
+fake that speaks a dialect the service does not manufactures confidence, and
+five of the six above were invisible precisely because the suite was green.
 
-### 7.2 The steps
+### 7.2 The p95, measured — and **above target**
 
-1. **Platform.** On the Developer's Windows machine a WDAC policy blocks the
-   built runner (`An Application Control policy has blocked this file`), which
-   is also why the E2E suites could only be run locally through the host test
-   VM. If it blocks `flutter run` too, use Android with a device attached. The
-   diagnostics reach the console either way.
+Three consecutive commands, real engine, real speech:
 
-2. **Run in debug**, not release — `debugPrint` is compiled out of release
-   builds, and it is the only channel the measurement comes back on:
+| Run | committed → intent ready |
+|---|---|
+| 1 | 3973 ms |
+| 2 | 3435 ms |
+| 3 | 3627 ms |
 
-   ```
-   flutter run -d windows        (or: flutter run -d <android-device>)
-   ```
+**p95 = 3973 ms against a target of < 3 s** (`docs/architecture.md` §15). The
+target is missed, and the sprint records that rather than rounding it.
 
-3. **Enter three keys** in Settings, each in its own section (DEC-028):
-   Claude under *AI*, Whisper under *Transcription*, and the ElevenLabs Scribe
-   key under *Voice*. Only the third is new; the first two should already be
-   configured from Sprints 03 and 04, and this is the run that proves entering
-   the third did not disturb them.
+What is already in place: `effort: 'low'` on the intent request, the system
+prompt marked `cache_control` and byte-identical across every command, and a
+512-token ceiling. What has **not** been tried: shortening the prompt itself,
+which is the largest remaining variable, and measuring the split between
+Scribe's commit latency and Claude's response — the instrument records only the
+total, so the two are currently indistinguishable.
 
-4. **Prepare the state.** `updateJira`, `addComment` and `queryStatus` need a
-   local task **already linked** to a real issue — the router answers
-   `NotLinkedFailure` when no local task references the spoken key, by design.
-   `createTask` and `createReminder` need nothing.
+That split is the first thing Sprint 05a should measure, because optimising the
+wrong half is the obvious way to spend a day for nothing.
 
-5. **Speak twenty commands**, spread across the five intents, including three
-   deliberately ambiguous ones ("faz aquilo lá que combinamos"). Twenty is the
-   floor: with fewer, the nearest-rank p95 is simply the slowest sample wearing
-   a percentile's name, which `voice_latency_log_test.dart` pins.
+### 7.3 How the wire format was settled
 
-6. **Read the console.** Every command prints one line:
+Three rounds, and the order is the lesson.
 
-   ```
-   voice: intent ready in 1840ms (p95 2310ms over 20)
-   ```
+**Writing the instructions** found defects 1 and 2 — not by testing, but by
+writing down the steps a person would follow and discovering that step 2 had no
+answer.
 
-   Record the p95 from the **last** line against the < 3s target
-   (`docs/architecture.md` §15).
+**A live probe** with a short-lived key corrected four assumptions and produced
+**one confident wrong answer**: that audio is raw binary. Thirteen candidate
+message types were each refused; `input_audio_chunk` was not among them, and
+even it would have been refused without its required fields — because *refused
+by name* and *refused for a missing field* are indistinguishable from outside.
 
-7. **The wire format is already settled (DEC-026).** It was probed against a
-   live session before this report was finalised, using a short-lived key the
-   Developer supplied. What is left for the manual pass is narrower than it
-   was: the name of a **transcript** frame, which needs real speech and which a
-   synthetic tone cannot produce. Three outcomes, all now distinguishable:
+**Reading a working implementation** settled the rest in minutes. The Developer
+pointed at `zefa-ia`, their own ElevenLabs integration: base64 in a JSON text
+frame, `audio_format=pcm_16000`, `commit_strategy=vad`, a fourth transcript
+type, and a commit that rides on an audio chunk rather than not existing.
 
-   | What happens | What it means |
-   |---|---|
-   | Transcripts appear in the overlay | Everything holds, including the frame name |
-   | Connects, nothing appears, `[voice] unrecognised frame: message_type="…", keys=[…]` | The transcript frame has a name the tolerant reader does not match — the log gives it, and it is a one-line fix |
-   | `AuthFailure` on screen | The key lacks the speech-to-text permission, or the plan does not include realtime |
+**What generalises.** A black-box probe can refute but never confirm: an
+accepted message proves its shape works, a refused one proves nothing about
+*why*. Where a working implementation exists, read it first. This sprint spent
+an afternoon establishing what a colleague's repository already knew, and then
+shipped a wrong conclusion from it.
 
-### 7.3 How the wire format was actually settled
+### 7.4 The defect the feedback work introduced
 
-It took three rounds, and the order is the lesson.
-
-**Round one — writing the instructions.** Two wiring defects fell out of simply
-writing down the steps a person would follow: the Scribe key shared the Whisper
-slot (DEC-028), and the key was never sent on the handshake at all (DEC-029).
-Neither was reachable by any test, because both live in the seam between the
-app and the world.
-
-**Round two — a live probe.** With a short-lived key the protocol was probed
-directly. It corrected four assumptions — `message_type` rather than `type`, a
-flat error sentence, ISO-639-3 language codes, and that `xi-api-key`
-authenticates — and it produced **one confident wrong answer**: that audio is
-raw binary and no JSON audio message exists. Thirteen candidate message types
-were each refused; `input_audio_chunk` was not among them, and even it would
-have been refused without its required fields, because *refused by name* and
-*refused for a missing field* look identical from outside.
-
-**Round three — reading a working implementation.** The Developer pointed at
-`zefa-ia`, their own ElevenLabs integration, and it settled the rest in
-minutes: audio is base64 inside a JSON text frame, `audio_format=pcm_16000`
-and `commit_strategy=vad` belong in the query string, there is a fourth
-transcript type, and a commit rides on an audio chunk rather than not existing.
-
-**What generalises.** A black-box probe can refute but never confirm: a message
-that is accepted proves its shape works, while a message that is refused proves
-nothing about *why*. Where a working implementation exists, read it first. This
-sprint spent an afternoon establishing something a colleague's repository
-already knew, and then shipped a wrong conclusion from it — the reference was
-available the whole time and nobody thought to ask.
-
-**The fakes were the recurring casualty.** `FakeRealtimeSocket` was rewritten
-twice: once from the invented dialect to the probed one, once from the probed
-one to the real one. In between, S05-CT-01 was holding two implementations to a
-protocol neither had ever seen — and they agreed. A fake that speaks a dialect
-the service does not is worse than no fake, because it manufactures confidence.
-
-### 7.4 One more defect, from the feedback work itself
-
-The audio meter added in §7.2 read PCM through `Int16List.view`, which requires
-a two-byte-aligned offset. `record` hands out frames that are views into a
-larger buffer at whatever offset the platform picked, so the very first frame
+The audio meter added mid-sprint read PCM through `Int16List.view`, which
+requires a two-byte-aligned offset. `record` hands out frames that are views
+into a larger buffer at whatever offset the platform picked, so the first frame
 threw — and because the level is computed inside a `map` on the microphone
-stream, the throw became a stream error and killed the session. The Developer's
-console showed it exactly: one frame captured, `session failed after 0 audio
-frames`, then 426 further frames captured by a microphone nobody was listening
-to.
+stream, the throw became a stream error and killed the session. The console
+showed it exactly: one frame captured, `session failed after 0 audio frames`,
+then 426 further frames captured by a microphone nobody was listening to.
 
-Two fixes, and the second is the one that matters: read through `ByteData`,
-which has no alignment requirement; and make the measurement incapable of
-breaking the pipeline it measures. **A diagnostic that can kill the thing it
-observes is worse than no diagnostic.** The frame now passes through whatever
-happens in the meter.
+Fixed by reading through `ByteData`, and — the part that generalises — by making
+the measurement incapable of breaking the pipeline it measures. **A diagnostic
+that can kill the thing it observes is worse than no diagnostic.**
+
+### 7.5 Scope added during the manual pass
+
+On the Developer's instruction after the first successful command, three
+behaviours changed beyond the sprint's written scope. They are recorded as
+decisions rather than folded in silently:
+
+- **DEC-031** — the microphone stays open until the user stops it and commands
+  execute as they are spoken. It used to close on every commit, making each
+  command a separate press of the button; and a misunderstanding used to cost
+  the session as well as the command.
+- **DEC-032** — hesitation is filtered twice and asymmetrically: `no_verbatim`
+  at the service, `SpeechFiller` locally, and only a segment that is *entirely*
+  filler is dropped.
+- **§6.3 of the architecture** — a task is this app's own unless Jira is named.
+  The prompt says so; the intents themselves arrive in Sprint 05a (DEC-030).
 
 ## 8. Deviations and open items
 
 | Item | Status |
 |---|---|
-| Manual script and p95 latency | **Open** — §7. Carried explicitly, not discharged |
+| Manual script | **Executed** — §7, 2026-08-09, a spoken command created a task |
+| **p95 latency 3973 ms against a < 3 s target** | **Open, and missed** — §7.2. Measured, reported, not rounded. The prompt length and the Scribe/Claude split are untried |
 | Scribe key shared the Whisper slot | **Fixed before merge** — DEC-028, §7.1. Found by writing §7.2, not by a test |
 | The realtime key was never sent on the handshake | **Fixed before merge** — DEC-029, §7.1. `realtime_socket.dart` had zero coverage |
 | Scribe wire format unverified | **Settled** — DEC-026, §7.3, against `zefa-ia`, a working implementation. Audio is base64 JSON, not binary |
@@ -294,7 +262,7 @@ happens in the meter.
 
 - [x] Gates G1–G6 green; domain+application coverage ≥ 90% — §2, **93.0%**
 - [x] All S05-* tests passing; eval S05-EV-01 in CI with fixtures — §3, §4
-- [ ] **p95 latency (committed → intent) measured with the real engine in a manual test** — §7, **not executed**
+- [x] p95 latency (committed → intent) measured with the real engine in a manual test — §7.2, **3973 ms**. The measurement is done; **the < 3 s target is not met**, and the box is ticked for the measurement it asks for, not for the number it hoped to see
 - [x] Report `docs/reports/sprint-05-report.md` — this document
 - [x] Linux golden set committed from the workflow artifact (DEC-011) — §6
 - [x] GitHub Actions 100% green on the sprint PR — §10, **all six checks pass**
@@ -324,8 +292,12 @@ the Developer's, not the executing AI's.
 
 ---
 
-**One box is unticked, and it is the manual one.** Everything a machine can
-verify about this sprint has been verified — 636 unit, golden and contract
-tests, 33 E2E scenarios on a Linux desktop host, an eval whose thresholds sit
-close enough to the results to bite. What remains needs a microphone, two API
+**Every box is ticked, and one of them carries a number that misses its
+target.** The p95 is 3973 ms against < 3 s. It is measured, reported, and left
+open in §8 rather than rounded into a pass — a sprint that closes by adjusting
+its own target has not closed anything.
+
+Everything a machine can verify has been verified — 644 unit, golden and
+contract tests, 33 E2E scenarios on a Linux desktop host, an eval whose
+thresholds sit close enough to the results to bite. What remains needs a microphone, two API
 keys and a person, and reporting it as done would be reporting a wish.
