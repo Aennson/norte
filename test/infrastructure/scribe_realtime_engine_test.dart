@@ -124,6 +124,44 @@ void main() {
       expect(connector.keys, <String>['synthetic-key']);
     });
 
+    test(
+      'S05-UT-06: audio goes as base64 JSON, not as binary frames',
+      () async {
+        // The protocol the service actually speaks. Raw binary is refused with
+        // `input_error: Message must be a valid protocol message`, once per
+        // chunk, so nothing transcribes and nothing looks broken (DEC-026).
+        await listen();
+        microphone.add(pcmFor(const Duration(milliseconds: 100)));
+        await pumpEventQueue();
+
+        final Map<String, Object?> frame = connector.current.frames.single;
+        expect(frame['message_type'], 'input_audio_chunk');
+        expect(frame['sample_rate'], ScribeRealtimeEngine.sampleRate);
+        expect(frame['commit'], isFalse);
+        expect(frame['audio_base_64'], isA<String>());
+        expect(
+          connector.current.audio,
+          pcmFor(const Duration(milliseconds: 100)),
+        );
+        // No binary frame was sent at all.
+        expect(connector.current.sent.whereType<Uint8List>(), isEmpty);
+      },
+    );
+
+    test('S05-UT-06: stopping commits the open segment', () async {
+      await listen();
+      microphone.add(pcmFor(const Duration(milliseconds: 100)));
+      await pumpEventQueue();
+      expect(connector.current.committed, isFalse);
+
+      await engine.stop();
+
+      // A commit rides on an audio chunk; an empty one closes the sentence.
+      // Without it a user who lifts their finger before VAD's silence window
+      // has elapsed loses the command.
+      expect(connector.sockets.last.committed, isTrue);
+    });
+
     test('S05-UT-06: no key configured is MissingApiKeyFailure', () async {
       final ScribeRealtimeEngine keyless = ScribeRealtimeEngine(
         credentialStore: FakeTranscriptionCredentialStore(),

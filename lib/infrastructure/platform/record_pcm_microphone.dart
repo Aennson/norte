@@ -54,6 +54,9 @@ class RecordPcmMicrophone implements Microphone {
   StreamController<Uint8List>? _session;
   StreamSubscription<Uint8List>? _frames;
 
+  /// Frames the platform has produced this session. A count, not a copy.
+  int _captured = 0;
+
   @override
   Future<MicrophonePermission> permission() async =>
       _translate(await micPermission.status);
@@ -71,12 +74,14 @@ class RecordPcmMicrophone implements Microphone {
   Stream<Uint8List> open() {
     final StreamController<Uint8List> session = StreamController<Uint8List>();
     _session = session;
+    _captured = 0;
     unawaited(_start(session));
     return session.stream;
   }
 
   @override
   Future<void> close() async {
+    log?.call('closing after $_captured frames');
     await _frames?.cancel();
     _frames = null;
     try {
@@ -155,6 +160,13 @@ class RecordPcmMicrophone implements Microphone {
 
     _frames = frames.listen(
       (Uint8List chunk) {
+        // The first frame is the answer to "is this microphone alive?", and
+        // its absence is the answer to the same question. Nothing after it is
+        // logged: a line per 100 ms would bury everything else.
+        if (_captured == 0) {
+          log?.call('first frame from the platform: ${chunk.length} bytes');
+        }
+        _captured++;
         if (!session.isClosed) session.add(chunk);
       },
       onError: (Object error) {
@@ -164,6 +176,7 @@ class RecordPcmMicrophone implements Microphone {
         }
       },
       onDone: () {
+        log?.call('platform ended capture after $_captured frames');
         // The platform ended the session — a phone call, a device change.
         // Closing here rather than hanging is what lets the pipeline commit
         // whatever was already spoken.

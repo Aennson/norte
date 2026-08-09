@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -74,20 +74,18 @@ void main() {
     });
 
     test('an unreachable host is NetworkFailure', () async {
-      // A port this test *knows* is free, because it held it a moment ago and
-      // let go. The first version assumed port 1 on loopback was closed; on
-      // the CI runner it was not, and the test failed there and nowhere else.
-      // An assumption about the host is not a fixture.
-      final ServerSocket probe = await ServerSocket.bind(
-        InternetAddress.loopbackIPv4,
-        0,
-      );
-      final int freePort = probe.port;
-      await probe.close();
-
+      // `.invalid` is reserved by RFC 2606 and can never resolve, so this
+      // needs no port and races with nothing.
+      //
+      // It took two tries to get here. Port 1 on loopback turned out to be
+      // open on the CI runner; binding an ephemeral port and releasing it
+      // raced the other suites, which bind ephemeral ports of their own and
+      // run in parallel. Both versions were an assumption about the machine
+      // dressed as a fixture — and a reserved name is the only one of the
+      // three that is a fact.
       await expectLater(
         WebSocketRealtimeSocket.connect(
-          Uri.parse('ws://127.0.0.1:$freePort'),
+          Uri.parse('ws://norte-nothing-here.invalid:443'),
           'synthetic-key',
         ),
         throwsA(isA<NetworkFailure>()),
@@ -139,7 +137,15 @@ void main() {
       );
 
       await _until(() => server.received.isNotEmpty);
-      expect(server.received.first, <int>[1, 2, 3, 4]);
+      final Map<String, Object?> frame =
+          jsonDecode(server.received.first! as String) as Map<String, Object?>;
+      expect(frame['message_type'], 'input_audio_chunk');
+      expect(base64Decode(frame['audio_base_64']! as String), <int>[
+        1,
+        2,
+        3,
+        4,
+      ]);
 
       server.emitCommitted('muda o PROJ-123 pra concluído');
       await _until(() => events.isNotEmpty);

@@ -100,6 +100,12 @@ class ScribeRealtimeEngine implements RealtimeTranscription {
   /// The default model.
   static const String defaultModel = 'scribe_v2_realtime';
 
+  /// The audio format the service is told to expect.
+  static const String audioFormat = 'pcm_16000';
+
+  /// The one client-to-server message this endpoint accepts.
+  static const String audioMessageType = 'input_audio_chunk';
+
   /// Sample rate of the audio this engine accepts.
   static const int sampleRate = 16000;
 
@@ -193,12 +199,13 @@ class ScribeRealtimeEngine implements RealtimeTranscription {
     if (_stopped) return;
     _stopped = true;
 
-    // No control frame on the way out. The first draft sent
-    // `{"type":"flush"}` here — a message this protocol does not have. The
-    // service answers `input_error: Message must be a valid protocol message`
-    // and drops the connection (DEC-026). Commits are VAD-driven server-side,
-    // which is what `vad_commit_strategy` in the session config means, so
-    // closing the socket is the whole of the goodbye.
+    // Close whatever the VAD still has open. There is no separate flush
+    // message in this protocol — a commit rides on an audio chunk — so an
+    // empty chunk with `commit` set is how a session says "that was the end
+    // of the sentence". The first draft invented `{"type":"flush"}`, which the
+    // service refuses (DEC-026).
+    _send(Uint8List(0), commit: true);
+
     await _teardown();
     final StreamController<TranscriptEvent>? events = _events;
     _events = null;
@@ -207,10 +214,18 @@ class ScribeRealtimeEngine implements RealtimeTranscription {
 
   // --- connection --------------------------------------------------------
 
+  /// The session is configured entirely through the query string.
+  ///
+  /// `audio_format` is not optional in practice: without it the service
+  /// assumes an encoding other than the 16 kHz mono PCM this pipeline
+  /// produces. `commit_strategy=vad` is what segments on silence instead of
+  /// waiting for an explicit commit per utterance — the behaviour §9.3
+  /// describes.
   Uri get _uri => Uri.parse('$baseUrl$endpoint').replace(
     queryParameters: <String, String>{
       'model_id': model,
-      'encoding': 'pcm_s16le_16000',
+      'audio_format': audioFormat,
+      'commit_strategy': 'vad',
       if (_iso639_3(language) case final String code) 'language_code': code,
     },
   );
@@ -231,6 +246,10 @@ class ScribeRealtimeEngine implements RealtimeTranscription {
 
     for (var attempt = 0; !_stopped; attempt++) {
       try {
+        log?.call(
+          'dialling ${_uri.path}${_uri.hasQuery ? '?…' : ''} '
+          '(attempt ${attempt + 1})',
+        );
         final RealtimeSocket socket = await _connect(_uri, key);
         if (_stopped) {
           await socket.close();
@@ -255,6 +274,11 @@ class ScribeRealtimeEngine implements RealtimeTranscription {
           _fail(failure);
           return;
         }
+        log?.call(
+          'attempt ${attempt + 1} failed (${failure.runtimeType}: '
+          '${failure.message}) — retrying in '
+          '${backoff[attempt].inMilliseconds}ms',
+        );
         await _sleep(backoff[attempt]);
       }
     }
@@ -283,16 +307,40 @@ class ScribeRealtimeEngine implements RealtimeTranscription {
 
   void _onAudio(Uint8List chunk) {
     if (_stopped) return;
-    final RealtimeSocket? socket = _socket;
-    if (socket != null) {
+    if (_socket != null) {
       if (_framesSent == 0) {
         log?.call('first audio frame sent (${chunk.length} bytes)');
       }
-      _framesSent++;
-      socket.send(chunk);
+      _send(chunk);
       return;
     }
     _hold(chunk);
+  }
+
+  /// Sends one chunk of PCM as the protocol's audio message.
+  ///
+  /// **Base64 inside a JSON text frame, not a binary frame.** Raw binary is
+  /// what the first draft sent, and the service answers
+  /// `input_error: Message must be a valid protocol message` — every chunk, so
+  /// nothing is ever transcribed and nothing looks broken either. Every field
+  /// below is required; a message missing one is refused exactly as a message
+  /// with the wrong name is, which is what made this expensive to find.
+  ///
+  /// The buffer holds **raw PCM** and encoding happens here, at the last
+  /// moment: base64 is a third larger, and the five-second cap of §9.3 is a
+  /// count of audio, not of transport.
+  void _send(Uint8List pcm, {bool commit = false}) {
+    final RealtimeSocket? socket = _socket;
+    if (socket == null) return;
+    _framesSent++;
+    socket.send(
+      jsonEncode(<String, Object?>{
+        'message_type': audioMessageType,
+        'audio_base_64': base64Encode(pcm),
+        'commit': commit,
+        'sample_rate': sampleRate,
+      }),
+    );
   }
 
   /// Holds [chunk] for replay, dropping the oldest audio past the cap.
@@ -318,22 +366,28 @@ class ScribeRealtimeEngine implements RealtimeTranscription {
 
   /// Re-sends everything held, oldest first, and forgets it.
   void _flush() {
-    final RealtimeSocket? socket = _socket;
-    if (socket == null) return;
+    if (_socket == null) return;
+    if (_buffer.isNotEmpty) {
+      log?.call(
+        'flushing ${_buffer.length} held frames ($_bufferedBytes bytes)',
+      );
+    }
     for (final Uint8List chunk in _buffer) {
-      socket.send(chunk);
+      // Counted like any other frame: audio captured before the socket came
+      // up is still audio the service received, and a counter that ignored it
+      // would report "0 frames sent" on exactly the session that buffered.
+      _send(chunk);
     }
     _buffer.clear();
     _bufferedBytes = 0;
   }
 
   void _onAudioDone() {
-    // The microphone closed — the user let go of the button. Nothing is sent:
-    // there is no commit message in this protocol, and the one the first draft
-    // invented got the session dropped. VAD closes the segment from the
-    // silence that follows, which is what `min_silence_duration_ms` in the
-    // session config is for.
+    log?.call('microphone closed after $_framesSent frames reached the socket');
     _audioEnded = true;
+    // The user let go of the button, so the sentence is over whether or not
+    // the silence has run long enough for VAD to say so.
+    _send(Uint8List(0), commit: true);
   }
 
   // --- messages ----------------------------------------------------------
@@ -354,11 +408,10 @@ class ScribeRealtimeEngine implements RealtimeTranscription {
   /// Errors carry a **flat `error` string**, not a nested object with a typed
   /// code — the first draft read `error.type` and would have found nothing.
   ///
-  /// Transcript frames are still read tolerantly (`partial`/`final`/
-  /// `committed` in the name, `is_final`, `text`/`transcript`), because the
-  /// live session never produced one: a synthetic tone is not speech, and this
-  /// account's key cannot reach TTS to make any. That single unknown is what
-  /// the manual pass settles, and [log] is what it will read.
+  /// The transcript frames are `partial_transcript`, `final_transcript`,
+  /// `committed_transcript` and `committed_transcript_with_timestamps`. The
+  /// substring match below covers all four and any fifth spelling of the same
+  /// two ideas, which is the tolerance worth keeping.
   void _onMessage(Object? frame) {
     final Object? decoded = switch (frame) {
       final String text => _tryDecode(text),
@@ -378,6 +431,19 @@ class ScribeRealtimeEngine implements RealtimeTranscription {
 
     if (type.contains('error') || type == 'invalid_request') {
       _fail(_failureFor(type, decoded['error']));
+      return;
+    }
+
+    // Its own message type rather than an error, and it carries no text — so
+    // without this it would be reported as an unrecognised frame on every
+    // throttled session.
+    if (type == 'rate_limited') {
+      _fail(
+        RateLimitFailure(switch (decoded['error']) {
+          final String reason => reason,
+          _ => 'the transcription service is rate limiting',
+        }),
+      );
       return;
     }
 
@@ -455,6 +521,12 @@ class ScribeRealtimeEngine implements RealtimeTranscription {
   }
 
   void _fail(Failure failure) {
+    // Logged before the guard: a failure that arrives after the stream has
+    // closed is exactly the one nobody would otherwise ever see.
+    log?.call(
+      'session failed after $_framesSent audio frames — '
+      '${failure.runtimeType}: ${failure.message}',
+    );
     final StreamController<TranscriptEvent>? events = _events;
     if (events == null || events.isClosed) return;
     events.addError(failure);

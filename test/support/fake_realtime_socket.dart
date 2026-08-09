@@ -45,20 +45,34 @@ class FakeRealtimeSocket implements RealtimeSocket {
     if (!_incoming.isClosed) await _incoming.close();
   }
 
-  /// The audio frames received, concatenated — the bytes the service heard.
+  /// Every frame received, decoded. They are all JSON text: this protocol has
+  /// no binary frames at all.
+  List<Map<String, Object?>> get frames => <Map<String, Object?>>[
+    for (final Object frame in sent)
+      if (frame is String) jsonDecode(frame) as Map<String, Object?>,
+  ];
+
+  /// The audio the service heard, base64-decoded and concatenated.
+  ///
+  /// Decoding here rather than letting a test read `audio_base_64` keeps the
+  /// assertions about **the bytes**, which is what the five-second buffer of
+  /// §9.3 is measured in.
   Uint8List get audio {
     final BytesBuilder heard = BytesBuilder();
-    for (final Object frame in sent) {
-      if (frame is Uint8List) heard.add(frame);
+    for (final Map<String, Object?> frame in frames) {
+      if (frame['message_type'] != 'input_audio_chunk') continue;
+      final Object? encoded = frame['audio_base_64'];
+      if (encoded is String && encoded.isNotEmpty) {
+        heard.add(base64Decode(encoded));
+      }
     }
     return heard.toBytes();
   }
 
-  /// The JSON control frames received, decoded.
-  List<Map<String, Object?>> get control => <Map<String, Object?>>[
-    for (final Object frame in sent)
-      if (frame is String) jsonDecode(frame) as Map<String, Object?>,
-  ];
+  /// `true` when a chunk carrying `commit` has been sent — the protocol's only
+  /// way of saying "that was the end of the sentence".
+  bool get committed =>
+      frames.any((Map<String, Object?> f) => f['commit'] == true);
 
   /// Pushes the frame the service opens every session with.
   void emitSessionStarted() => _emit(<String, Object?>{
