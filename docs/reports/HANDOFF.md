@@ -16,22 +16,24 @@ next. Read `docs/project-rules.md` first as always; this only says what is
 | PR | [#7](https://github.com/Aennson/norte/pull/7), **open, not merged** |
 | Tests | 644 passing · coverage 93.2% domain+application, 84.1% project |
 
-### The one thing blocking the merge
+### PR #7 merged early — and **`master` is red**
 
-The Developer **approved the merge**. It has not happened because GitHub's PR
-object was still reporting `head=57a3cc9` and `mergeable=null` while the branch
-was at `6a3256f` — an API propagation lag, not a code problem. The remote ref
-and the green CI run both point at `6a3256f`.
+PR #7 was merged at `57a3cc9`, **three commits before the branch tip**. What
+looked for twenty minutes like GitHub lagging was GitHub telling the truth: a
+closed PR freezes its head, and I read the frozen value as a stale one.
 
-**Next session: verify, then merge.**
+`master` therefore carries the continuous-listening change (DEC-031) **without**
+the goldens and the E2E assertion that change required. Six overlay goldens and
+S05-E2E-01 fail on it right now.
 
-```bash
-gh api repos/Aennson/norte/pulls/7 --jq '"\(.mergeable) \(.mergeable_state) \(.head.sha[0:7])"'
-# expect: true clean 6a3256f   → then merge
-```
+**[PR #8](https://github.com/Aennson/norte/pull/8) carries the tail and fixes
+it.** Merge that first, before anything else.
 
-Do not merge on a stale read. If it still disagrees, push an empty commit to
-nudge GitHub rather than forcing anything.
+| Commit | |
+|---|---|
+| `76f3316` | The truthful report — the manual pass, six defects, p95 3973 ms |
+| `6a3256f` | **The red-build fix** — regenerated goldens, E2E updated for DEC-031 |
+| `e116311` | This document |
 
 ---
 
