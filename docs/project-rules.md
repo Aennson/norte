@@ -78,6 +78,20 @@ These rules come from the architecture (`docs/architecture.md`) and **must each 
 4. **E2E never calls real APIs.** Fake adapters (`FakeAiEngine`, `FakeJiraGateway`, `FakeTranscriptionEngine`) are injected via Riverpod overrides and respond with deterministic fixtures defined in `test/fixtures/`.
 5. Tests must not depend on the network, the real clock (use `clock`/injected `DateTime.now`), or execution order.
 6. A discovered bug = a new regression test before the fix.
+7. **Manual steps that need a device the Developer does not currently hold**
+   (a physical Android phone, a macOS host) are **deferred to the end-of-v1.0
+   acceptance pass** in `docs/sprints/sprint-08-hardening.md`, keeping the
+   numbers they had in their own sprint (DEC-036). Ask the Developer for them
+   when the hardware is in hand; never claim one that was not run. Three
+   things this rule does **not** permit:
+   - deferring a platform the Developer *can* run — it is verified in its own
+     sprint, as Windows was in Sprint 06;
+   - deferring anything **automated**. Gates G1–G6, every golden set, every
+     E2E suite and CI run in full in every sprint, on every platform capable
+     of running them. This rule moves human verification of operating-system
+     behaviour and grants relief nowhere else;
+   - deleting the obligation. DEC-020 stands: Android is an available platform
+     and v1.0 still owes it a verified pass, at a named moment.
 
 ## 6. Code rules
 

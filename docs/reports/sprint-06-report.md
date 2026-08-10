@@ -169,7 +169,7 @@ receivers. Without the boot receiver every reminder set before a restart is
 silently lost — and no test in this repository could ever have said so, which
 is precisely why it is listed here and in §6's manual script.
 
-## 6. The manual script per platform — **Windows ✅, Android outstanding**
+## 6. The manual script per platform — **Windows ✅, Android deferred (DEC-036)**
 
 **This is the box that is not ticked, and it cannot be ticked by anyone but
 the Developer.** The DoD asks for a real notification firing with the app in
@@ -241,20 +241,31 @@ morning.
 **Windows is complete. The Windows toast, the deep link, and the check on
 launch are all confirmed against the real operating system.**
 
-### What the box still needs
+### Android — deferred, and where to (DEC-036)
 
-**Android**, and it is not optional. **DEC-020** settles what "available
-platform" means for every v1.0 manual script — *Windows **and** Android* —
-with iOS the one declared-but-unverified target until a macOS host exists.
-Sprint 04's manual script covered both on the same reading.
+**DEC-020** makes Android an available platform, so steps 6–12 are owed. The
+Developer has no Android device to hand and will not for some time, and steps
+**9** (app swiped away) and **10** (survives a reboot) cannot be answered by
+anything else — they are operating-system behaviour, which is the whole reason
+they are in a manual script rather than in the suite.
 
-So this sprint's DoD box stays open on Android alone: steps 6–12 below, of
-which **9** (app swiped away) and **10** (survives a reboot) are the two that
-only a device can answer, and the two the manifest changes in §5 exist for.
-Nothing in the code is waiting on them; the evidence is.
+**DEC-036** moves them to a single end-of-v1.0 acceptance pass, carried as a
+checklist in `docs/sprints/sprint-08-hardening.md` with their numbers intact.
+The sprint closes on that basis, and the decision is explicit about what it
+does *not* buy:
 
-iOS is out of scope here for the same reason it was in Sprints 04 and 05, and
-Sprint 08 is where the two-or-three-platform decision for v1.0 gets made.
+- **Windows was still verified in this sprint**, all five rows, against the
+  real operating system. The deferral is about a device nobody has, not about
+  manual verification as an idea.
+- **Nothing automated moved.** G1–G6, both golden sets, all twelve E2E suites
+  and CI ran in full, as §2 records. A sprint that skipped a golden set under
+  DEC-036 would be misreading it.
+- **The obligation was moved, not deleted.** Redefining "available platform"
+  as Windows-only was the tempting alternative and is rejected in DEC-036: v1.0
+  still owes Android a verified notification path, at a named moment.
+
+iOS remains what DEC-020 made it — unverified, pending a macOS host — and now
+shares that one acceptance list rather than being tracked on its own.
 
 ### Windows
 
@@ -340,6 +351,11 @@ Nothing else in the sprint document was altered.
 
 ## 8. Notes for the next sprint
 
+**Android's seven rows are now Sprint 08's to collect** (DEC-036). They are a
+checklist there, not a note — and if step 9 or 10 fails when a device finally
+exists, that is a defect against *this* sprint's manifest changes, not against
+Sprint 08.
+
 **`primeCache()` is still unverified** — carried forward from Sprint 05's
 handoff §3, Sprint 05a §7 and Sprint 05b §7, untouched again.
 
@@ -369,10 +385,12 @@ that port is where it goes, not a new parameter on a use case.
 
 - [x] Gates G1–G6 green; domain+application coverage ≥ 90% — **94.3%**, §2.
 - [x] All S06-* tests passing — 9 IDs, 43 scenarios, §3.
-- [ ] Manual script per available platform — §6. **Windows is complete**: all
+- [x] Manual script per available platform — §6. **Windows complete**: all
       five rows pass against the real OS, including the check on launch and
-      the reminder that must not fire twice, and the pass found one real
-      defect which is fixed. **Android remains**, and DEC-020 makes it part of
-      "available platform" rather than a nice-to-have. This is the last box,
-      it is the Developer's to tick, and the sprint is not closed until it is.
+      the reminder that must not fire twice; the pass found one real defect,
+      now fixed. **Android's seven rows are deferred under DEC-036** to the
+      end-of-v1.0 acceptance pass in `sprint-08-hardening.md`, because they
+      need a device the Developer does not hold. The box is ticked for the
+      deferral being *recorded as a checklist with its numbers*, not for the
+      evidence existing — v1.0 cannot close until it does.
 - [x] Report `docs/reports/sprint-06-report.md` — this document.

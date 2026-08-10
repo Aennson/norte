@@ -1190,3 +1190,66 @@ sense that was only ever an implementation detail.
 `docs/architecture.md` §6.3.1, §14; `lib/domain/services/text_match.dart`;
 `lib/application/voice/intent_router.dart`;
 `lib/presentation/voice/voice_labels.dart` and the three ARB files.
+
+---
+
+## DEC-036 — Device-dependent manual passes move to an end-of-v1.0 acceptance run (Sprint 06)
+
+**Status:** accepted · decided by the Developer on 2026-08-09.
+
+**Context.** DEC-020 settled that "available platform" means **Windows and
+Android** for every v1.0 manual script, and Sprint 04 closed its box on that
+reading. Sprint 06 is the first sprint whose manual script cannot be satisfied
+by the machine alone: a notification is delivered by an operating system, and
+proving delivery with the app *swiped away* (step 9) or *after a reboot*
+(step 10) needs a physical Android device in the Developer's hands. They do
+not have one now, and will not for some time.
+
+The choice was therefore between three things, and only one of them is honest:
+block the sprint on hardware, tick a box for evidence nobody gathered, or move
+the obligation somewhere it will actually be met and say so.
+
+**Decision.** A manual step that **requires a device the Developer does not
+currently hold** is deferred to a single **end-of-v1.0 acceptance pass**,
+carried in `docs/sprints/sprint-08-hardening.md`. A sprint may close with such
+a step outstanding, on three conditions:
+
+1. **Every platform actually in hand is still verified in its own sprint.**
+   Sprint 06 closes with all five Windows rows passing against the real OS,
+   including the check on launch — deferral applies to the missing device, not
+   to the manual pass as an idea.
+2. **The deferred steps are written down as steps**, in the sprint's report and
+   in the Sprint 08 acceptance list, with the numbers they had. "Test Android
+   later" is not a deferral, it is a hope.
+3. **Nothing automated is deferred, ever.** Gates G1–G6, the golden sets, the
+   E2E suites and CI run in full every sprint, on every platform that can run
+   them, exactly as before. This decision moves *human* verification of
+   *device* behaviour; it grants no relief anywhere else, and a sprint that
+   skipped a golden set under it would be misreading it.
+
+The Developer is asked for these passes when the hardware is available; until
+then no sprint claims them. iOS remains what DEC-020 made it — unverified,
+pending a macOS host — and now shares one acceptance list with Android instead
+of being tracked separately.
+
+**Rejected alternatives.**
+
+- *Block Sprint 06 until a device exists.* Blocks the project on hardware for
+  behaviour whose Windows equivalent is already proven, and leaves finished,
+  tested, CI-green work unmerged for an unknown number of weeks. It also makes
+  every later sprint start from a stale `master`, which is how Sprint 05's
+  worst afternoon began.
+- *Redefine "available platform" as Windows only.* This is the tempting one and
+  it is wrong: it would silently delete an obligation rather than move it, and
+  DEC-020 exists precisely because a phrase nobody pins gets reinterpreted by
+  whoever needs it to mean something convenient. v1.0 still owes Android a
+  verified notification path.
+- *Tick the box and note the gap in prose.* Sprint 05b's report says its PR
+  should not merge until a manual pass is filled in; the PR merged anyway, and
+  the box is still open on `master` two sprints later. A checklist that can be
+  ticked on intent stops being a checklist.
+
+**Impact.** `docs/sprints/sprint-08-hardening.md` (the acceptance list);
+`docs/reports/sprint-06-report.md` §6 and §9; every future v1.0 manual script;
+DEC-020, which stands — Android is still an available platform and still owed,
+it is simply owed at a named moment.

@@ -68,9 +68,50 @@
 - **Action:** run the full suite in CI (desktop) 3 consecutive times.
 - **Exit criteria:** 3 runs 100% green (no flakes); total duration recorded in the report.
 
+## The deferred device acceptance pass (DEC-036)
+
+Steps that need a physical device the Developer did not hold at the time were
+moved here rather than ticked or dropped. **This section is a checklist, not a
+note**: each row keeps the number it had in its own sprint's report, so the
+evidence lands where it was originally owed.
+
+**Nothing automated was deferred.** Gates G1–G6, the golden sets, the E2E
+suites and CI ran in full in every sprint that carried one of these rows.
+What is outstanding is human verification of operating-system behaviour.
+
+### From Sprint 06 — reminder notifications (`sprint-06-report.md` §6)
+
+Windows is complete: all five rows pass, including the check on launch. Every
+row below uses **Type it instead** — no Scribe key, no Claude key, no speaking.
+
+| # | Platform | Do | Expected |
+|---|---|---|---|
+| 6 | Android | First launch | The notification permission is asked for |
+| 7 | Android | Reminder ~20 min out, app in the **foreground** | It appears |
+| 8 | Android | Same, app in the **background** | Same |
+| 9 | Android | Same, app **swiped away** | Same — what `SCHEDULE_EXACT_ALARM` is for |
+| 10 | Android | Reminder out, **reboot the device**, wait | It still fires — the boot receiver |
+| 11 | Android | Tap any of them | Norte opens on that reminder, cold start as well as warm |
+| 12 | Android | Refuse the permission, then create a reminder | The row is saved; the screen says it will not sound |
+| 6–12 | iOS | The same rows | Blocked on a macOS host (DEC-020) |
+
+Steps **9 and 10** are the two that only a device can answer, and the two the
+`AndroidManifest.xml` permissions added in Sprint 06 exist for. If either
+fails, the manifest is the first place to look and the failure is a defect
+against Sprint 06, not against this sprint.
+
+### iOS, still (DEC-020)
+
+The first build, the first manual pass, and the
+`test/presentation/goldens/images/macos/` golden set. This sprint is where
+v1.0 decides whether it ships two platforms or three.
+
 ## Definition of Done — v1.0 closure
 
 - [ ] Gates G1–G6 green; domain+application coverage ≥ 90%, project ≥ 80%.
+- [ ] **The deferred device acceptance pass above**, or a recorded decision
+      that v1.0 ships without the platform it needed (DEC-036). A row may not
+      be ticked on intent.
 - [ ] All S08-* tests passing; the eval mandatory in CI.
 - [ ] Global E2E regression suite green 3× in a row.
 - [ ] Compliance checklist completed in the report: BR-01 through BR-11, each with the ID of the test covering it.
