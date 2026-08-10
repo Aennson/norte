@@ -24,7 +24,7 @@ class CliEngineProfile {
   const CliEngineProfile({
     required this.id,
     required this.label,
-    required this.executable,
+    required this.executables,
     required this.baseArguments,
     required this.promptFlag,
     required this.modelFlag,
@@ -39,10 +39,29 @@ class CliEngineProfile {
   /// Human-readable name for Settings and the diagnostics log.
   final String label;
 
-  /// The program to run. Resolved through `PATH` rather than pinned to an
-  /// install location, because both CLIs update themselves and a hard-coded
-  /// path would silently point at a version that has moved.
-  final String executable;
+  /// The programs to try, in order, until one starts.
+  ///
+  /// Resolved through `PATH` rather than pinned to an install location,
+  /// because both CLIs update themselves and a hard-coded path would silently
+  /// point at a version that has moved.
+  ///
+  /// **A list, because "the Copilot CLI" is not one install.** The Sprint 07
+  /// manual pass was written against the npm package, which lays down a `.ps1`,
+  /// a `.cmd` and an extensionless shell script side by side — only the `.cmd`
+  /// of which `CreateProcess` can start without a shell, which the runner
+  /// deliberately refuses to use. Run on a machine where the same tool had been
+  /// installed through WinGet, that name did not exist: WinGet ships a native
+  /// `copilot.exe`. One hard-coded name meant the engine worked on the
+  /// developer's machine and reported "is it installed?" on a machine where it
+  /// plainly was.
+  ///
+  /// The order is native-executable-first, because a `.cmd` is a shim around
+  /// one and starting the shim buys an extra process for nothing.
+  ///
+  /// Only a failure to *start* advances to the next candidate. A CLI that
+  /// starts and then exits non-zero has answered, and trying a second copy of
+  /// the same tool would turn one honest failure into two.
+  final List<String> executables;
 
   /// Arguments that are always sent, before the prompt.
   final List<String> baseArguments;
@@ -187,8 +206,18 @@ class CliAiEngine implements AiEngine {
     // sent first and the transcript after a delimiter, which preserves the
     // ordering the prompt was written for; what is lost is the caching, and
     // `capabilities.supportsPromptCache` already says so.
+    // **The output contract is spelled out, because this transport cannot
+    // attach a schema.** `ClaudeApiEngine` sends `MeetingSummaryCodec.schemaFor`
+    // as `output_config.format` and the model has no choice; there is one
+    // prompt here and no such affordance. Without this line the real Copilot
+    // CLI answered the Sprint 07 manual pass in Markdown headings — a good
+    // answer to the prompt it was given, and unreadable to the codec.
     final String raw = await _run(
-      _joinPrompt(codec.systemPromptFor(template), transcript),
+      _joinPrompt(
+        '${codec.systemPromptFor(template)}\n\n'
+        '${codec.outputContractFor(template)}',
+        transcript,
+      ),
     );
 
     return codec.parse(
@@ -254,19 +283,31 @@ class CliAiEngine implements AiEngine {
       if (!profile.promptOnStdin) prompt,
     ];
 
-    final RunningProcess process;
-    try {
-      process = await runner.start(
-        profile.executable,
-        arguments,
-        environment: const <String, String>{},
-        stdin: profile.promptOnStdin ? prompt : null,
-      );
-    } catch (error) {
-      // The commonest failure by far, and the one worth naming: the CLI is not
-      // installed. It is also how the sprint's manual fallback test is
-      // performed — rename the executable and this is the path that runs.
-      log?.call('[${profile.id}] could not start — ${error.runtimeType}');
+    // Each candidate in turn. The loop exists because one tool can be
+    // installed under more than one name (see [CliEngineProfile.executables]),
+    // and the only way to find out which one this machine has is to try.
+    RunningProcess? process;
+    for (final String executable in profile.executables) {
+      try {
+        process = await runner.start(
+          executable,
+          arguments,
+          environment: const <String, String>{},
+          stdin: profile.promptOnStdin ? prompt : null,
+        );
+        break;
+      } catch (error) {
+        // The commonest failure by far, and the one worth naming: the CLI is
+        // not installed under this name. It is also how the sprint's manual
+        // fallback test is performed — rename the executable and every
+        // candidate fails, and this is the path that runs.
+        log?.call(
+          '[${profile.id}] $executable could not start — ${error.runtimeType}',
+        );
+      }
+    }
+
+    if (process == null) {
       throw AiProcessFailure(
         '${profile.label} could not be started — is it installed?',
       );

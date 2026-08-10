@@ -64,11 +64,20 @@ class CopilotCliEngine extends CliAiEngine {
   static const CliEngineProfile copilotProfile = CliEngineProfile(
     id: engineId,
     label: 'GitHub Copilot CLI',
-    // `copilot.cmd` rather than `copilot`: npm installs a `.ps1`, a `.cmd` and
-    // an extensionless shell script side by side, and only the `.cmd` is
-    // something `CreateProcess` can start on Windows without a shell — which
-    // the runner deliberately refuses to use.
-    executable: 'copilot.cmd',
+    // **Two names, because there are two supported installs.** WinGet ships a
+    // native `copilot.exe`; npm lays down a `.ps1`, a `.cmd` and an
+    // extensionless shell script side by side, only the `.cmd` of which
+    // `CreateProcess` can start without a shell — which the runner
+    // deliberately refuses to use. Neither name exists in both installs, and
+    // the Sprint 07 manual pass met exactly that: the engine was written
+    // against the npm layout and reported "is it installed?" on a machine
+    // where WinGet had installed it.
+    //
+    // `copilot` on its own is not a third option: `CreateProcess` appends
+    // `.exe` to an extensionless name rather than running the shell script npm
+    // writes under it, so it would resolve to the same file as the first entry
+    // and miss the npm install entirely.
+    executables: <String>['copilot.exe', 'copilot.cmd'],
     baseArguments: <String>[
       '--allow-all-tools',
       '--deny-tool',

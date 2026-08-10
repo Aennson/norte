@@ -71,9 +71,11 @@ class ClaudeCodeCliEngine extends CliAiEngine {
   static const CliEngineProfile claudeCodeProfile = CliEngineProfile(
     id: engineId,
     label: 'Claude Code CLI',
-    // A native executable, so unlike Copilot there is no shim to choose
-    // between and `CreateProcess` can start it directly.
-    executable: 'claude',
+    // A native executable, so the common install needs no shim. The `.cmd` is
+    // still listed for the npm package, which wraps it the same way it wraps
+    // Copilot — the Sprint 07 manual pass found that assuming one install
+    // layout is how an installed CLI comes to report itself missing.
+    executables: <String>['claude.exe', 'claude.cmd'],
     baseArguments: <String>[
       '--output-format',
       'json',

@@ -6,10 +6,12 @@ import 'package:norte/domain/failures/failure.dart';
 import 'package:norte/infrastructure/ai/claude_code_cli_engine.dart';
 import 'package:norte/infrastructure/ai/cli_ai_engine.dart';
 import 'package:norte/infrastructure/ai/copilot_cli_engine.dart';
+import 'package:norte/infrastructure/ai/process_runner.dart';
 
 import '../fakes/fakes.dart';
 import '../support/cli_fixtures.dart';
 import '../support/fake_process_runner.dart';
+import '../support/meeting_fixtures.dart';
 
 /// A valid intent, as `IntentCodec` reads one.
 const String validIntent =
@@ -304,6 +306,80 @@ void main() {
       );
     });
 
+    test('the summary prompt states the JSON contract in words', () async {
+      // **The regression guard for the defect the manual pass found.** The
+      // remote engine attaches `MeetingSummaryCodec.schemaFor` as
+      // `output_config.format` and the model has no choice about the shape.
+      // A CLI has one prompt and no such affordance, and the system prompt on
+      // its own never says the word JSON — so the real Copilot CLI answered a
+      // retro in Markdown headings and the codec could not read a word of it.
+      //
+      // Every fixture in this file is JSON, which is exactly why no test here
+      // could have caught it: the fakes agreed with the parser about a shape
+      // the model was never asked for.
+      final FakeProcessRunner runner = FakeProcessRunner.always(
+        () => FakeProcess(
+          stdout: <String>[copilotAnswer(summaryFixture('retro.json'))],
+        ),
+      );
+
+      await copilot(runner).summarize(retroTranscript, retroTemplate);
+
+      final String sent = runner.invocations.single.prompt;
+      expect(sent, contains('JSON only'));
+      expect(sent, contains('"sections"'));
+      expect(sent, contains('"actionItems"'));
+      // The section titles the answer has to use, named in the prompt rather
+      // than left for the model to infer from the prose above.
+      for (final String title in retroTemplate.sectionTitles) {
+        expect(sent, contains(title));
+      }
+    });
+
+    test('a second executable name is tried when the first is absent', () {
+      // The other thing the manual pass found. `copilot.cmd` is the npm
+      // install's name; WinGet ships `copilot.exe`, and a profile that knew
+      // only one of them reported "is it installed?" on a machine where the
+      // tool plainly was.
+      expect(CopilotCliEngine.copilotProfile.executables, <String>[
+        'copilot.exe',
+        'copilot.cmd',
+      ]);
+      expect(
+        ClaudeCodeCliEngine.claudeCodeProfile.executables,
+        hasLength(greaterThan(1)),
+      );
+    });
+
+    test('every candidate is tried before the engine gives up', () async {
+      final List<String> tried = <String>[];
+      final FakeProcessRunner runner = _RecordingMissingRunner(tried);
+
+      await expectLater(
+        copilot(runner).parseIntent('cria uma tarefa', context),
+        throwsA(isA<AiProcessFailure>()),
+      );
+
+      expect(tried, CopilotCliEngine.copilotProfile.executables);
+    });
+
+    test('a candidate that starts is the only one tried', () async {
+      // Only a failure to *start* advances to the next name. A CLI that starts
+      // and then exits non-zero has answered, and running a second copy of the
+      // same tool would turn one honest failure into two — and bill for it.
+      final FakeProcessRunner runner = FakeProcessRunner.always(
+        () => FakeProcess(stderr: const <String>['nope'], exit: 1),
+      );
+
+      await expectLater(
+        copilot(runner).parseIntent('cria uma tarefa', context),
+        throwsA(isA<AiProcessFailure>()),
+      );
+
+      expect(runner.invocations, hasLength(1));
+      expect(runner.invocations.single.executable, 'copilot.exe');
+    });
+
     test(
       'an argv-delivered prompt over the ceiling is refused, not truncated',
       () async {
@@ -392,4 +468,32 @@ void main() {
       expect(runner.invocations, isEmpty);
     });
   });
+}
+
+/// A runner where every executable is missing, recording the names tried.
+///
+/// `FakeProcessRunner.missing()` would do the throwing, but not the recording —
+/// and the assertion is precisely about *which* names the engine reaches for
+/// and in what order.
+class _RecordingMissingRunner extends FakeProcessRunner {
+  _RecordingMissingRunner(this._tried)
+    : super((int _) => throw const ProcessException());
+
+  final List<String> _tried;
+
+  @override
+  Future<RunningProcess> start(
+    String executable,
+    List<String> arguments, {
+    Map<String, String> environment = const <String, String>{},
+    String? stdin,
+  }) {
+    _tried.add(executable);
+    return super.start(
+      executable,
+      arguments,
+      environment: environment,
+      stdin: stdin,
+    );
+  }
 }

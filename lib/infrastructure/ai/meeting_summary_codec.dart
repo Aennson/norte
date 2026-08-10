@@ -112,6 +112,40 @@ class MeetingSummaryCodec {
     return buffer.toString();
   }
 
+  /// The output contract in words, for a transport that cannot attach
+  /// [schemaFor].
+  ///
+  /// **The Sprint 07 manual pass is what proved this necessary.** The API
+  /// engine sends the schema as `output_config.format` and the model has no
+  /// choice about the shape; a CLI has one prompt and no such affordance, and
+  /// [systemPromptFor] — written for a transport that carried the schema
+  /// alongside it — never says the word JSON. Asked to summarize a retro, the
+  /// real Copilot CLI answered in Markdown headings: a perfectly good answer to
+  /// the prompt it was actually given, and unreadable to [parse].
+  ///
+  /// Every fixture in the suite is JSON, so every fake agreed with the parser
+  /// and nothing failed until a real model was asked. That is `sprint-05` §5's
+  /// lesson arriving a third time: a fake written from the caller's
+  /// expectations agrees with the caller about everything, including what both
+  /// got wrong.
+  ///
+  /// Kept beside [schemaFor] deliberately. Two descriptions of one shape will
+  /// drift; two descriptions in the same class at least drift in front of
+  /// whoever is editing them.
+  String outputContractFor(MeetingTemplate template) {
+    final String titles = template.sectionTitles
+        .map((String title) => '"$title"')
+        .join(', ');
+    return 'Answer with JSON only — no prose, no Markdown, no code fence.\n'
+        'The whole answer is one object:\n'
+        '{"sections": [{"title": "…", "body": "…"}], '
+        '"actionItems": [{"description": "…", "assignee": null, '
+        '"dueDate": null}]}\n'
+        'Use exactly these section titles, in this order: $titles.\n'
+        '"assignee" and "dueDate" are null when the meeting did not name them; '
+        '"dueDate" is an ISO 8601 date when it did.';
+  }
+
   /// Reads [raw] into a [MeetingSummary] shaped by [template].
   ///
   /// Throws [AiResponseFailure] rather than returning half a summary. The
