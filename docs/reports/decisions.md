@@ -1253,3 +1253,123 @@ of being tracked separately.
 `docs/reports/sprint-06-report.md` §6 and §9; every future v1.0 manual script;
 DEC-020, which stands — Android is still an available platform and still owed,
 it is simply owed at a named moment.
+
+---
+
+## DEC-037 — The Copilot CLI is a remote engine, and `isLocal` says so (Sprint 07)
+
+**Context.** `docs/architecture.md` §7.2 gives `CopilotCliEngine`
+`capabilities.isLocal = true`, with a stated reason: the inference runs as a
+local subprocess, so "data does not leave the machine". BR-07 uses exactly that
+condition — and only that condition — to permit relaxing the PII redactor.
+
+**The premise is false, and it was checked rather than assumed.** GitHub
+Copilot CLI 1.0.78 was installed on the Developer's machine and run
+non-interactively (`copilot -p … --output-format json`). Its own JSONL says what
+it is: `session.auto_mode_resolved` chose `claude-haiku-4.5` from a
+server-provided list, and the answer came back with `requestId`,
+`serviceRequestId`, `apiCallId: msg_011…` and `premiumRequests: 0.33` billed to
+the account. The CLI is a thin client. **The process is local; the inference is
+not.** A transcript handed to it goes to GitHub's servers exactly as a
+transcript handed to `ClaudeApiEngine` goes to Anthropic's.
+
+**Decision.** `CopilotCliEngine` declares **`isLocal = false`**. The redactor
+relaxation of BR-07 therefore never applies to it, the setting that would
+disable redaction is not offered, and PII redaction stays enforced on both
+engines in v1.0.
+
+**Why this way round.** BR-07 is a rule about *where the user's data goes*, and
+§7.2's `isLocal = true` is a claim about the same thing that happens to be
+wrong. Honouring the rule means contradicting the document's literal text;
+honouring the text means shipping a toggle that sends unredacted CPFs to a
+third party under a justification that does not survive one command's output.
+When a document and the world disagree about a fact, the world wins and the
+document is corrected — and BR-07's own words ("with `isLocal == true`") are
+satisfied here, not overridden: the condition is simply not met.
+
+**Rejected alternatives.**
+
+- *Implement §7.2 literally.* This is the deferential reading and it is the
+  dangerous one. It converts a documentation error into a privacy defect that
+  only fires when a user opts in, which is the hardest kind to notice: the
+  toggle would be labelled with the reassurance that the data stays local,
+  and the reassurance would be false.
+- *Keep `isLocal = true` and disable the toggle anyway.* Leaves the wrong fact
+  in the codebase for the next sprint to read and act on, having removed the
+  one symptom that would have exposed it. A capability that lies and is worked
+  around is worse than one that is corrected.
+- *Add a third capability (`runsLocally` vs `dataStaysLocal`).* Precise, and
+  premature: v1.0 has no engine for which the two differ in the other
+  direction, and BR-07 needs one answer, not two.
+
+**What this does not change.** Everything else Sprint 07 asks of the adapter
+stands unaltered — the subprocess, the 30s watchdog, the BR-10 fallback chain,
+the Windows-only availability, the settings section. `isLocal` is read by the
+application layer for one purpose, and this decision changes only that answer.
+
+**Impact.** `docs/architecture.md` §7.2 (the premise, corrected here rather
+than silently); the sprint's S07-IT-01, whose "off + local → CPF passes intact"
+scenario describes a state the app can no longer reach and is re-read in
+`docs/reports/sprint-07-report.md`; the Settings UI, which shows no redaction
+toggle. If a genuinely local engine is ever added (v1.1's gateway work, or an
+on-device model), BR-07's relaxation becomes reachable again and this decision
+does not stand in its way.
+
+---
+
+## DEC-038 — Claude Code CLI joins Sprint 07, as an amendment rather than a slip (Sprint 07)
+
+**Context.** `docs/sprints/sprint-07-copilot-cli.md` lists "other local engines"
+under **Out**, and the `sprint-executor` skill is explicit that what a sprint
+puts out of scope is forbidden "even if convenient". Mid-sprint the Developer
+asked, in as many words, for a way to use the Claude Code CLI as well.
+
+**Decision.** It is built, in this sprint, and the scope line is amended here
+rather than quietly stepped over. `ClaudeCodeCliEngine` ships alongside
+`CopilotCliEngine`, as a third `EnginePref`, a third row in Settings, and a
+third subject in the contract suite.
+
+**Why this is an amendment and not an exception.** The Developer owns the
+scope; a sprint document is their instrument, not their constraint. What the
+rule protects against is *an implementation* deciding on its own that something
+out of scope is worth adding — and the protection is preserved by the amendment
+being written down, with a number, in the place scope changes are recorded.
+A sprint that silently grew a third engine would be indistinguishable from one
+that had lost track of its own boundaries.
+
+**Why it was cheap enough to say yes to.** It was asked for *after*
+`CopilotCliEngine` was working, and the two tools turned out to have nearly the
+same shape: a prompt in, JSON on stdout, one process, one deadline. So the
+engine-specific part is a `CliEngineProfile` — six values — and every behaviour
+that could be got wrong (the watchdog, the parser, the failure translation, the
+stderr redaction) has one implementation shared by both. Had the second engine
+needed its own transport, the answer would have been a lettered sprint instead,
+on DEC-030's precedent.
+
+**Two things it is *not*.**
+
+- **Not a local engine.** DEC-037 applies to it unchanged: `isLocal = false`,
+  the redactor stays enforced. The Claude Code CLI is a client for a
+  server-side model exactly as Copilot is.
+- **Not the same thing as `ClaudeApiEngine`.** Both are "Claude" and they bill
+  differently: the API engine spends the user's own key per token (BYOK, BR-08),
+  the CLI spends whatever subscription the CLI is signed in to, and Norte holds
+  no credential for the second. Settings says so, because a user who assumes
+  the two are one thing will be surprised by exactly one of the bills.
+
+**Rejected alternatives.**
+
+- *Refuse, on the grounds that it is out of scope.* Correct reading of the
+  sprint document and the wrong reading of the project: the scope belongs to
+  the Developer, and this is a small, well-understood addition to a seam built
+  for exactly this.
+- *Add it silently.* The failure mode the rule exists to prevent.
+- *Defer it to a lettered sprint (07a).* Justified if it needed its own
+  transport or its own tests; it needs neither, and a sprint whose whole content
+  is six constants would be ceremony rather than control.
+
+**Impact.** `lib/infrastructure/ai/claude_code_cli_engine.dart`;
+`EnginePref.claudeCodeCli` and its row in the Settings section; S07-UT-01 gains
+two combinations; S07-CT-01 gains a third subject;
+`docs/sprints/sprint-07-copilot-cli.md`'s "Out" line, which this decision
+amends and which the sprint report restates.

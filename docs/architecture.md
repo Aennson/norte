@@ -368,9 +368,9 @@ Two notes on this surface, both recorded as **DEC-017**:
 - Response streaming for long summaries (progressive UX).
 - Requires the user's API key (secure storage) — BYOK model in v1.0.
 
-**`CopilotCliEngine`** (local, **Windows-only** in v1.0)
+**`CopilotCliEngine`** (subprocess, **Windows-only** in v1.0)
 - Invokes the Copilot CLI as a subprocess (`Process.start`), programmatic mode, parsed stdout.
-- `capabilities.isLocal = true` → the PII Redactor may be relaxed (data does not leave the machine).
+- `capabilities.isLocal = **false**` → the PII Redactor stays enforced (**DEC-037**). The line that stood here said `isLocal = true` "because data does not leave the machine"; the CLI was then installed and run, and its own output names a server-chosen model, a `serviceRequestId` and a billed premium request. The subprocess is local, the inference is not, and BR-07's relaxation is conditioned on the second.
 - Timeout and watchdog: hung CLI → configurable fallback to `ClaudeApiEngine`.
 - On Android/iOS the adapter reports `unavailable`; the UI hides the option.
 

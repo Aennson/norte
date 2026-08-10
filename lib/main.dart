@@ -11,10 +11,13 @@ import 'package:windows_notification/windows_notification.dart';
 import 'domain/ports/clock.dart';
 import 'domain/ports/notification_scheduler.dart';
 import 'infrastructure/ai/claude_api_engine.dart';
+import 'infrastructure/ai/claude_code_cli_engine.dart';
+import 'infrastructure/ai/copilot_cli_engine.dart';
 import 'infrastructure/ai/secure_ai_credential_store.dart';
 import 'infrastructure/jira/jira_rest_adapter.dart';
 import 'infrastructure/jira/outbox_dispatcher.dart';
 import 'infrastructure/jira/secure_jira_credential_store.dart';
+import 'infrastructure/persistence/drift_ai_engine_settings_store.dart';
 import 'infrastructure/persistence/drift_meeting_repository.dart';
 import 'infrastructure/persistence/drift_meeting_template_repository.dart';
 import 'infrastructure/persistence/drift_outbox_repository.dart';
@@ -38,6 +41,7 @@ import 'presentation/jira/jira_providers.dart';
 import 'presentation/meetings/meeting_providers.dart';
 import 'presentation/tasks/task_providers.dart';
 import 'presentation/reminders/reminder_providers.dart';
+import 'presentation/settings/ai_engine_providers.dart';
 import 'presentation/voice/voice_providers.dart';
 
 /// Application User Model ID for the Windows toast (`docs/architecture.md`
@@ -120,6 +124,9 @@ Future<void> main() async {
     log: (String line) => debugPrint('[voice] $line'),
   );
   final DriftReminderRepository reminders = DriftReminderRepository(database);
+  final DriftAiEngineSettingsStore engineSettings = DriftAiEngineSettingsStore(
+    database,
+  );
   final DriftVoiceSettingsStore voiceSettings = DriftVoiceSettingsStore(
     database,
   );
@@ -190,7 +197,35 @@ Future<void> main() async {
       meetingRepositoryProvider.overrideWithValue(meetings),
       meetingTemplateRepositoryProvider.overrideWithValue(templates),
       aiCredentialStoreProvider.overrideWithValue(aiCredentials),
-      aiEngineProvider.overrideWithValue(ai),
+      // §7.3's selection is computed from the user's preference, so what the
+      // root supplies is the pieces rather than a finished engine — see
+      // `aiEngineProvider`. Overriding the engine itself, as this did until
+      // Sprint 07, would pin the app to whichever engine was preferred at
+      // launch.
+      remoteAiEngineProvider.overrideWithValue(ai),
+      aiEngineSettingsStoreProvider.overrideWithValue(engineSettings),
+      // The only reading of `Platform.isWindows` outside the adapters, which
+      // is what the sprint's rule about platform code requires.
+      isWindowsProvider.overrideWithValue(Platform.isWindows),
+      copilotCliBuilderProvider.overrideWithValue(
+        (String? model) => CopilotCliEngine.system(
+          clock: const SystemClock(),
+          isWindows: Platform.isWindows,
+          model: model,
+          log: (String line) => debugPrint(line),
+        ),
+      ),
+      claudeCodeCliBuilderProvider.overrideWithValue(
+        (String? model) => ClaudeCodeCliEngine.system(
+          clock: const SystemClock(),
+          isWindows: Platform.isWindows,
+          model: model,
+          log: (String line) => debugPrint(line),
+        ),
+      ),
+      // Every engine switch, with its reason (BR-10). Run from a terminal to
+      // find out whether the engine you chose is the one answering.
+      aiEngineLogProvider.overrideWithValue((String line) => debugPrint(line)),
       transcriptionCredentialStoreProvider.overrideWithValue(
         whisperCredentials,
       ),

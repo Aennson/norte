@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:norte/domain/entities/jira_credentials.dart';
 import 'package:norte/l10n/generated/app_localizations.dart';
 import 'package:norte/presentation/jira/jira_providers.dart';
+import 'package:norte/presentation/settings/ai_engine_providers.dart';
 import 'package:norte/presentation/settings/jira_settings_section.dart';
 import 'package:norte/presentation/settings/settings_screen.dart';
 import 'package:norte/presentation/shared/theme/norte_theme.dart';
@@ -27,6 +28,15 @@ void main() {
       ProviderScope(
         overrides: <Override>[
           jiraCredentialStoreProvider.overrideWithValue(store),
+          // Sprint 07 put the AI Engine section on this screen, so rendering
+          // it now needs the two things that section reads. Overridden as
+          // Windows because that is the configuration with the most to draw —
+          // a mobile render would silently skip both CLI rows and this file's
+          // assertions would still pass while covering less.
+          isWindowsProvider.overrideWithValue(true),
+          aiEngineSettingsStoreProvider.overrideWithValue(
+            FakeAiEngineSettingsStore(),
+          ),
         ],
         child: MaterialApp(
           debugShowCheckedModeBanner: false,

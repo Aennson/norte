@@ -287,5 +287,18 @@
   "remindersNotPermitted": "Le notifiche sono disattivate, quindi questo promemoria non suonerà. È stato salvato.",
   "remindersLoadFailed": "Non è stato possibile caricare i promemoria.",
   "remindersRetry": "Riprova",
-  "remindersFired": "Consegnato"
+  "remindersFired": "Consegnato",
+
+  "settingsEngineSection": "Motore IA",
+  "settingsEngineDescription": "Quale assistente riassume le tue riunioni e interpreta i comandi vocali. I motori a riga di comando usano il proprio accesso e sono disponibili solo su Windows.",
+  "settingsEngineClaudeApi": "API Claude (la tua chiave)",
+  "settingsEngineCopilotCli": "GitHub Copilot CLI",
+  "settingsEngineClaudeCodeCli": "Claude Code CLI",
+  "settingsEngineModelAutomatic": "Automatico",
+  "settingsEngineAnswers": "{count} risposte",
+  "settingsEngineFallback": "Ripiega su un altro motore",
+  "settingsEngineFallbackDescription": "Se il motore scelto non riesce a rispondere, prova l'API Claude invece di mostrare un errore. Disattivalo per essere sempre avvisato quando il tuo motore fallisce.",
+  "aiErrorEngineUnavailable": "Nessun motore IA ha potuto rispondere. Controlla la sezione Motore IA nelle Impostazioni.",
+  "aiErrorEngineNotInstalled": "Non è stato possibile avviare quel motore a riga di comando. Verifica che sia installato e connesso.",
+  "aiErrorEngineTooSlow": "Il motore non ha risposto in tempo ed è stato interrotto. Riprova."
 }

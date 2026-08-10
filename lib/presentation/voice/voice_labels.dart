@@ -157,5 +157,11 @@ String voiceFailureText(
   NetworkFailure() => l10n.aiErrorOffline,
   TimeoutFailure() => l10n.aiErrorTimeout,
   StorageFailure() => l10n.aiErrorStorage,
+  // Sprint 07. A voice command goes through the same engine chain a summary
+  // does, so it meets the same three failures — and a user who is talking to
+  // the app is the least placed to go and read a log about it.
+  AiUnavailableFailure() => l10n.aiErrorEngineUnavailable,
+  AiProcessFailure() => l10n.aiErrorEngineNotInstalled,
+  AiTimeoutFailure() => l10n.aiErrorEngineTooSlow,
   _ => l10n.aiErrorGeneric,
 };

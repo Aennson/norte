@@ -1677,6 +1677,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delivered'**
   String get remindersFired;
+
+  /// Title of the section choosing which AI engine answers.
+  ///
+  /// In en, this message translates to:
+  /// **'AI engine'**
+  String get settingsEngineSection;
+
+  /// Explains what the engine choice affects.
+  ///
+  /// In en, this message translates to:
+  /// **'Which assistant summarizes your meetings and reads your spoken commands. The command-line engines use their own sign-in and are only available on Windows.'**
+  String get settingsEngineDescription;
+
+  /// Name of the remote engine, which bills the user's own API key.
+  ///
+  /// In en, this message translates to:
+  /// **'Claude API (your key)'**
+  String get settingsEngineClaudeApi;
+
+  /// Name of the Copilot command-line engine.
+  ///
+  /// In en, this message translates to:
+  /// **'GitHub Copilot CLI'**
+  String get settingsEngineCopilotCli;
+
+  /// Name of the Claude Code command-line engine.
+  ///
+  /// In en, this message translates to:
+  /// **'Claude Code CLI'**
+  String get settingsEngineClaudeCodeCli;
+
+  /// Model option meaning the engine picks the model itself.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get settingsEngineModelAutomatic;
+
+  /// How many answers one engine has produced on this device.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} answers'**
+  String settingsEngineAnswers(int count);
+
+  /// Label of the switch permitting a fallback when the chosen engine fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Fall back to another engine'**
+  String get settingsEngineFallback;
+
+  /// Explains the fallback switch, including why someone would turn it off.
+  ///
+  /// In en, this message translates to:
+  /// **'If the engine you chose cannot answer, try the Claude API instead rather than showing an error. Turn this off to always be told when your engine fails.'**
+  String get settingsEngineFallbackDescription;
+
+  /// Shown when every engine in the fallback chain failed.
+  ///
+  /// In en, this message translates to:
+  /// **'No AI engine could answer. Check the AI engine section in Settings.'**
+  String get aiErrorEngineUnavailable;
+
+  /// Shown when a CLI engine's executable could not be run.
+  ///
+  /// In en, this message translates to:
+  /// **'That command-line engine could not be started. Check that it is installed and signed in.'**
+  String get aiErrorEngineNotInstalled;
+
+  /// Shown when the watchdog killed a hung CLI engine.
+  ///
+  /// In en, this message translates to:
+  /// **'The engine did not answer in time and was stopped. Try again.'**
+  String get aiErrorEngineTooSlow;
 }
 
 class _AppLocalizationsDelegate

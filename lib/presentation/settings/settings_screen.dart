@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../shared/theme/norte_spacing.dart';
 import '../shared/widgets/norte_screen.dart';
+import 'ai_engine_settings_section.dart';
 import 'ai_settings_section.dart';
 import 'jira_settings_section.dart';
 import 'template_settings_section.dart';
@@ -31,6 +32,11 @@ class SettingsScreen extends StatelessWidget {
           JiraSettingsSection(),
           SizedBox(height: NorteSpacing.lg),
           AiSettingsSection(),
+          SizedBox(height: NorteSpacing.lg),
+          // Directly under the key it may make optional: choosing a CLI engine
+          // is the one way a user can summarize a meeting without pasting an
+          // API key, and putting the choice anywhere else would hide that.
+          AiEngineSettingsSection(),
           SizedBox(height: NorteSpacing.lg),
           TranscriptionSettingsSection(),
           SizedBox(height: NorteSpacing.lg),

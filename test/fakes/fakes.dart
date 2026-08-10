@@ -5,6 +5,7 @@
 library;
 
 export 'fake_ai_engine.dart';
+export 'fake_ai_engine_settings_store.dart';
 export 'fake_audio_recorder.dart';
 export 'fake_audio_store.dart';
 export 'fake_batch_transcription.dart';

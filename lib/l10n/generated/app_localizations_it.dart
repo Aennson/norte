@@ -917,4 +917,47 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get remindersFired => 'Consegnato';
+
+  @override
+  String get settingsEngineSection => 'Motore IA';
+
+  @override
+  String get settingsEngineDescription =>
+      'Quale assistente riassume le tue riunioni e interpreta i comandi vocali. I motori a riga di comando usano il proprio accesso e sono disponibili solo su Windows.';
+
+  @override
+  String get settingsEngineClaudeApi => 'API Claude (la tua chiave)';
+
+  @override
+  String get settingsEngineCopilotCli => 'GitHub Copilot CLI';
+
+  @override
+  String get settingsEngineClaudeCodeCli => 'Claude Code CLI';
+
+  @override
+  String get settingsEngineModelAutomatic => 'Automatico';
+
+  @override
+  String settingsEngineAnswers(int count) {
+    return '$count risposte';
+  }
+
+  @override
+  String get settingsEngineFallback => 'Ripiega su un altro motore';
+
+  @override
+  String get settingsEngineFallbackDescription =>
+      'Se il motore scelto non riesce a rispondere, prova l\'API Claude invece di mostrare un errore. Disattivalo per essere sempre avvisato quando il tuo motore fallisce.';
+
+  @override
+  String get aiErrorEngineUnavailable =>
+      'Nessun motore IA ha potuto rispondere. Controlla la sezione Motore IA nelle Impostazioni.';
+
+  @override
+  String get aiErrorEngineNotInstalled =>
+      'Non è stato possibile avviare quel motore a riga di comando. Verifica che sia installato e connesso.';
+
+  @override
+  String get aiErrorEngineTooSlow =>
+      'Il motore non ha risposto in tempo ed è stato interrotto. Riprova.';
 }

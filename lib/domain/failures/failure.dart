@@ -142,6 +142,59 @@ final class AiResponseFailure extends Failure {
   ]);
 }
 
+/// A subprocess engine exceeded its deadline and was killed.
+///
+/// Distinct from [TimeoutFailure], which is a request that ran out of patience
+/// over a socket. This one means a **process** stopped answering and the
+/// watchdog ended it (`sprint-07` S07-UT-03): by the time a caller sees this,
+/// the child has been sent a kill and the app owns no orphan. The difference
+/// matters to the fallback chain, which treats it as a primary-engine failure
+/// worth retrying once (BR-10).
+final class AiTimeoutFailure extends Failure {
+  const AiTimeoutFailure([
+    super.message = 'the AI engine did not answer in time and was stopped',
+  ]);
+}
+
+/// A subprocess engine could not be run, or ended badly.
+///
+/// The executable is missing, the platform refused to start it, it exited
+/// non-zero, or it wrote nothing to stdout. All four are one fact from the
+/// caller's side — *the CLI did not produce an answer* — and all four are
+/// retried and then fallen back from identically (BR-10).
+///
+/// It carries no stderr text. The CLI's own diagnostics go to the log, where
+/// they are redacted; a `Failure.message` is rendered to the user and may not
+/// become a channel for whatever a third-party process decided to print
+/// (`docs/architecture.md` §10).
+final class AiProcessFailure extends Failure {
+  const AiProcessFailure([
+    super.message = 'the AI engine could not be run',
+    this.exitCode,
+  ]);
+
+  /// The child's exit code, when it started and ended on its own.
+  ///
+  /// `null` when it never started or was killed by the watchdog — a number
+  /// here means the process ran and disagreed, which is a different thing to
+  /// debug than a process that was never there.
+  final int? exitCode;
+}
+
+/// Every engine in the chain failed (BR-10, `docs/architecture.md` §7.3).
+///
+/// The end of the policy, not a step in it: the primary failed, its retry
+/// failed, and either the fallback failed too or the user has it switched off.
+/// The message is written to be **actionable** — it names which engines were
+/// tried and sends the user to Settings — because this is the one AI failure
+/// with nothing left to try automatically (S07-E2E-02).
+final class AiUnavailableFailure extends Failure {
+  const AiUnavailableFailure(super.message, {this.tried = const <String>[]});
+
+  /// Ids of the engines that were attempted, in the order they were tried.
+  final List<String> tried;
+}
+
 /// The transcription engine failed, or answered with something unreadable.
 ///
 /// Distinct from [EngineFailure] because of what the UI owes the user when it
