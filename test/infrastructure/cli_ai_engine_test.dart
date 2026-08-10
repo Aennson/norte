@@ -8,24 +8,8 @@ import 'package:norte/infrastructure/ai/cli_ai_engine.dart';
 import 'package:norte/infrastructure/ai/copilot_cli_engine.dart';
 
 import '../fakes/fakes.dart';
+import '../support/cli_fixtures.dart';
 import '../support/fake_process_runner.dart';
-
-/// One Copilot JSONL line carrying an assistant answer.
-String copilotAnswer(String payload) => jsonEncode(<String, Object?>{
-  'type': 'assistant.message',
-  'data': <String, Object?>{'content': payload},
-});
-
-/// The bookkeeping Copilot really emits around an answer, taken from the
-/// Sprint 07 manual pass. Present in the fixtures because the parser has to
-/// step over it, and a fixture with only the payload would never prove that.
-const List<String> copilotNoise = <String>[
-  '{"type":"session.mcp_server_status_changed","data":{"status":"connected"}}',
-  '{"type":"assistant.turn_start","data":{"turnId":"0"}}',
-];
-
-/// The trailer Copilot writes after the answer.
-const String copilotResult = '{"type":"result","exitCode":0,"usage":{}}';
 
 /// A valid intent, as `IntentCodec` reads one.
 const String validIntent =
