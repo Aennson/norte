@@ -292,17 +292,28 @@ class CliAiEngine implements AiEngine {
       onError: (_) {},
     );
 
+    // **Both pipes are drained to their end, not just awaited alongside the
+    // exit code.** A process that exits quickly completes `exitCode` while
+    // stdout still has lines in flight, and cancelling the subscription then
+    // discards them — which produced an adapter that read a one-line answer
+    // correctly and lost the same answer the moment the CLI printed a banner
+    // above it. The bug survived every single-line fixture and was caught by
+    // the first one with noise in it (S07-UT-04).
+    final Future<void> drained = Future.wait(<Future<void>>[
+      outSub.asFuture<void>().catchError((_) {}),
+      errSub.asFuture<void>().catchError((_) {}),
+    ]);
+
     bool timedOut = false;
     try {
-      await process.exitCode.timeout(
+      await Future.wait(<Future<void>>[process.exitCode, drained]).timeout(
         timeout,
         onTimeout: () {
           timedOut = true;
           process.kill();
-          // The value is never used — `timedOut` decides the outcome — but a
-          // code has to be returned for the future to complete, and completing
-          // it is what lets the cleanup below run.
-          return -1;
+          // The value is never used — `timedOut` decides the outcome — but the
+          // future has to complete for the cleanup below to run.
+          return <void>[];
         },
       );
     } finally {
