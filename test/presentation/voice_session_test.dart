@@ -23,6 +23,7 @@ import 'package:norte/presentation/tasks/task_providers.dart';
 import 'package:norte/presentation/voice/voice_host.dart';
 import 'package:norte/presentation/voice/voice_labels.dart';
 import 'package:norte/presentation/voice/voice_latency_log.dart';
+import 'package:norte/presentation/reminders/reminder_providers.dart';
 import 'package:norte/presentation/voice/voice_providers.dart';
 import 'package:norte/presentation/voice/widgets/confirm_sheet.dart';
 import 'package:norte/presentation/voice/widgets/voice_overlay.dart';
@@ -118,6 +119,9 @@ void main() {
       microphoneProvider.overrideWithValue(microphone),
       realtimeTranscriptionProvider.overrideWithValue(realtime),
       reminderRepositoryProvider.overrideWithValue(reminders),
+      notificationSchedulerProvider.overrideWithValue(
+        FakeNotificationScheduler(),
+      ),
       voiceSettingsStoreProvider.overrideWithValue(settings),
       realtimeCredentialStoreProvider.overrideWithValue(scribeKey),
       clockProvider.overrideWithValue(clock),

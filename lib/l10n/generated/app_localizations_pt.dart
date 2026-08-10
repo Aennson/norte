@@ -837,4 +837,78 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get settingsScribeKeyHint => 'sk_...';
+
+  @override
+  String get reminderNotificationTitle => 'Lembrete';
+
+  @override
+  String get remindersUpcoming => 'Próximos';
+
+  @override
+  String get remindersPast => 'Passados';
+
+  @override
+  String get remindersHold => 'Segure para falar';
+
+  @override
+  String get remindersListening => 'Ouvindo…';
+
+  @override
+  String remindersSecondsLeft(int seconds) {
+    return 'faltam ${seconds}s';
+  }
+
+  @override
+  String get remindersLimitReached =>
+      'O limite é 15 segundos — foi só isso que ouvi.';
+
+  @override
+  String get remindersTypeInstead => 'Digitar em vez disso';
+
+  @override
+  String get remindersTextLabel => 'Me lembra de…';
+
+  @override
+  String get remindersTimeLabel => 'Quando?';
+
+  @override
+  String get remindersInTwentyMinutes => 'Em 20 minutos';
+
+  @override
+  String get remindersInAnHour => 'Em uma hora';
+
+  @override
+  String get remindersTomorrowMorning => 'Amanhã 09:00';
+
+  @override
+  String get remindersPickDateTime => 'Escolher data e hora';
+
+  @override
+  String get remindersCreate => 'Criar lembrete';
+
+  @override
+  String get remindersCancel => 'Cancelar lembrete';
+
+  @override
+  String get remindersCancelled => 'Lembrete cancelado';
+
+  @override
+  String get remindersTimePassed => 'Esse horário já passou.';
+
+  @override
+  String get remindersTimeUnreadable =>
+      'Não consegui entender esse horário. Tente \"em 20 minutos\".';
+
+  @override
+  String get remindersNotPermitted =>
+      'As notificações estão desligadas, então este lembrete não vai tocar. Ele foi salvo.';
+
+  @override
+  String get remindersLoadFailed => 'Não foi possível carregar os lembretes.';
+
+  @override
+  String get remindersRetry => 'Tentar de novo';
+
+  @override
+  String get remindersFired => 'Entregue';
 }

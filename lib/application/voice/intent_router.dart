@@ -10,7 +10,7 @@ import '../../domain/ports/voice_settings_store.dart';
 import '../../domain/services/text_match.dart';
 import '../usecases/add_jira_comment.dart';
 import '../usecases/comment_task.dart';
-import '../usecases/create_reminder.dart';
+import '../usecases/create_voice_reminder.dart';
 import '../usecases/create_task.dart';
 import '../usecases/delete_task.dart';
 import '../usecases/refresh_jira_status.dart';
@@ -192,7 +192,7 @@ class IntentRouter {
   final UpdateTask updateTask;
   final DeleteTask deleteTask;
   final CommentTask commentTask;
-  final CreateReminder createReminder;
+  final CreateVoiceReminder createReminder;
   final UpdateJiraStatus updateJiraStatus;
   final AddJiraComment addJiraComment;
   final RefreshJiraStatus refreshJiraStatus;

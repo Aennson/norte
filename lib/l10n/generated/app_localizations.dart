@@ -1539,6 +1539,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'sk_...'**
   String get settingsScribeKeyHint;
+
+  /// Title of a reminder's local notification. Short: some platforms truncate it hard.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder'**
+  String get reminderNotificationTitle;
+
+  /// Section header for reminders whose time has not come.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get remindersUpcoming;
+
+  /// Section header for reminders whose time has passed.
+  ///
+  /// In en, this message translates to:
+  /// **'Past'**
+  String get remindersPast;
+
+  /// Label of the push-to-talk button on the reminders screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold to speak'**
+  String get remindersHold;
+
+  /// Shown while a push-to-talk capture is running.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening…'**
+  String get remindersListening;
+
+  /// Countdown of the 15s push-to-talk limit.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds}s left'**
+  String remindersSecondsLeft(int seconds);
+
+  /// Shown when push-to-talk cut the capture off at its limit.
+  ///
+  /// In en, this message translates to:
+  /// **'15 seconds is the limit — that is all I heard.'**
+  String get remindersLimitReached;
+
+  /// Opens the manual fallback for creating a reminder without speaking.
+  ///
+  /// In en, this message translates to:
+  /// **'Type it instead'**
+  String get remindersTypeInstead;
+
+  /// Label of the reminder text field.
+  ///
+  /// In en, this message translates to:
+  /// **'Remind me to…'**
+  String get remindersTextLabel;
+
+  /// Label of the reminder time field.
+  ///
+  /// In en, this message translates to:
+  /// **'When?'**
+  String get remindersTimeLabel;
+
+  /// One-tap reminder time on the manual sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'In 20 minutes'**
+  String get remindersInTwentyMinutes;
+
+  /// One-tap reminder time on the manual sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'In an hour'**
+  String get remindersInAnHour;
+
+  /// One-tap reminder time on the manual sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Tomorrow 09:00'**
+  String get remindersTomorrowMorning;
+
+  /// Opens the date and time pickers on the manual reminder sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a date and time'**
+  String get remindersPickDateTime;
+
+  /// Confirms manual creation of a reminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Create reminder'**
+  String get remindersCreate;
+
+  /// Cancels a reminder and its notification.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel reminder'**
+  String get remindersCancel;
+
+  /// Feedback after a reminder was cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder cancelled'**
+  String get remindersCancelled;
+
+  /// Shown when the requested reminder time is in the past.
+  ///
+  /// In en, this message translates to:
+  /// **'That time has already passed.'**
+  String get remindersTimePassed;
+
+  /// Shown when the reminder time could not be read at all.
+  ///
+  /// In en, this message translates to:
+  /// **'I could not work out that time. Try \"in 20 minutes\".'**
+  String get remindersTimeUnreadable;
+
+  /// Shown when the platform refused to schedule, after the reminder was stored.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are switched off, so this reminder will not sound. It is saved.'**
+  String get remindersNotPermitted;
+
+  /// Error state of the reminders screen.
+  ///
+  /// In en, this message translates to:
+  /// **'The reminders could not be loaded.'**
+  String get remindersLoadFailed;
+
+  /// Retries loading the reminders.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get remindersRetry;
+
+  /// Badge on a reminder whose notification has already fired.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered'**
+  String get remindersFired;
 }
 
 class _AppLocalizationsDelegate

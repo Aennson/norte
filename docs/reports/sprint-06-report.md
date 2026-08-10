@@ -1,0 +1,396 @@
+# Sprint 06 — Voice Reminders + Notifications on All 3 Platforms · Report
+
+**Branch:** `sprint-06/voice-reminders` · **Flutter:** 3.44.9 stable · **Dart:** 3.12.2
+**Host:** Windows 11 Pro 26200 (Developer's machine) · **CI:** `ubuntu-latest`
+
+---
+
+## 1. Entry criteria
+
+| Criterion | Evidence | Result |
+|---|---|---|
+| Sprint 05 DoD complete — Scribe realtime + IntentParser working, `Reminder` persisted via the stub | `docs/reports/sprint-05-report.md`; merged at `57a3cc9`/PR #8. The stub was `CreateReminder`, and this sprint replaces it | ✅ |
+| `FakeNotificationScheduler` and `FakeClock` available | `test/fakes/fake_notification_scheduler.dart`, `test/fakes/fake_clock.dart`, both shipped in Sprint 00 | ✅ |
+
+**One thing the criteria do not cover, and it should be read before this PR is
+merged.** Sprint 05b's Definition of Done has **one box open** — the manual
+pass against the real Scribe, §5 of its report, which says in as many words
+that the PR should not merge until it is filled in. PR #11 merged anyway, so
+this sprint starts from a `master` carrying an unfinished sprint. Nothing in
+Sprint 06 depends on that box: 05b is `taskRef` resolution and reminders
+resolve no `taskRef`. But it is open, it is the Developer's to close, and it
+does not become closed by a later sprint passing over it.
+
+## 2. Quality gates
+
+| Gate | Command | Result |
+|---|---|---|
+| G1 — static analysis | `flutter analyze` | `No issues found! (ran in 7.1s)` — 0 errors, 0 warnings, 0 infos ✅ |
+| G2 — formatting | `dart format --set-exit-if-changed .` | `Formatted 275 files (0 changed)`, exit 0 ✅ |
+| G3 — tests | `flutter test` | `00:56 +828: All tests passed!` ✅ |
+| G4 — coverage | `flutter test --coverage` + `dart run tool/check_coverage.dart` | domain+application **94.5%** (783/829) · project **81.4%** (4753/5840) — `gate G4: OK` ✅ |
+| G5 — dependency rule | `dart run tool/check_imports.dart` | `check_imports: OK — no layer or color violations in lib` ✅ |
+| G6 — secrets | `grep -rEn "(api[_-]?key\|token)[[:space:]]*=[[:space:]]*['\"]" lib/` | no match (exit 1) ✅ |
+| E2E | `flutter test integration_test/<suite>`, one per file (DEC-010) | **12 suites, 43 scenarios**, all passing ✅ |
+
+The suite grew from 751 to 828. Domain+application coverage rose 93.9% →
+94.5% while that layer gained 115 lines.
+
+**Project coverage fell 84.5% → 81.4%, and the reason is worth naming rather
+than absorbing.** Two of this sprint's three new adapters are platform
+channels end to end, and `main.dart` — which grew by fifty lines of
+composition — has no test at all, as `sprint-05` §5 recorded. 81.4% is above
+the 80% floor with less headroom than the sprint before it, and the way back
+up is a `main.dart` that can be exercised, not more tests for the two
+adapters.
+
+## 3. Tests
+
+| ID | Where | Result |
+|---|---|---|
+| S06-UT-01 | `test/application/create_voice_reminder_test.dart` | ✅ 2 scenarios — the spoken utterance through the real codec, and the injected clock |
+| S06-UT-02 | same | ✅ 4 scenarios — a past time, "now" exactly, an unreadable slot, a blank text |
+| S06-UT-03 | same | ✅ 2 scenarios — both halves cancelled, and cancelling nothing |
+| S06-UT-04 | same | ✅ 2 scenarios — success and rejected parse |
+| S06-IT-01 | `test/application/reminders_launch_and_timezone_test.dart` | ✅ 4 scenarios — including the *second* launch, and a scheduler that refuses |
+| S06-IT-02 | same | ✅ 4 scenarios — São Paulo, Rome, today, and the Friday that is not today |
+| S06-GT-01 | `test/presentation/goldens/reminders_screen_golden_test.dart` | ✅ 21 scenarios — 5 states × 2 themes × 2 viewports, plus the muted-past assertion |
+| S06-E2E-01 | `integration_test/reminders_flow_test.dart` | ✅ 2 scenarios |
+| S06-E2E-02 | same | ✅ 2 scenarios — the question, and the typed fallback |
+
+Three suites carry no sprint ID and exist under `docs/project-rules.md` §5.4:
+`test/domain/trigger_time_test.dart` (the grammar, exhaustively),
+`test/infrastructure/notification_scheduler_contract_test.dart` (the port
+contract over every implementation), and
+`test/infrastructure/local_notification_scheduler_test.dart`.
+
+### The two assertions that could not pass by accident
+
+**S06-IT-02 runs the same sentence through two zones.** "tomorrow 09:00"
+resolves to 12:00 UTC in São Paulo and 07:00 UTC in Rome, from one clock and
+one utterance. An implementation that read the zone and one that ignored it
+agree on every single-zone assertion in the suite; only this pair separates
+them, which is why the sprint's own case is written as two.
+
+**S06-IT-01 asserts the *second* launch.** Delivering an overdue reminder on
+the first launch is easy to get right. The case that matters is the one a
+user meets every morning: the same reminder must not shout again, and only
+`isFired` having been written makes that true.
+
+### What the fake could not be lenient about
+
+`FakeNotificationScheduler` and `WindowsToastScheduler` go through **one
+contract suite**, per `docs/testing-strategy.md` §3 and the lesson of
+`sprint-05` §5 — a fake written from what the caller expected agrees with the
+caller about everything, including what both got wrong. Replacement by id,
+ordering by `triggerAt`, and cancel-as-no-op are asserted against both.
+
+`LocalNotificationScheduler` is deliberately **not** in that loop: every one
+of its methods is a platform channel, so a contract test over it would be a
+test of mocktail. What can be checked without a device is checked in its own
+file — the id it derives, the payload it writes and reads back, the branch
+that shows an overdue notification when the plugin refuses to schedule one,
+and both failure translations.
+
+## 4. What was built
+
+**Domain.** `TimeZone` (port) with `FixedOffsetTimeZone` for tests and the
+fallback; `TriggerTime`, which reads the five slot shapes
+`IntentCodec.systemPrompt` tells the model to produce; and
+`InvalidTriggerTimeFailure`, distinct from `ValidationFailure` because "say
+another time" and "say it another way" send the user to different places.
+
+**Application.** `CreateVoiceReminder` replaces the Sprint 05 stub —
+validate, resolve, reject the past, **persist, then schedule**, in that
+order. `CancelReminder` reaches the row *and* the registration.
+`CheckDueReminders` is §12's check on launch.
+
+**Infrastructure.** `LocalNotificationScheduler` (Android/iOS, via
+`flutter_local_notifications` + `timezone`); `WindowsToastScheduler`
+(WinRT toast via `windows_notification`); `PlatformTimeZone`, reading the
+device zone from the same IANA database the mobile scheduler schedules
+against.
+
+**Presentation.** The reminders screen with its four states, an upcoming/past
+split decided against the clock, cancel per row; `PushToTalkBar` with the
+15-second countdown; `ReminderCapture`, the push-to-talk notifier;
+a typed fallback and the targeted "for when?" sheet; `ReminderDetailScreen`
+at `/reminders/:id`, which is where a tapped notification lands.
+
+### Why there are two adapters rather than one with a branch
+
+`windows_notification` shows a toast **now**. There is no "show this in two
+hours" to hand WinRT, and nothing registered survives the app closing —
+whereas `flutter_local_notifications` hands Android and iOS a registration
+the OS keeps across a reboot. So the Windows adapter owns a `Timer` per
+pending notification, and §12's check on launch is what covers the gap
+between sessions. Neither half is optional there: the timers alone lose every
+reminder at exit, and the launch check alone would only ever notify people
+who happened to restart the app.
+
+The same routine runs on mobile, where it is merely idempotent —
+`schedule` replaces by id, so re-registering something already registered
+cannot double-fire. One routine that behaves the same everywhere is worth
+more than a platform branch nobody exercises on the other platform.
+
+### The reminder id is not `String.hashCode`
+
+`flutter_local_notifications` keys on an `int` and a `ScheduledNotification`
+keys on a `String`. `notificationIdOf` is FNV-1a, because nothing in the
+language promises `String.hashCode` is stable across processes or SDK
+versions — and a `cancel` that computed a different number from the same
+reminder would cancel nothing, leaving a notification to fire for something
+the user deleted last week. The test pins the *specific* number, so changing
+the algorithm (which would orphan every notification already registered on
+every installed device) has to be a deliberate edit rather than a silent one.
+
+## 5. Two things fixed that the sprint did not ask for
+
+**`voiceLocaleProvider` was never overridden.** It always returned `pt-BR`
+(`sprint-05` handoff §6 recorded it open), so a user reading the app in
+English or Italian had their speech parsed as Portuguese. It could not stay
+that way here: the notification title has to be localized *before* the
+platform is handed it (BR-11), and the use case that hands it over has no
+`BuildContext`. `appLocaleProvider` is now written into by `NorteApp` from
+the locale `MaterialApp` resolved, and `voiceLocaleProvider` derives from it,
+so there is one answer to "what language is this user in" rather than two
+that can disagree.
+
+The obvious implementation — a nested `ProviderScope` under `MaterialApp` —
+is in the dartdoc as the thing **not** to do: a provider that is not itself
+overridden initialises in the root container, so everything depending on the
+locale would keep reading the default while the scope below held the real
+one. It would have looked correct and done nothing.
+
+**The Android manifest had none of the permissions this needs.**
+`POST_NOTIFICATIONS`, `SCHEDULE_EXACT_ALARM`/`USE_EXACT_ALARM`,
+`RECEIVE_BOOT_COMPLETED`, and the two `flutter_local_notifications`
+receivers. Without the boot receiver every reminder set before a restart is
+silently lost — and no test in this repository could ever have said so, which
+is precisely why it is listed here and in §6's manual script.
+
+## 6. The manual script per platform — **Windows ✅, Android deferred (DEC-036)**
+
+**This is the box that is not ticked, and it cannot be ticked by anyone but
+the Developer.** The DoD asks for a real notification firing with the app in
+the foreground, in the background, and closed on mobile, plus a Windows toast
+and the check on launch. Every test above replaces the notification platform
+with a fake; what no fake can answer is whether the OS actually delivers.
+
+### First pass — 2026-08-09, Windows
+
+**The voice path works.** The Developer reported the spoken flow as good: the
+utterance is transcribed, the reminder is created, and the toast is delivered.
+Steps 1 and 2 below are therefore confirmed against a real Scribe, a real
+Claude and real WinRT — which is the half of this sprint no test could reach.
+
+**The typed path was wrong, and the Developer met it head-on.** Their words:
+the field *"pede para digitar algo como `in 20 minutes`, não faz sentido"*.
+They were right, and the defect was mine.
+
+`remindersTimeHint` read **`in 20 minutes`** while `TriggerTime` accepts only
+`+20m`, `today 15:00`, `tomorrow 09:00`, `friday 15:00` and ISO. The field
+prompted, in as many words, for a phrase the parser refuses — so the fallback
+was unusable to anyone who followed its own instruction.
+
+The wrong fix is to change the hint to `+20m`. That grammar is what the
+**model** emits after reading speech; it was never meant for a person, and the
+whole reason the typed fallback exists is a user who cannot or will not talk
+to their laptop. Making them learn a slot syntax instead is not a fallback.
+
+**What was done instead:** the free-text time field is gone. The sheet now
+offers three one-tap choices — *In 20 minutes*, *In an hour*,
+*Tomorrow 09:00* — plus a date-and-time picker, and shows the resolved instant
+underneath in `mono`, formatted exactly as the list will show it. Nothing can
+be spelled wrong because nothing is spelled.
+
+The picker needed a slot shape the spoken grammar has no use for: a picker
+knows the exact day and cannot say "tomorrow". `2026-08-09 15:00` is that
+shape, and it resolves through the same injected `TimeZone` as the other
+wall-clock forms — an ISO instant built in the widget layer would have been
+resolved against whatever zone the device happened to be in.
+
+**Writing the test for it found a second defect.** An impossible date —
+`2026-02-31 09:00` — was resolving to **3 March**. `TriggerTime` refused it
+correctly and then fell through to `DateTime.tryParse`, which is lenient and
+rolls the overflow into the next month; the rejection undid itself one line
+later. A reminder silently moved to another day is worse than one refused,
+because the user is not told and finds out by missing it. The dated form now
+answers for itself, `null` included.
+
+### Second pass — 2026-08-09, Windows, after the fix
+
+The Developer re-ran the script through the rebuilt sheet. **All five Windows
+rows pass.**
+
+| # | Row | Result |
+|---|---|---|
+| 1 | Spoken reminder → toast, titled **Lembrete** | ✅ first pass, real Scribe and real Claude |
+| 2 | Clicking the toast opens the reminder | ✅ first pass |
+| 3 | Overdue while Norte was **closed** → toast on the next launch, row in **Past** | ✅ |
+| 4 | An hour out, closed and reopened → **no** toast, still Upcoming | ✅ |
+| 5 | Reopened a second time → the toast does **not** repeat | ✅ |
+
+Rows 3, 4 and 5 are the ones that matter most and the ones no test could
+reach. Together they are the whole of §12 on Windows: 3 proves a reminder
+that fell due with the app shut is still delivered, 4 proves the launch check
+re-registers rather than firing everything it finds, and 5 proves `isFired`
+is actually written — the defect a user would otherwise meet every single
+morning.
+
+**Windows is complete. The Windows toast, the deep link, and the check on
+launch are all confirmed against the real operating system.**
+
+### Android — deferred, and where to (DEC-036)
+
+**DEC-020** makes Android an available platform, so steps 6–12 are owed. The
+Developer has no Android device to hand and will not for some time, and steps
+**9** (app swiped away) and **10** (survives a reboot) cannot be answered by
+anything else — they are operating-system behaviour, which is the whole reason
+they are in a manual script rather than in the suite.
+
+**DEC-036** moves them to a single end-of-v1.0 acceptance pass, carried as a
+checklist in `docs/sprints/sprint-08-hardening.md` with their numbers intact.
+The sprint closes on that basis, and the decision is explicit about what it
+does *not* buy:
+
+- **Windows was still verified in this sprint**, all five rows, against the
+  real operating system. The deferral is about a device nobody has, not about
+  manual verification as an idea.
+- **Nothing automated moved.** G1–G6, both golden sets, all twelve E2E suites
+  and CI ran in full, as §2 records. A sprint that skipped a golden set under
+  DEC-036 would be misreading it.
+- **The obligation was moved, not deleted.** Redefining "available platform"
+  as Windows-only was the tempting alternative and is rejected in DEC-036: v1.0
+  still owes Android a verified notification path, at a named moment.
+
+iOS remains what DEC-020 made it — unverified, pending a macOS host — and now
+shares that one acceptance list rather than being tracked on its own.
+
+### Windows
+
+**Run `tool/register_windows_toast.ps1` once first.** Windows shows no toast
+for an unpackaged Win32 app unless a Start Menu shortcut carries the same
+AUMID the app files notifications under, and `flutter run -d windows` creates
+no such shortcut. Skipping this makes every row below fail identically and
+silently, for a reason that is not the code.
+
+| # | Do | Expected | What it proves |
+|---|---|---|---|
+| 1 | Speak "me lembra em dois minutos de olhar o build", keep the app open | A toast after two minutes, titled **Lembrete** | The timer path, and the AUMID in `main.dart` matching the shortcut |
+| 2 | Click the toast | Norte opens `/reminders/<id>` on that reminder | The tap callback and the deep link |
+| 3 | Create a reminder two minutes out, **close Norte**, wait three minutes, reopen | A toast immediately on launch, and the row shows under **Past** | The check on launch — the half that has no timer behind it |
+| 4 | Create one an hour out, close and reopen Norte | No toast; the reminder is still listed as upcoming | The launch check re-registers rather than firing everything overdue |
+| 5 | Repeat 3 twice without cancelling | The toast fires **once**, on the first reopen | `isFired`, and the defect a user meets every morning |
+
+If step 1 shows nothing at all, the AUMID is still the first suspect: the
+shortcut has to point at the executable actually running, so a shortcut
+registered against the Debug build proves nothing about a Release one. Re-run
+the script with `-Target` to move it. Windows also caches the AUMID table, so
+a first toast that does not appear may just need Explorer restarted.
+
+**Steps 1 and 2 need a Scribe key and a Claude key** — they go through the
+voice pipeline, and both are ✅ confirmed. Steps 3–5 do not: use **Type it
+instead**, tap *In 20 minutes*, and the whole notification path runs with no
+key configured at all.
+
+For steps 3 and 5 the two-minute wait matters more than the exact number —
+use *In 20 minutes* and just close the app, wait, and reopen. What is being
+proved is that a reminder which fell due while Norte was shut is delivered on
+the next launch and **not** on the one after that.
+
+### Android
+
+Every row uses **Type it instead** — no Scribe key, no Claude key, no
+speaking. Rows 7–10 want a short wait, so *In 20 minutes* is the choice to
+tap. `flutter run -d <device>` after `flutter devices` names one; the APK has
+built on this machine since Sprint 00 (`sprint-00-report.md` §2).
+
+| # | Do | Expected |
+|---|---|---|
+| 6 | First launch | The notification permission is asked for |
+| 7 | Reminder two minutes out, app in the **foreground** | The notification appears |
+| 8 | Same, app in the **background** | Same |
+| 9 | Same, app **swiped away** | Same — this is the one the exact-alarm permissions are for |
+| 10 | Reminder ten minutes out, **reboot the device**, wait | It still fires — the boot receiver |
+| 11 | Tap any of them | Norte opens on that reminder, from a cold start as well as a warm one |
+| 12 | Refuse the permission, then create a reminder | The row is saved and the screen says the notification will not sound |
+
+### iOS
+
+**Not run, and not runnable here.** iOS has never been built or tested in
+this project (`sprint-05` handoff §6, DEC-020), and Sprint 08 has to decide
+whether v1.0 ships two platforms or three. Steps 6–12 apply unchanged when
+somebody has a Mac.
+
+**Until this section is filled in with real runs, the Definition of Done is
+incomplete.**
+
+## 7. Deviations
+
+**The typed fallback collects its time by choice rather than by text.** The
+sprint's scope says "create manually by text as a fallback", and the reminder
+*text* is still typed; the time is not. §6 is the reason — a free-text time
+field asked the user to learn a slot grammar written for a language model, and
+the Developer's first contact with it was to say, correctly, that it made no
+sense. The fallback's purpose is a user who cannot use voice, and that purpose
+is served better by three taps than by a syntax. This is a deliberate reading
+of the scope, recorded here rather than absorbed.
+
+**One documented test's entry criteria were read differently than written.**
+S06-UT-01 lists a realtime fake among its entry criteria; the test drives
+`FakeAiEngine` and the real `IntentCodec` to produce the intent, then calls
+the use case, and does **not** stand up a realtime session. The realtime leg
+of that pipeline is asserted end to end by S06-E2E-01 through the real
+composition root, where it is a stronger claim; duplicating it in a unit test
+would have added a second fake and no assertion. Both halves of the exit
+criteria — `triggerAt = 14:20` and the scheduler receiving the reminder's own
+id — are asserted exactly as specified.
+
+Nothing else in the sprint document was altered.
+
+## 8. Notes for the next sprint
+
+**Android's seven rows are now Sprint 08's to collect** (DEC-036). They are a
+checklist there, not a note — and if step 9 or 10 fails when a device finally
+exists, that is a defect against *this* sprint's manifest changes, not against
+Sprint 08.
+
+**`primeCache()` is still unverified** — carried forward from Sprint 05's
+handoff §3, Sprint 05a §7 and Sprint 05b §7, untouched again.
+
+**`DateTime.tryParse` is lenient, and the ISO branch still relies on it.** The
+dated slot now validates its own digits (§6), but a model that returned
+`2026-02-31T09:00:00Z` would still be rolled forward to 3 March. That input
+comes from the model rather than a person, and no eval row has ever produced
+it, so it is recorded rather than guarded — the guard costs a re-parse of
+every ISO variant, and this is the honest place to say the exposure exists.
+
+**Sprint 05b's manual pass is still open** — §1 above.
+
+**`WindowsToastScheduler.pending()` is in-memory, and honestly so.** It
+reports what this process scheduled, which is all the platform knows.
+`LocalNotificationScheduler.pending()` reads the OS's own list and restores
+each `triggerAt` from the payload, because the platform reports the int key
+and the text and nothing else. Both keep the port's ordering promise; only
+one of them survives a restart.
+
+**The reminder notification's title is the only localized string that
+crosses into a use case.** `ReminderNotificationCopy` exists so that BR-11
+holds at the point where text leaves the app for the operating system. If a
+future sprint needs a second such string — a snooze action's label, say —
+that port is where it goes, not a new parameter on a use case.
+
+## 9. Definition of Done
+
+- [x] Gates G1–G6 green; domain+application coverage ≥ 90% — **94.3%**, §2.
+- [x] All S06-* tests passing — 9 IDs, 43 scenarios, §3.
+- [x] Manual script per available platform — §6. **Windows complete**: all
+      five rows pass against the real OS, including the check on launch and
+      the reminder that must not fire twice; the pass found one real defect,
+      now fixed. **Android's seven rows are deferred under DEC-036** to the
+      end-of-v1.0 acceptance pass in `sprint-08-hardening.md`, because they
+      need a device the Developer does not hold. The box is ticked for the
+      deferral being *recorded as a checklist with its numbers*, not for the
+      evidence existing — v1.0 cannot close until it does.
+- [x] Report `docs/reports/sprint-06-report.md` — this document.
