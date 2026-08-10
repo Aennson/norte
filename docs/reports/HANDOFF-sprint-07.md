@@ -1,5 +1,14 @@
 # Handoff — Sprint 07 mid-flight, moving to another machine
 
+> **Superseded — the sprint was finished on 2026-08-10.** Kept because it is the
+> record of where the work stopped and what it was carrying, and because
+> `sprint-07-report.md` cites it. Everything below §4 is now done;
+> `docs/reports/sprint-07-report.md` is what is true. Two things it predicted
+> turned out differently and are worth reading there: the contract divergence of
+> §4.1 needed a third answer, not either of the two suggested, and the manual
+> pass of §4.6 found two defects in shipped code rather than confirming the
+> fakes.
+
 Written 2026-08-10. **Sprint 07 is not finished.** This says exactly what is
 true right now, what is left, and the traps waiting in the parts that are left.
 Read `docs/project-rules.md` and `docs/sprints/sprint-07-copilot-cli.md` first,
