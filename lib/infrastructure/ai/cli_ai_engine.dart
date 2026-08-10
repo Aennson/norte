@@ -235,9 +235,7 @@ class CliAiEngine implements AiEngine {
   /// Runs the CLI once and returns the answer text.
   Future<String> _run(String prompt) async {
     if (unavailable) {
-      throw AiProcessFailure(
-        '${profile.label} is only available on Windows',
-      );
+      throw AiProcessFailure('${profile.label} is only available on Windows');
     }
     if (!profile.promptOnStdin && prompt.length > maxPromptChars) {
       throw const ValidationFailure(
@@ -248,7 +246,10 @@ class CliAiEngine implements AiEngine {
 
     final List<String> arguments = <String>[
       ...profile.baseArguments,
-      if (model case final String pinned) ...<String>[profile.modelFlag, pinned],
+      if (model case final String pinned) ...<String>[
+        profile.modelFlag,
+        pinned,
+      ],
       profile.promptFlag,
       if (!profile.promptOnStdin) prompt,
     ];
@@ -320,10 +321,7 @@ class CliAiEngine implements AiEngine {
 
     final int code = await process.exitCode;
     if (code != 0) {
-      throw AiProcessFailure(
-        '${profile.label} exited with code $code',
-        code,
-      );
+      throw AiProcessFailure('${profile.label} exited with code $code', code);
     }
 
     final String? answer = _extractAnswer(out);

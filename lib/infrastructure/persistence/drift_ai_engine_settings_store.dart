@@ -34,7 +34,10 @@ class DriftAiEngineSettingsStore implements AiEngineSettingsStore {
 
   @override
   Future<AiEngineSettings> read() async {
-    final String? raw = await _readRow(settingsKey, 'reading the AI engine settings failed');
+    final String? raw = await _readRow(
+      settingsKey,
+      'reading the AI engine settings failed',
+    );
     return _decodeSettings(raw);
   }
 
@@ -53,7 +56,10 @@ class DriftAiEngineSettingsStore implements AiEngineSettingsStore {
 
   @override
   Future<AiEngineUsage> readUsage() async {
-    final String? raw = await _readRow(usageKey, 'reading the AI engine usage failed');
+    final String? raw = await _readRow(
+      usageKey,
+      'reading the AI engine usage failed',
+    );
     return _decodeUsage(raw);
   }
 

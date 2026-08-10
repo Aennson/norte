@@ -908,4 +908,47 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get remindersFired => 'Delivered';
+
+  @override
+  String get settingsEngineSection => 'AI engine';
+
+  @override
+  String get settingsEngineDescription =>
+      'Which assistant summarizes your meetings and reads your spoken commands. The command-line engines use their own sign-in and are only available on Windows.';
+
+  @override
+  String get settingsEngineClaudeApi => 'Claude API (your key)';
+
+  @override
+  String get settingsEngineCopilotCli => 'GitHub Copilot CLI';
+
+  @override
+  String get settingsEngineClaudeCodeCli => 'Claude Code CLI';
+
+  @override
+  String get settingsEngineModelAutomatic => 'Automatic';
+
+  @override
+  String settingsEngineAnswers(int count) {
+    return '$count answers';
+  }
+
+  @override
+  String get settingsEngineFallback => 'Fall back to another engine';
+
+  @override
+  String get settingsEngineFallbackDescription =>
+      'If the engine you chose cannot answer, try the Claude API instead rather than showing an error. Turn this off to always be told when your engine fails.';
+
+  @override
+  String get aiErrorEngineUnavailable =>
+      'No AI engine could answer. Check the AI engine section in Settings.';
+
+  @override
+  String get aiErrorEngineNotInstalled =>
+      'That command-line engine could not be started. Check that it is installed and signed in.';
+
+  @override
+  String get aiErrorEngineTooSlow =>
+      'The engine did not answer in time and was stopped. Try again.';
 }

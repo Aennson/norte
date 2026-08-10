@@ -911,4 +911,47 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get remindersFired => 'Entregue';
+
+  @override
+  String get settingsEngineSection => 'Motor de IA';
+
+  @override
+  String get settingsEngineDescription =>
+      'Qual assistente resume suas reuniões e interpreta seus comandos de voz. Os motores de linha de comando usam o login deles e só existem no Windows.';
+
+  @override
+  String get settingsEngineClaudeApi => 'API da Claude (sua chave)';
+
+  @override
+  String get settingsEngineCopilotCli => 'GitHub Copilot CLI';
+
+  @override
+  String get settingsEngineClaudeCodeCli => 'Claude Code CLI';
+
+  @override
+  String get settingsEngineModelAutomatic => 'Automático';
+
+  @override
+  String settingsEngineAnswers(int count) {
+    return '$count respostas';
+  }
+
+  @override
+  String get settingsEngineFallback => 'Recorrer a outro motor';
+
+  @override
+  String get settingsEngineFallbackDescription =>
+      'Se o motor escolhido não conseguir responder, tentar a API da Claude em vez de mostrar um erro. Desligue para ser sempre avisado quando o seu motor falhar.';
+
+  @override
+  String get aiErrorEngineUnavailable =>
+      'Nenhum motor de IA conseguiu responder. Veja a seção Motor de IA nas Configurações.';
+
+  @override
+  String get aiErrorEngineNotInstalled =>
+      'Não foi possível iniciar esse motor de linha de comando. Verifique se ele está instalado e conectado.';
+
+  @override
+  String get aiErrorEngineTooSlow =>
+      'O motor não respondeu a tempo e foi interrompido. Tente de novo.';
 }

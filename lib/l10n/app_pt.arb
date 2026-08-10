@@ -287,5 +287,18 @@
   "remindersNotPermitted": "As notificações estão desligadas, então este lembrete não vai tocar. Ele foi salvo.",
   "remindersLoadFailed": "Não foi possível carregar os lembretes.",
   "remindersRetry": "Tentar de novo",
-  "remindersFired": "Entregue"
+  "remindersFired": "Entregue",
+
+  "settingsEngineSection": "Motor de IA",
+  "settingsEngineDescription": "Qual assistente resume suas reuniões e interpreta seus comandos de voz. Os motores de linha de comando usam o login deles e só existem no Windows.",
+  "settingsEngineClaudeApi": "API da Claude (sua chave)",
+  "settingsEngineCopilotCli": "GitHub Copilot CLI",
+  "settingsEngineClaudeCodeCli": "Claude Code CLI",
+  "settingsEngineModelAutomatic": "Automático",
+  "settingsEngineAnswers": "{count} respostas",
+  "settingsEngineFallback": "Recorrer a outro motor",
+  "settingsEngineFallbackDescription": "Se o motor escolhido não conseguir responder, tentar a API da Claude em vez de mostrar um erro. Desligue para ser sempre avisado quando o seu motor falhar.",
+  "aiErrorEngineUnavailable": "Nenhum motor de IA conseguiu responder. Veja a seção Motor de IA nas Configurações.",
+  "aiErrorEngineNotInstalled": "Não foi possível iniciar esse motor de linha de comando. Verifique se ele está instalado e conectado.",
+  "aiErrorEngineTooSlow": "O motor não respondeu a tempo e foi interrompido. Tente de novo."
 }

@@ -1245,5 +1245,60 @@
   "remindersFired": "Delivered",
   "@remindersFired": {
     "description": "Badge on a reminder whose notification has already fired."
+  },
+
+  "settingsEngineSection": "AI engine",
+  "@settingsEngineSection": {
+    "description": "Title of the section choosing which AI engine answers."
+  },
+  "settingsEngineDescription": "Which assistant summarizes your meetings and reads your spoken commands. The command-line engines use their own sign-in and are only available on Windows.",
+  "@settingsEngineDescription": {
+    "description": "Explains what the engine choice affects."
+  },
+  "settingsEngineClaudeApi": "Claude API (your key)",
+  "@settingsEngineClaudeApi": {
+    "description": "Name of the remote engine, which bills the user's own API key."
+  },
+  "settingsEngineCopilotCli": "GitHub Copilot CLI",
+  "@settingsEngineCopilotCli": {
+    "description": "Name of the Copilot command-line engine."
+  },
+  "settingsEngineClaudeCodeCli": "Claude Code CLI",
+  "@settingsEngineClaudeCodeCli": {
+    "description": "Name of the Claude Code command-line engine."
+  },
+  "settingsEngineModelAutomatic": "Automatic",
+  "@settingsEngineModelAutomatic": {
+    "description": "Model option meaning the engine picks the model itself."
+  },
+  "settingsEngineAnswers": "{count} answers",
+  "@settingsEngineAnswers": {
+    "description": "How many answers one engine has produced on this device.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "settingsEngineFallback": "Fall back to another engine",
+  "@settingsEngineFallback": {
+    "description": "Label of the switch permitting a fallback when the chosen engine fails."
+  },
+  "settingsEngineFallbackDescription": "If the engine you chose cannot answer, try the Claude API instead rather than showing an error. Turn this off to always be told when your engine fails.",
+  "@settingsEngineFallbackDescription": {
+    "description": "Explains the fallback switch, including why someone would turn it off."
+  },
+  "aiErrorEngineUnavailable": "No AI engine could answer. Check the AI engine section in Settings.",
+  "@aiErrorEngineUnavailable": {
+    "description": "Shown when every engine in the fallback chain failed."
+  },
+  "aiErrorEngineNotInstalled": "That command-line engine could not be started. Check that it is installed and signed in.",
+  "@aiErrorEngineNotInstalled": {
+    "description": "Shown when a CLI engine's executable could not be run."
+  },
+  "aiErrorEngineTooSlow": "The engine did not answer in time and was stopped. Try again.",
+  "@aiErrorEngineTooSlow": {
+    "description": "Shown when the watchdog killed a hung CLI engine."
   }
 }

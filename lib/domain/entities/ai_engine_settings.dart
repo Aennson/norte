@@ -101,7 +101,6 @@ class AiEngineSettings {
       models.entries.map((MapEntry<String, String> e) => '${e.key}=${e.value}'),
     ),
   );
-
 }
 
 /// Map equality by content, for the two small maps this file holds.

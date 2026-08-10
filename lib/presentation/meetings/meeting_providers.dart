@@ -9,24 +9,26 @@ import '../../domain/entities/meeting_template.dart';
 import '../../domain/failures/failure.dart';
 import '../../domain/failures/result.dart';
 import '../../domain/ports/ai_credential_store.dart';
-import '../../domain/ports/ai_engine.dart';
 import '../../domain/ports/audio_recorder.dart';
 import '../../domain/ports/audio_store.dart';
 import '../../domain/ports/meeting_repository.dart';
 import '../../domain/ports/meeting_template_repository.dart';
 import '../../domain/ports/transcription_credential_store.dart';
 import '../../domain/ports/transcription_engine.dart';
+import '../settings/ai_engine_providers.dart';
 import '../tasks/task_providers.dart';
 
-/// The ports the composition root supplies. Each throws until overridden, so
-/// a missing wire fails loudly at startup instead of silently doing nothing
-/// (`docs/project-rules.md` §3 — `presentation/` may not reach into
-/// `infrastructure/`).
-final Provider<AiEngine> aiEngineProvider = Provider<AiEngine>(
-  (Ref ref) => throw UnimplementedError(
-    'aiEngineProvider must be overridden in the composition root',
-  ),
-);
+/// `aiEngineProvider` moved to `../settings/ai_engine_providers.dart` in
+/// Sprint 07 and is re-exported here so that every existing caller keeps
+/// working unchanged.
+///
+/// **It stopped being a port and became a computation.** The composition root
+/// used to build one engine and override this with it; §7.3's selection reads
+/// the user's preference, which can change while the app is running, so an
+/// engine fixed at launch would go on being the one chosen then. What the root
+/// overrides now is the pieces — the remote engine and the two CLI builders —
+/// and the choice between them is made on every read.
+export '../settings/ai_engine_providers.dart' show aiEngineProvider;
 
 final Provider<AiCredentialStore> aiCredentialStoreProvider =
     Provider<AiCredentialStore>(
