@@ -32,7 +32,10 @@ either, and it is the Developer's to close.
 | G4 — coverage | `flutter test --coverage` + `dart run tool/check_coverage.dart` | domain+application **91.5%** (852/931) · project **80.4%** (5003/6219) — `gate G4: OK` ✅ |
 | G5 — dependency rule | `dart run tool/check_imports.dart` | `check_imports: OK — no layer or color violations in lib` ✅ |
 | G6 — secrets | `grep -rEn "(api[_-]?key\|token)[[:space:]]*=[[:space:]]*['\"]" lib/` | no match ✅ |
-| E2E | `flutter test integration_test/<suite>`, one per file (DEC-010) | 13 suites — verified on CI, see §7 |
+| E2E | `flutter test integration_test/<suite>`, one per file (DEC-010) | **13 suites, all green** on the CI `e2e` job — run `31395379023` ✅ |
+
+**The whole pipeline is green at `923f592`**: `quality`, `test` and `e2e` all
+`success` in run `31395379023`.
 
 **G4 was the red gate this sprint restarted on, at 79.7% against an 80% floor.**
 It is green at 80.4%. The handoff predicted where the missing coverage was — the
@@ -204,6 +207,32 @@ chain.
 Both fixes carry regressions in `test/presentation/ai_engine_wiring_test.dart`
 that run in the ordinary `flutter test` pass — the E2E suites only run on the
 desktop host, and a fix nothing local guards is a fix waiting to be reverted.
+
+### Two things the CI run then found, and neither was a product bug
+
+**S07-E2E-02 counted starts, not attempts.** After §5.3 gave the profile two
+executable spellings, one BR-10 attempt against a tool that is installed under
+neither name is one `start` per candidate — so the count was 4 where the test
+said 2. The chain was right the whole time; its own log shows exactly two
+attempts and one switch. The assertion is now the product, and the *attempts*
+are read from the log, because two attempts is what BR-10 specifies and starts
+are an implementation detail of finding the tool.
+
+**S00-E2E-01 booted a root that had grown requirements.** Sprint 00's smoke
+suite builds a bare `ProviderScope` on the stated grounds that there was no
+external adapter to override yet. That stopped being true here: Settings carries
+the engine section, and `_AiEngineWarmUp` reads the preference on the first
+frame, so `isWindowsProvider` and `aiEngineSettingsStoreProvider` are needed at
+boot rather than when Settings is opened. Both still throw when unoverridden and
+that is kept — a silent default is how a phone comes to be offered a subprocess
+— so the suite supplies them exactly as `main.dart` does.
+
+Worth noting for whoever runs these locally on Windows: with those overrides in
+place the suite then reported a 153px `RenderFlex` overflow on the **Reminders**
+screen at a 390px viewport, on this host and not on CI, where the same suite is
+green. Golden sets are per-OS for this reason (DEC-006) — the host font stack
+measures text differently. It is recorded rather than chased because CI is the
+authority the DoD names, and CI does not see it.
 
 ## 7. The manual pass — **Windows ✅**
 
