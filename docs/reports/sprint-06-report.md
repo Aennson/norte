@@ -169,7 +169,7 @@ receivers. Without the boot receiver every reminder set before a restart is
 silently lost — and no test in this repository could ever have said so, which
 is precisely why it is listed here and in §6's manual script.
 
-## 6. The manual script per platform — **PARTLY RUN, one defect found**
+## 6. The manual script per platform — **Windows ✅, Android outstanding**
 
 **This is the box that is not ticked, and it cannot be ticked by anyone but
 the Developer.** The DoD asks for a real notification firing with the app in
@@ -218,14 +218,43 @@ later. A reminder silently moved to another day is worse than one refused,
 because the user is not told and finds out by missing it. The dated form now
 answers for itself, `null` included.
 
-### Still to run
+### Second pass — 2026-08-09, Windows, after the fix
 
-Steps **3, 4 and 5** — the check on launch, and the reminder that must not
-shout twice. They were not reached on the first pass, because they are the
-rows that use the typed path. They are now the cheapest rows in the script:
-three one-tap choices, no API key, no speaking.
+The Developer re-ran the script through the rebuilt sheet. **All five Windows
+rows pass.**
 
-Android and iOS are untouched, §6 below.
+| # | Row | Result |
+|---|---|---|
+| 1 | Spoken reminder → toast, titled **Lembrete** | ✅ first pass, real Scribe and real Claude |
+| 2 | Clicking the toast opens the reminder | ✅ first pass |
+| 3 | Overdue while Norte was **closed** → toast on the next launch, row in **Past** | ✅ |
+| 4 | An hour out, closed and reopened → **no** toast, still Upcoming | ✅ |
+| 5 | Reopened a second time → the toast does **not** repeat | ✅ |
+
+Rows 3, 4 and 5 are the ones that matter most and the ones no test could
+reach. Together they are the whole of §12 on Windows: 3 proves a reminder
+that fell due with the app shut is still delivered, 4 proves the launch check
+re-registers rather than firing everything it finds, and 5 proves `isFired`
+is actually written — the defect a user would otherwise meet every single
+morning.
+
+**Windows is complete. The Windows toast, the deep link, and the check on
+launch are all confirmed against the real operating system.**
+
+### What the box still needs
+
+**Android**, and it is not optional. **DEC-020** settles what "available
+platform" means for every v1.0 manual script — *Windows **and** Android* —
+with iOS the one declared-but-unverified target until a macOS host exists.
+Sprint 04's manual script covered both on the same reading.
+
+So this sprint's DoD box stays open on Android alone: steps 6–12 below, of
+which **9** (app swiped away) and **10** (survives a reboot) are the two that
+only a device can answer, and the two the manifest changes in §5 exist for.
+Nothing in the code is waiting on them; the evidence is.
+
+iOS is out of scope here for the same reason it was in Sprints 04 and 05, and
+Sprint 08 is where the two-or-three-platform decision for v1.0 gets made.
 
 ### Windows
 
@@ -260,6 +289,11 @@ proved is that a reminder which fell due while Norte was shut is delivered on
 the next launch and **not** on the one after that.
 
 ### Android
+
+Every row uses **Type it instead** — no Scribe key, no Claude key, no
+speaking. Rows 7–10 want a short wait, so *In 20 minutes* is the choice to
+tap. `flutter run -d <device>` after `flutter devices` names one; the APK has
+built on this machine since Sprint 00 (`sprint-00-report.md` §2).
 
 | # | Do | Expected |
 |---|---|---|
@@ -335,9 +369,10 @@ that port is where it goes, not a new parameter on a use case.
 
 - [x] Gates G1–G6 green; domain+application coverage ≥ 90% — **94.3%**, §2.
 - [x] All S06-* tests passing — 9 IDs, 43 scenarios, §3.
-- [ ] Manual script per available platform: a real notification with the app
-      in the foreground, background and closed (mobile), and a Windows toast
-      plus the check on launch — **partly run**, §6. The Windows voice path is
-      confirmed and found one defect, now fixed; the launch-check rows and all
-      of Android remain. The sprint is not closed until they are done.
+- [ ] Manual script per available platform — §6. **Windows is complete**: all
+      five rows pass against the real OS, including the check on launch and
+      the reminder that must not fire twice, and the pass found one real
+      defect which is fixed. **Android remains**, and DEC-020 makes it part of
+      "available platform" rather than a nice-to-have. This is the last box,
+      it is the Developer's to tick, and the sprint is not closed until it is.
 - [x] Report `docs/reports/sprint-06-report.md` — this document.
