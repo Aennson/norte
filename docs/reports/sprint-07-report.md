@@ -32,10 +32,10 @@ either, and it is the Developer's to close.
 | G4 — coverage | `flutter test --coverage` + `dart run tool/check_coverage.dart` | domain+application **91.5%** (852/931) · project **80.4%** (5003/6219) — `gate G4: OK` ✅ |
 | G5 — dependency rule | `dart run tool/check_imports.dart` | `check_imports: OK — no layer or color violations in lib` ✅ |
 | G6 — secrets | `grep -rEn "(api[_-]?key\|token)[[:space:]]*=[[:space:]]*['\"]" lib/` | no match ✅ |
-| E2E | `flutter test integration_test/<suite>`, one per file (DEC-010) | **13 suites, all green** on the CI `e2e` job — run `31395379023` ✅ |
+| E2E | `flutter test integration_test/<suite>`, one per file (DEC-010) | **13 suites, all green** on the CI `e2e` job — run `31396322298` ✅ |
 
-**The whole pipeline is green at `923f592`**: `quality`, `test` and `e2e` all
-`success` in run `31395379023`.
+**The whole pipeline is green at `f6104e9`**: `quality`, `test` and `e2e` all
+`success` in run `31396322298`.
 
 **G4 was the red gate this sprint restarted on, at 79.7% against an 80% floor.**
 It is green at 80.4%. The handoff predicted where the missing coverage was — the
