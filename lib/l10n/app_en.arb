@@ -1194,9 +1194,21 @@
   "@remindersTimeLabel": {
     "description": "Label of the reminder time field."
   },
-  "remindersTimeHint": "in 20 minutes",
-  "@remindersTimeHint": {
-    "description": "Placeholder of the reminder time field."
+  "remindersInTwentyMinutes": "In 20 minutes",
+  "@remindersInTwentyMinutes": {
+    "description": "One-tap reminder time on the manual sheet."
+  },
+  "remindersInAnHour": "In an hour",
+  "@remindersInAnHour": {
+    "description": "One-tap reminder time on the manual sheet."
+  },
+  "remindersTomorrowMorning": "Tomorrow 09:00",
+  "@remindersTomorrowMorning": {
+    "description": "One-tap reminder time on the manual sheet."
+  },
+  "remindersPickDateTime": "Pick a date and time",
+  "@remindersPickDateTime": {
+    "description": "Opens the date and time pickers on the manual reminder sheet."
   },
   "remindersCreate": "Create reminder",
   "@remindersCreate": {

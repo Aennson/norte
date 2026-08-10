@@ -877,7 +877,16 @@ class AppLocalizationsIt extends AppLocalizations {
   String get remindersTimeLabel => 'Quando?';
 
   @override
-  String get remindersTimeHint => 'tra 20 minuti';
+  String get remindersInTwentyMinutes => 'Tra 20 minuti';
+
+  @override
+  String get remindersInAnHour => 'Tra un\'ora';
+
+  @override
+  String get remindersTomorrowMorning => 'Domani 09:00';
+
+  @override
+  String get remindersPickDateTime => 'Scegli data e ora';
 
   @override
   String get remindersCreate => 'Crea promemoria';

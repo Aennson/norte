@@ -26,20 +26,20 @@ does not become closed by a later sprint passing over it.
 | Gate | Command | Result |
 |---|---|---|
 | G1 — static analysis | `flutter analyze` | `No issues found! (ran in 7.1s)` — 0 errors, 0 warnings, 0 infos ✅ |
-| G2 — formatting | `dart format --set-exit-if-changed .` | `Formatted 274 files (0 changed)`, exit 0 ✅ |
-| G3 — tests | `flutter test` | `01:09 +825: All tests passed!` ✅ |
-| G4 — coverage | `flutter test --coverage` + `dart run tool/check_coverage.dart` | domain+application **94.3%** (764/810) · project **81.8%** (4734/5785) — `gate G4: OK` ✅ |
+| G2 — formatting | `dart format --set-exit-if-changed .` | `Formatted 275 files (0 changed)`, exit 0 ✅ |
+| G3 — tests | `flutter test` | `00:56 +828: All tests passed!` ✅ |
+| G4 — coverage | `flutter test --coverage` + `dart run tool/check_coverage.dart` | domain+application **94.5%** (783/829) · project **81.4%** (4753/5840) — `gate G4: OK` ✅ |
 | G5 — dependency rule | `dart run tool/check_imports.dart` | `check_imports: OK — no layer or color violations in lib` ✅ |
 | G6 — secrets | `grep -rEn "(api[_-]?key\|token)[[:space:]]*=[[:space:]]*['\"]" lib/` | no match (exit 1) ✅ |
 | E2E | `flutter test integration_test/<suite>`, one per file (DEC-010) | **12 suites, 43 scenarios**, all passing ✅ |
 
-The suite grew from 751 to 825. Domain+application coverage rose 93.9% →
-94.3% while that layer gained 96 lines.
+The suite grew from 751 to 828. Domain+application coverage rose 93.9% →
+94.5% while that layer gained 115 lines.
 
-**Project coverage fell 84.5% → 81.8%, and the reason is worth naming rather
+**Project coverage fell 84.5% → 81.4%, and the reason is worth naming rather
 than absorbing.** Two of this sprint's three new adapters are platform
 channels end to end, and `main.dart` — which grew by fifty lines of
-composition — has no test at all, as `sprint-05` §5 recorded. 81.8% is above
+composition — has no test at all, as `sprint-05` §5 recorded. 81.4% is above
 the 80% floor with less headroom than the sprint before it, and the way back
 up is a `main.dart` that can be exercised, not more tests for the two
 adapters.
@@ -169,13 +169,63 @@ receivers. Without the boot receiver every reminder set before a restart is
 silently lost — and no test in this repository could ever have said so, which
 is precisely why it is listed here and in §6's manual script.
 
-## 6. The manual script per platform — **OUTSTANDING**
+## 6. The manual script per platform — **PARTLY RUN, one defect found**
 
 **This is the box that is not ticked, and it cannot be ticked by anyone but
 the Developer.** The DoD asks for a real notification firing with the app in
 the foreground, in the background, and closed on mobile, plus a Windows toast
 and the check on launch. Every test above replaces the notification platform
 with a fake; what no fake can answer is whether the OS actually delivers.
+
+### First pass — 2026-08-09, Windows
+
+**The voice path works.** The Developer reported the spoken flow as good: the
+utterance is transcribed, the reminder is created, and the toast is delivered.
+Steps 1 and 2 below are therefore confirmed against a real Scribe, a real
+Claude and real WinRT — which is the half of this sprint no test could reach.
+
+**The typed path was wrong, and the Developer met it head-on.** Their words:
+the field *"pede para digitar algo como `in 20 minutes`, não faz sentido"*.
+They were right, and the defect was mine.
+
+`remindersTimeHint` read **`in 20 minutes`** while `TriggerTime` accepts only
+`+20m`, `today 15:00`, `tomorrow 09:00`, `friday 15:00` and ISO. The field
+prompted, in as many words, for a phrase the parser refuses — so the fallback
+was unusable to anyone who followed its own instruction.
+
+The wrong fix is to change the hint to `+20m`. That grammar is what the
+**model** emits after reading speech; it was never meant for a person, and the
+whole reason the typed fallback exists is a user who cannot or will not talk
+to their laptop. Making them learn a slot syntax instead is not a fallback.
+
+**What was done instead:** the free-text time field is gone. The sheet now
+offers three one-tap choices — *In 20 minutes*, *In an hour*,
+*Tomorrow 09:00* — plus a date-and-time picker, and shows the resolved instant
+underneath in `mono`, formatted exactly as the list will show it. Nothing can
+be spelled wrong because nothing is spelled.
+
+The picker needed a slot shape the spoken grammar has no use for: a picker
+knows the exact day and cannot say "tomorrow". `2026-08-09 15:00` is that
+shape, and it resolves through the same injected `TimeZone` as the other
+wall-clock forms — an ISO instant built in the widget layer would have been
+resolved against whatever zone the device happened to be in.
+
+**Writing the test for it found a second defect.** An impossible date —
+`2026-02-31 09:00` — was resolving to **3 March**. `TriggerTime` refused it
+correctly and then fell through to `DateTime.tryParse`, which is lenient and
+rolls the overflow into the next month; the rejection undid itself one line
+later. A reminder silently moved to another day is worse than one refused,
+because the user is not told and finds out by missing it. The dated form now
+answers for itself, `null` included.
+
+### Still to run
+
+Steps **3, 4 and 5** — the check on launch, and the reminder that must not
+shout twice. They were not reached on the first pass, because they are the
+rows that use the typed path. They are now the cheapest rows in the script:
+three one-tap choices, no API key, no speaking.
+
+Android and iOS are untouched, §6 below.
 
 ### Windows
 
@@ -200,10 +250,14 @@ the script with `-Target` to move it. Windows also caches the AUMID table, so
 a first toast that does not appear may just need Explorer restarted.
 
 **Steps 1 and 2 need a Scribe key and a Claude key** — they go through the
-voice pipeline. Steps 3–5 do not: use **Type it instead** on the reminders
-screen with `+2m` as the time, and the notification path is exercised with no
-key configured at all. That is the fastest way to find out whether the toast
-works before spending anything on an API call.
+voice pipeline, and both are ✅ confirmed. Steps 3–5 do not: use **Type it
+instead**, tap *In 20 minutes*, and the whole notification path runs with no
+key configured at all.
+
+For steps 3 and 5 the two-minute wait matters more than the exact number —
+use *In 20 minutes* and just close the app, wait, and reopen. What is being
+proved is that a reminder which fell due while Norte was shut is delivered on
+the next launch and **not** on the one after that.
 
 ### Android
 
@@ -229,6 +283,15 @@ incomplete.**
 
 ## 7. Deviations
 
+**The typed fallback collects its time by choice rather than by text.** The
+sprint's scope says "create manually by text as a fallback", and the reminder
+*text* is still typed; the time is not. §6 is the reason — a free-text time
+field asked the user to learn a slot grammar written for a language model, and
+the Developer's first contact with it was to say, correctly, that it made no
+sense. The fallback's purpose is a user who cannot use voice, and that purpose
+is served better by three taps than by a syntax. This is a deliberate reading
+of the scope, recorded here rather than absorbed.
+
 **One documented test's entry criteria were read differently than written.**
 S06-UT-01 lists a realtime fake among its entry criteria; the test drives
 `FakeAiEngine` and the real `IntentCodec` to produce the intent, then calls
@@ -245,6 +308,13 @@ Nothing else in the sprint document was altered.
 
 **`primeCache()` is still unverified** — carried forward from Sprint 05's
 handoff §3, Sprint 05a §7 and Sprint 05b §7, untouched again.
+
+**`DateTime.tryParse` is lenient, and the ISO branch still relies on it.** The
+dated slot now validates its own digits (§6), but a model that returned
+`2026-02-31T09:00:00Z` would still be rolled forward to 3 March. That input
+comes from the model rather than a person, and no eval row has ever produced
+it, so it is recorded rather than guarded — the guard costs a re-parse of
+every ISO variant, and this is the honest place to say the exposure exists.
 
 **Sprint 05b's manual pass is still open** — §1 above.
 
@@ -267,6 +337,7 @@ that port is where it goes, not a new parameter on a use case.
 - [x] All S06-* tests passing — 9 IDs, 43 scenarios, §3.
 - [ ] Manual script per available platform: a real notification with the app
       in the foreground, background and closed (mobile), and a Windows toast
-      plus the check on launch — **outstanding**, §6. It is the Developer's to
-      run, and the sprint is not closed until it is.
+      plus the check on launch — **partly run**, §6. The Windows voice path is
+      confirmed and found one defect, now fixed; the launch-check rows and all
+      of Android remain. The sprint is not closed until they are done.
 - [x] Report `docs/reports/sprint-06-report.md` — this document.

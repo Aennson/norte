@@ -3,10 +3,9 @@ import '../ports/time_zone.dart';
 /// Turns the `triggerAt` slot into an instant.
 ///
 /// The grammar is **the one the model is told to produce** — the `Reminders:`
-/// line of `IntentCodec.systemPrompt` lists exactly these five shapes, and this
-/// file is the other half of that contract. Adding a form here that the prompt
-/// never asks for buys nothing; accepting less than the prompt promises is a
-/// parse failure the user experiences as the app not understanding them.
+/// line of `IntentCodec.systemPrompt` lists those five shapes, and this file is
+/// the other half of that contract. Accepting less than the prompt promises is
+/// a parse failure the user experiences as the app not understanding them.
 ///
 /// | Slot | Read as |
 /// |---|---|
@@ -14,7 +13,16 @@ import '../ports/time_zone.dart';
 /// | `today 15:00` | 15:00 local, on the local calendar day of "now" |
 /// | `tomorrow 09:00` | 09:00 local, the day after that |
 /// | `friday 15:00` | 15:00 local, on the **next** such weekday |
+/// | `2026-08-09 15:00` | that local wall clock, on that date |
 /// | an ISO 8601 instant | itself, converted to UTC |
+///
+/// **The dated form is not spoken, and the model is not told about it.** It is
+/// what the typed fallback's date picker emits — a picker knows the exact day
+/// and cannot say "tomorrow", and the alternative was asking a user who chose
+/// *not* to talk to their laptop to type `+20m` instead. It goes through the
+/// same zone as the other wall-clock forms, which is the reason it is a slot
+/// shape at all rather than an ISO instant built in the widget layer against
+/// whatever zone the device happened to be in.
 ///
 /// **Everything wall-clock goes through [TimeZone].** Sprint 05 refused these
 /// three forms rather than resolve them in the device's ambient zone
@@ -40,10 +48,43 @@ abstract final class TriggerTime {
     final DateTime? offset = _resolveOffset(value, now);
     if (offset != null) return offset;
 
-    final DateTime? wallClock = _resolveWallClock(value, now, zone);
+    // **The dated form answers for itself, including with a `null`.** Falling
+    // through to `DateTime.tryParse` on a rejection would undo the rejection:
+    // that parser is lenient and turns `2026-02-31` into 3 March without
+    // complaint, so a date this class had just refused as impossible would
+    // come back as a reminder on another day.
+    final String lowered = value.toLowerCase();
+    if (_datedWallClock.firstMatch(lowered) case final RegExpMatch dated) {
+      return _resolveDated(dated, zone);
+    }
+
+    final DateTime? wallClock = _resolveWallClock(lowered, now, zone);
     if (wallClock != null) return wallClock;
 
     return DateTime.tryParse(value)?.toUtc();
+  }
+
+  /// The `2026-08-09 15:00` shape, already matched.
+  ///
+  /// `null` means the digits do not name a real minute — 25:00, month 13, the
+  /// 31st of February.
+  static DateTime? _resolveDated(RegExpMatch dated, TimeZone zone) {
+    final int hour = int.parse(dated.group(4)!);
+    final int minute = int.parse(dated.group(5)!);
+    if (hour > 23 || minute > 59) return null;
+
+    final int year = int.parse(dated.group(1)!);
+    final int month = int.parse(dated.group(2)!);
+    final int day = int.parse(dated.group(3)!);
+    if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+
+    final DateTime local = DateTime.utc(year, month, day, hour, minute);
+    // `DateTime` rolls an impossible day into the next month rather than
+    // refusing it, and a reminder silently moved to another day is worse than
+    // one refused: the user is not told, and finds out by missing it.
+    if (local.month != month || local.day != day) return null;
+
+    return zone.instantOf(local);
   }
 
   static DateTime? _resolveOffset(String value, DateTime now) {
@@ -60,12 +101,15 @@ abstract final class TriggerTime {
     };
   }
 
+  /// The relative shapes — `today 15:00`, `tomorrow 09:00`, `friday 15:00`.
+  ///
+  /// [lowered] has already been lower-cased by [resolve].
   static DateTime? _resolveWallClock(
-    String value,
+    String lowered,
     DateTime now,
     TimeZone zone,
   ) {
-    final RegExpMatch? match = _wallClock.firstMatch(value.toLowerCase());
+    final RegExpMatch? match = _wallClock.firstMatch(lowered);
     if (match == null) return null;
 
     final int hour = int.parse(match.group(2)!);
@@ -84,6 +128,16 @@ abstract final class TriggerTime {
     return zone.instantOf(local);
   }
 
+  /// [local] as the dated wall-clock slot this class reads back.
+  ///
+  /// The date picker's side of the contract, so the format lives beside the
+  /// expression that parses it rather than in a widget three layers away.
+  static String slotFor(DateTime local) {
+    String two(int value) => value.toString().padLeft(2, '0');
+    return '${local.year}-${two(local.month)}-${two(local.day)} '
+        '${two(local.hour)}:${two(local.minute)}';
+  }
+
   /// [day] with its time replaced — calendar fields only, never arithmetic on
   /// a wall-clock reading (`TimeZone.localAt`).
   static DateTime _at(DateTime day, int hour, int minute) =>
@@ -97,6 +151,10 @@ abstract final class TriggerTime {
   }
 
   static final RegExp _offset = RegExp(r'^\+(\d+)\s*([smhd])$');
+
+  static final RegExp _datedWallClock = RegExp(
+    r'^(\d{4})-(\d{2})-(\d{2})[ t](\d{1,2}):(\d{2})$',
+  );
 
   static final RegExp _wallClock = RegExp(
     r'^(today|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday)'

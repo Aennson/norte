@@ -237,11 +237,13 @@ void main() {
         expect(await reminders.listAll(), isEmpty);
         expect(scheduler.scheduled, isEmpty);
 
-        // Answering completes the slot, and only then is it stored.
-        await tester.enterText(
-          find.byKey(const Key('reminder-answer-time-field')),
-          '+20m',
-        );
+        // Answering completes the slot, and only then is it stored. The time
+        // is **chosen, never typed**: the grammar `TriggerTime` reads is what
+        // the model emits after hearing speech, not something a person should
+        // have to learn — the first version of this sheet asked for it as free
+        // text and the Developer met a field hinting a phrase it refused.
+        await tester.tap(find.byKey(const Key('reminder-time.+20m')));
+        await tester.pumpAndSettle();
         await tester.tap(find.byKey(const Key('reminder-answer-time-button')));
         await tester.pumpAndSettle();
 
@@ -265,10 +267,8 @@ void main() {
           find.byKey(const Key('reminder-text-field')),
           'levar o carro na revisão',
         );
-        await tester.enterText(
-          find.byKey(const Key('reminder-time-field')),
-          'tomorrow 09:00',
-        );
+        await tester.tap(find.byKey(const Key('reminder-time.tomorrow')));
+        await tester.pumpAndSettle();
         await tester.tap(find.byKey(const Key('reminder-create-button')));
         await tester.pumpAndSettle();
 

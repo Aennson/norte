@@ -95,6 +95,38 @@ void main() {
     });
   });
 
+  group('the dated form the picker emits', () {
+    test('a picked day and time resolve in the injected zone', () {
+      // The picker knows the exact day and cannot say "tomorrow", so it emits
+      // this. It must go through the zone like every other wall-clock form —
+      // an ISO instant built in the widget layer would be resolved against
+      // whatever zone the device happened to be in.
+      expect(
+        TriggerTime.resolve('2026-08-09 09:00', now, saoPaulo),
+        DateTime.utc(2026, 8, 9, 12),
+      );
+    });
+
+    test('slotFor and resolve are the two halves of one contract', () {
+      // The picker's output is parsed by the same class that defines the
+      // format, so the two cannot drift apart in a refactor.
+      final DateTime picked = DateTime.utc(2026, 12, 25, 7, 5);
+      expect(TriggerTime.slotFor(picked), '2026-12-25 07:05');
+      expect(
+        TriggerTime.resolve(TriggerTime.slotFor(picked), now, saoPaulo),
+        saoPaulo.instantOf(picked),
+      );
+    });
+
+    test('a date that does not exist is refused, not rolled forward', () {
+      // `DateTime` turns 31 February into 3 March without complaint. A
+      // reminder silently moved to another day is worse than one refused.
+      expect(TriggerTime.resolve('2026-02-31 09:00', now, saoPaulo), isNull);
+      expect(TriggerTime.resolve('2026-13-01 09:00', now, saoPaulo), isNull);
+      expect(TriggerTime.resolve('2026-08-09 25:00', now, saoPaulo), isNull);
+    });
+  });
+
   group('ISO 8601', () {
     test('an instant with a zone is taken as it stands', () {
       expect(

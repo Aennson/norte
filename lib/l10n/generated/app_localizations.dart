@@ -1600,11 +1600,29 @@ abstract class AppLocalizations {
   /// **'When?'**
   String get remindersTimeLabel;
 
-  /// Placeholder of the reminder time field.
+  /// One-tap reminder time on the manual sheet.
   ///
   /// In en, this message translates to:
-  /// **'in 20 minutes'**
-  String get remindersTimeHint;
+  /// **'In 20 minutes'**
+  String get remindersInTwentyMinutes;
+
+  /// One-tap reminder time on the manual sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'In an hour'**
+  String get remindersInAnHour;
+
+  /// One-tap reminder time on the manual sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Tomorrow 09:00'**
+  String get remindersTomorrowMorning;
+
+  /// Opens the date and time pickers on the manual reminder sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a date and time'**
+  String get remindersPickDateTime;
 
   /// Confirms manual creation of a reminder.
   ///
