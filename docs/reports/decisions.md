@@ -1314,3 +1314,62 @@ scenario describes a state the app can no longer reach and is re-read in
 toggle. If a genuinely local engine is ever added (v1.1's gateway work, or an
 on-device model), BR-07's relaxation becomes reachable again and this decision
 does not stand in its way.
+
+---
+
+## DEC-038 — Claude Code CLI joins Sprint 07, as an amendment rather than a slip (Sprint 07)
+
+**Context.** `docs/sprints/sprint-07-copilot-cli.md` lists "other local engines"
+under **Out**, and the `sprint-executor` skill is explicit that what a sprint
+puts out of scope is forbidden "even if convenient". Mid-sprint the Developer
+asked, in as many words, for a way to use the Claude Code CLI as well.
+
+**Decision.** It is built, in this sprint, and the scope line is amended here
+rather than quietly stepped over. `ClaudeCodeCliEngine` ships alongside
+`CopilotCliEngine`, as a third `EnginePref`, a third row in Settings, and a
+third subject in the contract suite.
+
+**Why this is an amendment and not an exception.** The Developer owns the
+scope; a sprint document is their instrument, not their constraint. What the
+rule protects against is *an implementation* deciding on its own that something
+out of scope is worth adding — and the protection is preserved by the amendment
+being written down, with a number, in the place scope changes are recorded.
+A sprint that silently grew a third engine would be indistinguishable from one
+that had lost track of its own boundaries.
+
+**Why it was cheap enough to say yes to.** It was asked for *after*
+`CopilotCliEngine` was working, and the two tools turned out to have nearly the
+same shape: a prompt in, JSON on stdout, one process, one deadline. So the
+engine-specific part is a `CliEngineProfile` — six values — and every behaviour
+that could be got wrong (the watchdog, the parser, the failure translation, the
+stderr redaction) has one implementation shared by both. Had the second engine
+needed its own transport, the answer would have been a lettered sprint instead,
+on DEC-030's precedent.
+
+**Two things it is *not*.**
+
+- **Not a local engine.** DEC-037 applies to it unchanged: `isLocal = false`,
+  the redactor stays enforced. The Claude Code CLI is a client for a
+  server-side model exactly as Copilot is.
+- **Not the same thing as `ClaudeApiEngine`.** Both are "Claude" and they bill
+  differently: the API engine spends the user's own key per token (BYOK, BR-08),
+  the CLI spends whatever subscription the CLI is signed in to, and Norte holds
+  no credential for the second. Settings says so, because a user who assumes
+  the two are one thing will be surprised by exactly one of the bills.
+
+**Rejected alternatives.**
+
+- *Refuse, on the grounds that it is out of scope.* Correct reading of the
+  sprint document and the wrong reading of the project: the scope belongs to
+  the Developer, and this is a small, well-understood addition to a seam built
+  for exactly this.
+- *Add it silently.* The failure mode the rule exists to prevent.
+- *Defer it to a lettered sprint (07a).* Justified if it needed its own
+  transport or its own tests; it needs neither, and a sprint whose whole content
+  is six constants would be ceremony rather than control.
+
+**Impact.** `lib/infrastructure/ai/claude_code_cli_engine.dart`;
+`EnginePref.claudeCodeCli` and its row in the Settings section; S07-UT-01 gains
+two combinations; S07-CT-01 gains a third subject;
+`docs/sprints/sprint-07-copilot-cli.md`'s "Out" line, which this decision
+amends and which the sprint report restates.
