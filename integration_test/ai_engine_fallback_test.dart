@@ -271,8 +271,21 @@ void main() {
     );
     expect(find.text('Summarizing failed. Try again.'), findsNothing);
 
-    // Both were tried, in the BR-10 sequence, and both are named in the log.
-    expect(cliRunner.invocations, hasLength(2));
+    // Both engines were tried, in the BR-10 sequence.
+    //
+    // **The primary is attempted twice; it is *started* more often than that.**
+    // Since the Sprint 07 manual pass, a profile carries several spellings of
+    // its executable — `copilot.exe` for the WinGet install, `copilot.cmd` for
+    // the npm one — and an attempt tries each until one starts. When none of
+    // them exists, as here, one attempt is one invocation per candidate. The
+    // count is written as the product so that adding a third spelling updates
+    // it rather than breaking it, and the *attempts* are asserted from the log,
+    // because two attempts is what BR-10 actually specifies.
+    expect(
+      cliRunner.invocations,
+      hasLength(2 * CopilotCliEngine.copilotProfile.executables.length),
+    );
+    expect(log.where((String line) => line.contains('attempt')), hasLength(2));
     expect(remote.calls, hasLength(1));
     expect(
       log.join('\n'),
