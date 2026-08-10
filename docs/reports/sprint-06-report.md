@@ -179,6 +179,12 @@ with a fake; what no fake can answer is whether the OS actually delivers.
 
 ### Windows
 
+**Run `tool/register_windows_toast.ps1` once first.** Windows shows no toast
+for an unpackaged Win32 app unless a Start Menu shortcut carries the same
+AUMID the app files notifications under, and `flutter run -d windows` creates
+no such shortcut. Skipping this makes every row below fail identically and
+silently, for a reason that is not the code.
+
 | # | Do | Expected | What it proves |
 |---|---|---|---|
 | 1 | Speak "me lembra em dois minutos de olhar o build", keep the app open | A toast after two minutes, titled **Lembrete** | The timer path, and the AUMID in `main.dart` matching the shortcut |
@@ -187,10 +193,17 @@ with a fake; what no fake can answer is whether the OS actually delivers.
 | 4 | Create one an hour out, close and reopen Norte | No toast; the reminder is still listed as upcoming | The launch check re-registers rather than firing everything overdue |
 | 5 | Repeat 3 twice without cancelling | The toast fires **once**, on the first reopen | `isFired`, and the defect a user meets every morning |
 
-If step 1 shows nothing at all, the AUMID is the first suspect —
-`_windowsApplicationId` in `main.dart` has to match the shortcut the
-installer creates, and WinRT accepts a toast under a wrong AUMID and displays
-nothing, with no error.
+If step 1 shows nothing at all, the AUMID is still the first suspect: the
+shortcut has to point at the executable actually running, so a shortcut
+registered against the Debug build proves nothing about a Release one. Re-run
+the script with `-Target` to move it. Windows also caches the AUMID table, so
+a first toast that does not appear may just need Explorer restarted.
+
+**Steps 1 and 2 need a Scribe key and a Claude key** — they go through the
+voice pipeline. Steps 3–5 do not: use **Type it instead** on the reminders
+screen with `+2m` as the time, and the notification path is exercised with no
+key configured at all. That is the fastest way to find out whether the toast
+works before spending anything on an API call.
 
 ### Android
 
