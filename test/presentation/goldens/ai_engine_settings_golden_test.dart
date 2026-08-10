@@ -184,7 +184,9 @@ void main() {
       // The remote engine is still offered, and so is the fallback toggle —
       // a phone that hid the whole section would be a different bug.
       expect(
-        find.byKey(AiEngineSettingsSection.engineRadioKey(EnginePref.claudeApi)),
+        find.byKey(
+          AiEngineSettingsSection.engineRadioKey(EnginePref.claudeApi),
+        ),
         findsOneWidget,
       );
       expect(

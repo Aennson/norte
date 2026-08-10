@@ -353,14 +353,17 @@ void main() {
         },
       );
 
-      test('S03-CT-01: a rejected credential is the declared Failure', () async {
-        subject().provoke(_Situation.credentialRejected);
+      test(
+        'S03-CT-01: a rejected credential is the declared Failure',
+        () async {
+          subject().provoke(_Situation.credentialRejected);
 
-        await expectLater(
-          subject().engine.summarize(retroTranscript, retroTemplate),
-          throwsA(subject().raises[_Situation.credentialRejected]),
-        );
-      });
+          await expectLater(
+            subject().engine.summarize(retroTranscript, retroTemplate),
+            throwsA(subject().raises[_Situation.credentialRejected]),
+          );
+        },
+      );
 
       test('S03-CT-01: throttling is the declared Failure', () async {
         subject().provoke(_Situation.throttled);
@@ -522,9 +525,7 @@ class _CliDouble {
 
   late FakeProcess Function() _next = () => FakeProcess();
 
-  late final FakeProcessRunner runner = FakeProcessRunner.always(
-    () => _next(),
-  );
+  late final FakeProcessRunner runner = FakeProcessRunner.always(() => _next());
 
   /// Answers with [raw], surrounded by the bookkeeping the real CLI prints.
   ///
@@ -544,10 +545,9 @@ class _CliDouble {
   ///
   /// The one shape a subprocess has for every credential and quota problem it
   /// meets. See [_cliRaises].
-  void refuse() => _next = () => FakeProcess(
-    stderr: const <String>[notSignedInStderr],
-    exit: 1,
-  );
+  void refuse() =>
+      _next = () =>
+          FakeProcess(stderr: const <String>[notSignedInStderr], exit: 1);
 }
 
 /// The three utterances of S05-CT-02, one raw answer each and the intent both

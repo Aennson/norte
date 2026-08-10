@@ -19,10 +19,14 @@ import '../support/meeting_fixtures.dart';
 /// whether a summary parses, and mixing the two would make a failure here
 /// ambiguous between the chain and the codec.
 class _SpyEngine implements AiEngine {
-  _SpyEngine({this.failures = 0, this.name = 'spy'});
+  // `failures` is settable rather than a constructor argument: every scenario
+  // in this suite adjusts it after building the engine — that is what "fails
+  // once, then works" is — so an argument nobody passed was only ever going to
+  // go stale.
+  _SpyEngine({this.name = 'spy'});
 
   /// How many of the first calls should fail before one succeeds.
-  int failures;
+  int failures = 0;
 
   final String name;
 

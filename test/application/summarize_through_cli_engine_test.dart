@@ -64,35 +64,38 @@ void main() {
   );
 
   group('S07-IT-01: a CPF never reaches a CLI engine', () {
-    test('S07-IT-01: Copilot receives the transcript redacted, in argv',
-        () async {
-      final FakeProcessRunner runner = FakeProcessRunner.always(
-        () => FakeProcess(stdout: copilotStdout()),
-      );
+    test(
+      'S07-IT-01: Copilot receives the transcript redacted, in argv',
+      () async {
+        final FakeProcessRunner runner = FakeProcessRunner.always(
+          () => FakeProcess(stdout: copilotStdout()),
+        );
 
-      final Result<Meeting> result = await through(
-        CopilotCliEngine(
-          runner: runner,
-          clock: FakeClock(now),
-          isWindows: true,
-        ),
-      )(
-        transcript: transcriptWithPii,
-        template: retroTemplate,
-        title: 'Retro',
-      );
+        final Result<Meeting> result =
+            await through(
+              CopilotCliEngine(
+                runner: runner,
+                clock: FakeClock(now),
+                isWindows: true,
+              ),
+            )(
+              transcript: transcriptWithPii,
+              template: retroTemplate,
+              title: 'Retro',
+            );
 
-      expect(result.isOk, isTrue);
+        expect(result.isOk, isTrue);
 
-      // What the child process was handed — the command line itself, which on
-      // Windows is also what shows up in the process list.
-      final String sent = runner.invocations.single.prompt;
-      expect(sent, isNot(contains('123.456.789-09')));
-      expect(sent, isNot(contains('12345678909')));
-      expect(sent, contains(PiiRedactor.cpfMask));
-      // The whole of BR-07, not only the CPF the sprint names.
-      expect(const PiiRedactor().containsPii(sent), isFalse);
-    });
+        // What the child process was handed — the command line itself, which on
+        // Windows is also what shows up in the process list.
+        final String sent = runner.invocations.single.prompt;
+        expect(sent, isNot(contains('123.456.789-09')));
+        expect(sent, isNot(contains('12345678909')));
+        expect(sent, contains(PiiRedactor.cpfMask));
+        // The whole of BR-07, not only the CPF the sprint names.
+        expect(const PiiRedactor().containsPii(sent), isFalse);
+      },
+    );
 
     test('S07-IT-01: Claude Code receives it redacted too, on stdin', () async {
       final FakeProcessRunner runner = FakeProcessRunner.always(
@@ -107,11 +110,7 @@ void main() {
           clock: FakeClock(now),
           isWindows: true,
         ),
-      )(
-        transcript: transcriptWithPii,
-        template: retroTemplate,
-        title: 'Retro',
-      );
+      )(transcript: transcriptWithPii, template: retroTemplate, title: 'Retro');
 
       expect(result.isOk, isTrue);
 
@@ -134,30 +133,35 @@ void main() {
           () => FakeProcess(stdout: copilotStdout()),
         );
 
-        final Result<Meeting> result = await through(
-          CopilotCliEngine(
-            runner: runner,
-            clock: FakeClock(now),
-            isWindows: true,
-          ),
-        )(
-          transcript: transcriptWithPii,
-          template: retroTemplate,
-          title: 'Retro',
-        );
+        final Result<Meeting> result =
+            await through(
+              CopilotCliEngine(
+                runner: runner,
+                clock: FakeClock(now),
+                isWindows: true,
+              ),
+            )(
+              transcript: transcriptWithPii,
+              template: retroTemplate,
+              title: 'Retro',
+            );
 
         // Redaction is what the *engine* is shown, not what the user loses.
         // A rule that quietly rewrote the user's own transcript would be a
         // data-loss bug wearing a privacy rule's clothes.
-        expect((result as Ok<Meeting>).value.rawTranscript,
-            contains('123.456.789-09'));
+        expect(
+          (result as Ok<Meeting>).value.rawTranscript,
+          contains('123.456.789-09'),
+        );
       },
     );
   });
 
   group('S07-IT-01: no setting can relax it for a CLI engine', () {
     test('S07-IT-01: both CLI engines report isLocal false (DEC-037)', () {
-      final FakeProcessRunner runner = FakeProcessRunner.always(FakeProcess.new);
+      final FakeProcessRunner runner = FakeProcessRunner.always(
+        FakeProcess.new,
+      );
       final FakeClock clock = FakeClock(now);
 
       for (final CliAiEngine engine in <CliAiEngine>[
@@ -170,54 +174,48 @@ void main() {
       }
     });
 
-    test(
-      'S07-IT-01: the relaxation branch is live, and no shipped engine '
-      'reaches it',
-      () async {
-        // Proving the negative honestly. If the use case simply never passed
-        // raw text to anyone, the assertions above would hold for a completely
-        // different reason and would keep holding if BR-07 were deleted.
-        final FakeAiEngine local = FakeAiEngine(
-          capabilities: const AiCapabilities(
-            isLocal: true,
-            supportsStreaming: false,
-            supportsPromptCache: false,
-            maxTokens: 8192,
-          ),
-        )..alwaysAnswer(summaryFixture('retro.json'));
+    test('S07-IT-01: the relaxation branch is live, and no shipped engine '
+        'reaches it', () async {
+      // Proving the negative honestly. If the use case simply never passed
+      // raw text to anyone, the assertions above would hold for a completely
+      // different reason and would keep holding if BR-07 were deleted.
+      final FakeAiEngine local = FakeAiEngine(
+        capabilities: const AiCapabilities(
+          isLocal: true,
+          supportsStreaming: false,
+          supportsPromptCache: false,
+          maxTokens: 8192,
+        ),
+      )..alwaysAnswer(summaryFixture('retro.json'));
 
-        await through(local)(
-          transcript: transcriptWithPii,
-          template: retroTemplate,
-          title: 'Retro',
-        );
+      await through(local)(
+        transcript: transcriptWithPii,
+        template: retroTemplate,
+        title: 'Retro',
+      );
 
-        // The branch works: a genuinely local engine is given the raw text.
-        expect(local.lastTranscript, contains('123.456.789-09'));
+      // The branch works: a genuinely local engine is given the raw text.
+      expect(local.lastTranscript, contains('123.456.789-09'));
 
-        // And nothing the user can select is such an engine. There is no
-        // setting to check because there is no setting: the condition is a
-        // property of the adapter, not a preference.
-        final FakeProcessRunner runner = FakeProcessRunner.always(
-          FakeProcess.new,
-        );
-        final FakeClock clock = FakeClock(now);
-        expect(
-          <bool>[
-            CopilotCliEngine(
-              runner: runner,
-              clock: clock,
-              isWindows: true,
-            ).capabilities.isLocal,
-            ClaudeCodeCliEngine(
-              runner: runner,
-              clock: clock,
-              isWindows: true,
-            ).capabilities.isLocal,
-          ],
-          everyElement(isFalse),
-        );
-      },
-    );
+      // And nothing the user can select is such an engine. There is no
+      // setting to check because there is no setting: the condition is a
+      // property of the adapter, not a preference.
+      final FakeProcessRunner runner = FakeProcessRunner.always(
+        FakeProcess.new,
+      );
+      final FakeClock clock = FakeClock(now);
+      expect(<bool>[
+        CopilotCliEngine(
+          runner: runner,
+          clock: clock,
+          isWindows: true,
+        ).capabilities.isLocal,
+        ClaudeCodeCliEngine(
+          runner: runner,
+          clock: clock,
+          isWindows: true,
+        ).capabilities.isLocal,
+      ], everyElement(isFalse));
+    });
   });
 }

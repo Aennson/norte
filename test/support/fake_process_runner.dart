@@ -12,17 +12,16 @@ import 'package:norte/infrastructure/ai/process_runner.dart';
 /// outliving the test run.
 class FakeProcess implements RunningProcess {
   FakeProcess({
-    List<String> stdout = const <String>[],
-    List<String> stderr = const <String>[],
-    int exit = 0,
+    this.stdout = const <String>[],
+    this.stderr = const <String>[],
+    this.exit = 0,
     this.neverExits = false,
-  }) : _stdout = stdout,
-       _stderr = stderr,
-       _exit = exit;
+  });
 
-  final List<String> _stdout;
-  final List<String> _stderr;
-  final int _exit;
+  /// Lines the child "writes" to each pipe, and the code it ends with.
+  final List<String> stdout;
+  final List<String> stderr;
+  final int exit;
 
   /// When `true`, [exitCode] never completes on its own.
   final bool neverExits;
@@ -35,15 +34,15 @@ class FakeProcess implements RunningProcess {
   final Completer<int> _exitCode = Completer<int>();
 
   @override
-  Stream<String> get stdoutLines => Stream<String>.fromIterable(_stdout);
+  Stream<String> get stdoutLines => Stream<String>.fromIterable(stdout);
 
   @override
-  Stream<String> get stderrLines => Stream<String>.fromIterable(_stderr);
+  Stream<String> get stderrLines => Stream<String>.fromIterable(stderr);
 
   @override
   Future<int> get exitCode {
     if (neverExits) return _exitCode.future;
-    return Future<int>.value(_exit);
+    return Future<int>.value(exit);
   }
 
   @override

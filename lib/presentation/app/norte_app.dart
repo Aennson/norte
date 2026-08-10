@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../domain/entities/ai_engine_settings.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../reminders/reminder_detail_screen.dart';
 import '../reminders/reminder_providers.dart';
+import '../settings/ai_engine_providers.dart';
 import '../shared/theme/norte_theme.dart';
 import 'norte_router.dart';
 
@@ -48,9 +50,11 @@ class _NorteAppState extends State<NorteApp> {
       localeResolutionCallback: resolveNorteLocale,
       routerConfig: _router,
       builder: (BuildContext context, Widget? child) => _LocaleBinder(
-        child: _ReminderDeepLinkListener(
-          router: _router,
-          child: child ?? const SizedBox.shrink(),
+        child: _AiEngineWarmUp(
+          child: _ReminderDeepLinkListener(
+            router: _router,
+            child: child ?? const SizedBox.shrink(),
+          ),
         ),
       ),
     );
@@ -90,6 +94,39 @@ class _LocaleBinderState extends ConsumerState<_LocaleBinder> {
 
   @override
   Widget build(BuildContext context) => widget.child;
+}
+
+/// Starts reading the AI engine preference as the app opens.
+///
+/// **Without this, the first request after launch goes to the wrong engine.**
+/// `aiEngineProvider` composes the chain from `aiEngineSettingsProvider`, and a
+/// Riverpod provider is lazy: nothing reads the settings until something reads
+/// the engine, and by then the read has only just started, so the chain is built
+/// from the defaults and the request is already on its way to the remote engine.
+/// The user who chose Copilot in Settings gets Claude API for their first
+/// summary of every session, the usage counter credits the engine they did not
+/// pick, and nothing anywhere reports a problem. S07-E2E-01 is what found it.
+///
+/// Later reads are safe on their own: `ref.invalidate` after a write keeps the
+/// previous value while the new one loads, so only the very first read of the
+/// process can see `null`. This closes that one.
+///
+/// **`ref.listen`, not `ref.watch`.** Both activate the provider, which is all
+/// this widget is for; watching would additionally rebuild the entire
+/// application subtree every time the user touched a switch in Settings.
+class _AiEngineWarmUp extends ConsumerWidget {
+  const _AiEngineWarmUp({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen<AsyncValue<AiEngineSettings>>(
+      aiEngineSettingsProvider,
+      (_, _) {},
+    );
+    return child;
+  }
 }
 
 /// Navigates to the reminder a notification asked for (`sprint-06` scope).
