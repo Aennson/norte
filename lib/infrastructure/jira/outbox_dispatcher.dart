@@ -224,6 +224,15 @@ class OutboxDispatcher {
     RecordingFailure() ||
     // Sprint 06's reminder failure lands here for the same reason: a queued
     // Jira operation has no trigger time to be wrong about.
-    InvalidTriggerTimeFailure() => false,
+    InvalidTriggerTimeFailure() ||
+    // Sprint 07's three, likewise: no outbox operation starts a subprocess.
+    // `AiTimeoutFailure` is the one worth pausing on, because it *looks*
+    // retryable and the classification above would have said so — but a Jira
+    // operation cannot produce it, and if one ever did, retrying a killed
+    // subprocess on the Jira queue's hour-long backoff is not what anybody
+    // would want. The engine's own chain retries it once, immediately (BR-10).
+    AiTimeoutFailure() ||
+    AiProcessFailure() ||
+    AiUnavailableFailure() => false,
   };
 }
