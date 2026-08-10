@@ -1253,3 +1253,64 @@ of being tracked separately.
 `docs/reports/sprint-06-report.md` §6 and §9; every future v1.0 manual script;
 DEC-020, which stands — Android is still an available platform and still owed,
 it is simply owed at a named moment.
+
+---
+
+## DEC-037 — The Copilot CLI is a remote engine, and `isLocal` says so (Sprint 07)
+
+**Context.** `docs/architecture.md` §7.2 gives `CopilotCliEngine`
+`capabilities.isLocal = true`, with a stated reason: the inference runs as a
+local subprocess, so "data does not leave the machine". BR-07 uses exactly that
+condition — and only that condition — to permit relaxing the PII redactor.
+
+**The premise is false, and it was checked rather than assumed.** GitHub
+Copilot CLI 1.0.78 was installed on the Developer's machine and run
+non-interactively (`copilot -p … --output-format json`). Its own JSONL says what
+it is: `session.auto_mode_resolved` chose `claude-haiku-4.5` from a
+server-provided list, and the answer came back with `requestId`,
+`serviceRequestId`, `apiCallId: msg_011…` and `premiumRequests: 0.33` billed to
+the account. The CLI is a thin client. **The process is local; the inference is
+not.** A transcript handed to it goes to GitHub's servers exactly as a
+transcript handed to `ClaudeApiEngine` goes to Anthropic's.
+
+**Decision.** `CopilotCliEngine` declares **`isLocal = false`**. The redactor
+relaxation of BR-07 therefore never applies to it, the setting that would
+disable redaction is not offered, and PII redaction stays enforced on both
+engines in v1.0.
+
+**Why this way round.** BR-07 is a rule about *where the user's data goes*, and
+§7.2's `isLocal = true` is a claim about the same thing that happens to be
+wrong. Honouring the rule means contradicting the document's literal text;
+honouring the text means shipping a toggle that sends unredacted CPFs to a
+third party under a justification that does not survive one command's output.
+When a document and the world disagree about a fact, the world wins and the
+document is corrected — and BR-07's own words ("with `isLocal == true`") are
+satisfied here, not overridden: the condition is simply not met.
+
+**Rejected alternatives.**
+
+- *Implement §7.2 literally.* This is the deferential reading and it is the
+  dangerous one. It converts a documentation error into a privacy defect that
+  only fires when a user opts in, which is the hardest kind to notice: the
+  toggle would be labelled with the reassurance that the data stays local,
+  and the reassurance would be false.
+- *Keep `isLocal = true` and disable the toggle anyway.* Leaves the wrong fact
+  in the codebase for the next sprint to read and act on, having removed the
+  one symptom that would have exposed it. A capability that lies and is worked
+  around is worse than one that is corrected.
+- *Add a third capability (`runsLocally` vs `dataStaysLocal`).* Precise, and
+  premature: v1.0 has no engine for which the two differ in the other
+  direction, and BR-07 needs one answer, not two.
+
+**What this does not change.** Everything else Sprint 07 asks of the adapter
+stands unaltered — the subprocess, the 30s watchdog, the BR-10 fallback chain,
+the Windows-only availability, the settings section. `isLocal` is read by the
+application layer for one purpose, and this decision changes only that answer.
+
+**Impact.** `docs/architecture.md` §7.2 (the premise, corrected here rather
+than silently); the sprint's S07-IT-01, whose "off + local → CPF passes intact"
+scenario describes a state the app can no longer reach and is re-read in
+`docs/reports/sprint-07-report.md`; the Settings UI, which shows no redaction
+toggle. If a genuinely local engine is ever added (v1.1's gateway work, or an
+on-device model), BR-07's relaxation becomes reachable again and this decision
+does not stand in its way.
